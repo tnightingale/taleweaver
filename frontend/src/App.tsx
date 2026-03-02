@@ -77,7 +77,7 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <header className="py-8 text-center">
         <h1 className="text-4xl font-extrabold text-purple-800">
-          StoryForge
+          Taleweaver
         </h1>
         <p className="text-gray-500 mt-1">Magical audio stories for kids</p>
       </header>
