@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.config import router as config_router
+from app.routes.story import router as story_router
 
 app = FastAPI(title="Audio Story Creator")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(config_router)
+app.include_router(story_router)
 
 
 @app.get("/api/health")
