@@ -22,12 +22,14 @@ export async function fetchHistoricalEvents(): Promise<HistoricalEvent[]> {
 export async function createCustomStory(
   kid: KidProfile,
   genre: string,
-  description: string
+  description: string,
+  mood?: string,
+  length?: string,
 ): Promise<JobCreatedResponse> {
   const res = await fetch(`${BASE}/story/custom`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kid, genre, description }),
+    body: JSON.stringify({ kid, genre, description, mood, length }),
   });
   return res.json();
 }

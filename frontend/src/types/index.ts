@@ -51,10 +51,10 @@ export interface JobCompleteResponse {
 
 export type StoryType = "custom" | "historical";
 
+export type StoryMood = "exciting" | "heartwarming" | "funny" | "mysterious";
+export type StoryLength = "short" | "medium" | "long";
+
 export type WizardStep =
-  | "profile"
-  | "story-type"
-  | "custom-form"
-  | "historical-pick"
-  | "generating"
-  | "listen";
+  | "hero"
+  | "craft"
+  | "story";
