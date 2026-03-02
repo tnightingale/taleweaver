@@ -1,52 +1,103 @@
-def _age_instructions(age: int) -> str:
+from typing import Optional
+
+
+def _word_count_guide(age: int, length: Optional[str]) -> str:
+    ranges = {
+        "young": {"short": (300, 400, 3, 4), "medium": (500, 700, 5, 7), "long": (700, 900, 7, 9)},
+        "mid": {"short": (500, 700, 5, 7), "medium": (900, 1200, 9, 12), "long": (1200, 1500, 12, 15)},
+        "older": {"short": (700, 1000, 7, 10), "medium": (1200, 1800, 12, 18), "long": (1800, 2500, 18, 25)},
+    }
+    age_key = "young" if age <= 5 else "mid" if age <= 8 else "older"
+    length_key = length if length in ("short", "medium", "long") else "medium"
+    lo, hi, min_dur, max_dur = ranges[age_key][length_key]
+    return f"The story should be {lo}-{hi} words ({min_dur}-{max_dur} minutes when read aloud)."
+
+
+def _age_directives(age: int) -> str:
     if age <= 5:
-        return (
-            "Use very simple words and short sentences. "
-            "The story should be about 200-300 words (2-3 minutes when read aloud). "
-            "Keep the historical events simple and easy to understand."
-        )
+        return """AGE GROUP 3-5:
+- Use very simple words and short sentences.
+- Focus on what the child SEES and HEARS — concrete sensory details.
+- Keep the historical context simple. One or two key facts, explained gently.
+- The time-travel framing should feel magical and safe.
+- Include a repetitive refrain about the time-travel experience."""
     elif age <= 8:
-        return (
-            "Use moderate vocabulary appropriate for early readers. "
-            "The story should be about 400-600 words (4-6 minutes when read aloud). "
-            "Explain historical context in kid-friendly terms."
-        )
+        return """AGE GROUP 6-8:
+- Moderate vocabulary. Explain historical terms in kid-friendly language.
+- Include the emotional dimension: how the historical figures FELT.
+- Let the child observer have an emotional reaction to what they witness.
+- 2-3 key historical facts woven naturally into the narrative.
+- Include a moment of wonder or awe at witnessing history."""
     else:
-        return (
-            "Use rich, detailed language with more complex sentence structures. "
-            "The story should be about 700-1000 words (7-10 minutes when read aloud). "
-            "Include more historical detail and context."
-        )
+        return """AGE GROUP 9-12:
+- Rich, detailed language. Don't shy from historical complexity.
+- Explore the motivations and conflicts of historical figures.
+- Include context: why this event mattered, what was at stake.
+- The child observer can reflect on what they're seeing — what it means.
+- All key facts must be included accurately.
+- Moral complexity is welcome — history is rarely simple."""
 
 
 def build_historical_story_prompt(
-    name: str, age: int, details: str, event_data: dict
+    name: str, age: int, details: str, event_data: dict,
+    mood: Optional[str] = None, length: Optional[str] = None,
 ) -> str:
-    age_guide = _age_instructions(age)
+    age_guide = _age_directives(age)
+    word_count = _word_count_guide(age, length)
     facts = "\n".join(f"- {f}" for f in event_data["key_facts"])
 
-    return f"""You are a world-class children's storyteller who specializes in historically accurate stories.
+    return f"""You are a world-class children's audio storyteller who specializes in historically accurate, vivid time-travel stories.
 
-IMPORTANT RULES:
-- {name} (age {age}) is a silent observer who has been magically transported back in time to witness this event.
-- {name} is watching the events unfold but does NOT change history. They are an invisible, time-traveling observer.
-- You MUST be historically accurate and factual. Do NOT invent events that didn't happen.
-- {age_guide}
-- The story must be safe, positive, and appropriate for children.
-- Make the experience vivid and immersive — describe what {name} sees, hears, and feels as they watch.
+STORY REQUEST:
+- Observer: {name} (age {age}), a child magically transported back in time
+- {name} is an INVISIBLE, silent observer. They watch but do NOT change history.
 
 CHILD'S DETAILS:
-{details if details else "No additional details provided."}
+{details if details else "No additional details."}
 
 HISTORICAL EVENT:
 Title: {event_data["title"]}
 Historical Figure: {event_data["figure"]}
 Year: {event_data["year"]}
 
-KEY FACTS (you MUST include these accurately):
+KEY FACTS (you MUST include ALL of these accurately):
 {facts}
 
+---
+
+STEP 1 — PLAN (do this internally before writing):
+
+Structure the story as a journey:
+1. {name} is transported — describe the arrival (sights, sounds, smells of the era)
+2. {name} witnesses the buildup — tension rises as events unfold
+3. The key moment — the climax of the historical event
+4. {name} sees the aftermath — the impact and meaning
+5. {name} returns home — changed by what they witnessed
+
+Answer: What makes this event EMOTIONALLY compelling for a child? What will {name} FEEL watching it?
+
+STEP 2 — WRITE THE STORY:
+
+{age_guide}
+
+{word_count}
+
+HISTORICAL ACCURACY RULES:
+- You MUST be historically accurate. Do NOT invent events that didn't happen.
+- All key facts listed above MUST appear in the story.
+- Historical figures must speak and act consistently with the historical record.
+- {name} NEVER interacts with, speaks to, or is noticed by historical figures.
+
+AUDIO STORYTELLING RULES:
+- Hook in the FIRST PARAGRAPH — start with the moment of time travel. Sights, sounds, disorientation.
+- Vary sentence length: short sentences for dramatic moments, longer for awe and wonder.
+- Build sound into the prose: the sounds of the era, the voices, the environment.
+- Show emotion through action, not narration.
+- Include ONE recurring refrain about the time-travel experience (e.g., "and {name} watched, invisible, as history unfolded").
+- Include ONE moment addressing the listener: "Imagine standing there..."
+- Make the experience VIVID and IMMERSIVE — describe what {name} sees, hears, smells, and feels.
+
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
-TITLE: [Your story title]
+TITLE: [A creative, evocative title]
 STORY:
-[Your story text here. Use dialogue with character names. Format dialogue as: CharacterName: "dialogue text"]"""
+[Your story text. Use dialogue with character names formatted as: CharacterName: "dialogue text"]"""

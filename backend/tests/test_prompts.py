@@ -37,7 +37,8 @@ def test_historical_prompt_includes_facts():
         "key_facts": ["Escaped in fruit baskets", "Disguised as sadhu"]
     }
     prompt = build_historical_story_prompt(
-        name="Arjun", age=7, details="", event_data=event_data
+        name="Arjun", age=7, details="", event_data=event_data,
+        mood=None, length=None,
     )
     assert "Arjun" in prompt
     assert "observer" in prompt.lower() or "watching" in prompt.lower()
@@ -53,6 +54,17 @@ def test_historical_prompt_enforces_accuracy():
         "key_facts": ["Fact one"]
     }
     prompt = build_historical_story_prompt(
-        name="Test", age=8, details="", event_data=event_data
+        name="Test", age=8, details="", event_data=event_data,
+        mood=None, length=None,
     )
     assert "accurate" in prompt.lower() or "factual" in prompt.lower() or "historically" in prompt.lower()
+
+
+def test_historical_prompt_includes_audio_directives():
+    event = {"title": "Moon Landing", "figure": "Neil Armstrong", "year": 1969, "key_facts": ["Fact 1"]}
+    prompt = build_historical_story_prompt(
+        name="Ava", age=7, details="", event_data=event,
+        mood=None, length=None,
+    )
+    assert "hook" in prompt.lower() or "first paragraph" in prompt.lower()
+    assert "sentence length" in prompt.lower() or "pacing" in prompt.lower()
