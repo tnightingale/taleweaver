@@ -8,12 +8,12 @@ def get_llm() -> BaseChatModel:
 
     if provider == "groq":
         from langchain_groq import ChatGroq
-        return ChatGroq(api_key=settings.groq_api_key, model="llama-3.3-70b-versatile")
+        return ChatGroq(api_key=settings.groq_api_key, model="llama-3.3-70b-versatile", max_tokens=8192)
     elif provider == "openai":
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(api_key=settings.openai_api_key, model="gpt-4o")
+        return ChatOpenAI(api_key=settings.openai_api_key, model="gpt-4o", max_tokens=8192)
     elif provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
-        return ChatAnthropic(api_key=settings.anthropic_api_key, model="claude-haiku-4-5-20251001")
+        return ChatAnthropic(api_key=settings.anthropic_api_key, model="claude-sonnet-4-5-20250514", max_tokens=8192)
     else:
         raise ValueError(f"Unknown LLM provider: {provider}")
