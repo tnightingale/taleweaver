@@ -48,21 +48,47 @@ def _load_event(event_id: str) -> Optional[dict]:
     return None
 
 
+# Maps LangGraph node names to frontend stage names
+NODE_TO_STAGE = {
+    "story_writer": "writing",
+    "script_splitter": "splitting",
+    "voice_synthesizer": "synthesizing",
+    "audio_stitcher": "stitching",
+}
+STAGE_ORDER = list(NODE_TO_STAGE.keys())
+
+
 async def run_pipeline(job_id: str, state: dict):
     try:
         pipeline = create_story_pipeline()
 
         logger.info(f"[{job_id}] Starting pipeline: type={state['story_type']}, kid={state['kid_name']}, age={state['kid_age']}")
         jobs[job_id]["current_stage"] = "writing"
-        result = await pipeline.ainvoke(state)
+
+        # Stream node-by-node to track progress
+        final_state = None
+        async for event in pipeline.astream(state):
+            # event is {node_name: node_output_dict}
+            for node_name in event:
+                # After a node completes, advance to the next stage
+                idx = STAGE_ORDER.index(node_name) if node_name in STAGE_ORDER else -1
+                if idx + 1 < len(STAGE_ORDER):
+                    next_stage = NODE_TO_STAGE[STAGE_ORDER[idx + 1]]
+                    jobs[job_id]["current_stage"] = next_stage
+                    logger.info(f"[{job_id}] Stage: {next_stage}")
+                # Merge node output into our tracked state
+                if final_state is None:
+                    final_state = {**state, **event[node_name]}
+                else:
+                    final_state.update(event[node_name])
 
         jobs[job_id]["status"] = "complete"
         jobs[job_id]["current_stage"] = "done"
-        jobs[job_id]["title"] = result["title"]
-        jobs[job_id]["duration_seconds"] = result["duration_seconds"]
-        jobs[job_id]["final_audio"] = result["final_audio"]
+        jobs[job_id]["title"] = final_state["title"]
+        jobs[job_id]["duration_seconds"] = final_state["duration_seconds"]
+        jobs[job_id]["final_audio"] = final_state["final_audio"]
 
-        logger.info(f"[{job_id}] Pipeline complete: title='{result['title']}', duration={result['duration_seconds']}s")
+        logger.info(f"[{job_id}] Pipeline complete: title='{final_state['title']}', duration={final_state['duration_seconds']}s")
     except Exception as e:
         logger.error(f"[{job_id}] Pipeline failed: {e}", exc_info=True)
         jobs[job_id]["status"] = "failed"

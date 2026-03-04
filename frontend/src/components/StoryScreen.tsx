@@ -102,15 +102,9 @@ export default function StoryScreen({
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center space-y-8"
           >
-            {/* Pulsing Orb */}
+            {/* Color-Cycling Pulsing Orb */}
             <motion.div
-              className="w-32 h-32 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%)",
-                boxShadow:
-                  "0 0 40px rgba(124, 58, 237, 0.6), 0 0 80px rgba(124, 58, 237, 0.3), 0 0 120px rgba(124, 58, 237, 0.1)",
-              }}
+              className="w-32 h-32 rounded-full orb-color-cycle"
               animate={{
                 scale: [1, 1.15, 1],
                 opacity: [0.8, 1, 0.8],
@@ -121,6 +115,23 @@ export default function StoryScreen({
                 ease: "easeInOut",
               }}
             />
+            <style>{`
+              @keyframes orbColorCycle {
+                0%   { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
+                       box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
+                25%  { background: radial-gradient(circle, #93c5fd 0%, #3b82f6 50%, #1e3a8a 100%);
+                       box-shadow: 0 0 40px rgba(59,130,246,0.6), 0 0 80px rgba(59,130,246,0.3); }
+                50%  { background: radial-gradient(circle, #6ee7b7 0%, #10b981 50%, #064e3b 100%);
+                       box-shadow: 0 0 40px rgba(16,185,129,0.6), 0 0 80px rgba(16,185,129,0.3); }
+                75%  { background: radial-gradient(circle, #fda4af 0%, #e11d48 50%, #881337 100%);
+                       box-shadow: 0 0 40px rgba(225,29,72,0.6), 0 0 80px rgba(225,29,72,0.3); }
+                100% { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
+                       box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
+              }
+              .orb-color-cycle {
+                animation: orbColorCycle 8s ease-in-out infinite;
+              }
+            `}</style>
 
             {/* Stage Label */}
             <AnimatePresence mode="wait">
