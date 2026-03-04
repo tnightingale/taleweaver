@@ -80,7 +80,7 @@ async def story_writer(state: StoryState) -> dict:
         parts = text.split("STORY:", 1)
         title_part = parts[0]
         story_text = parts[1].strip()
-        title = title_part.replace("TITLE:", "").strip()
+        title = title_part.replace("TITLE:", "").strip().strip("#").strip()
     else:
         logger.warning("LLM response missing TITLE:/STORY: markers, using raw text")
 
