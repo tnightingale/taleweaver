@@ -65,18 +65,16 @@ KEY FACTS (you MUST include ALL of these accurately):
 
 ---
 
-STEP 1 — PLAN (do this internally before writing):
+BEFORE YOU WRITE, plan the story internally (DO NOT output your planning — go straight to the final TITLE/STORY output):
 
-Structure the story as a journey:
+Structure to follow:
 1. {name} is transported — describe the arrival (sights, sounds, smells of the era)
 2. {name} witnesses the buildup — tension rises as events unfold
 3. The key moment — the climax of the historical event
 4. {name} sees the aftermath — the impact and meaning
 5. {name} returns home — changed by what they witnessed
 
-Answer: What makes this event EMOTIONALLY compelling for a child? What will {name} FEEL watching it?
-
-STEP 2 — WRITE THE STORY:
+WRITING RULES:
 
 {age_guide}
 

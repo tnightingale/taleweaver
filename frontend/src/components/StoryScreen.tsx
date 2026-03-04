@@ -3,21 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   isGenerating: boolean;
-  currentStage: string;
   title: string;
   audioUrl: string;
   durationSeconds: number;
   onCreateAnother: () => void;
 }
-
-const STAGE_LABELS: Record<string, string> = {
-  writing: "Weaving your tale...",
-  splitting: "Giving voice to characters...",
-  synthesizing: "Recording the narration...",
-  stitching: "Binding the magic...",
-};
-
-const STAGES = Object.keys(STAGE_LABELS);
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -27,7 +17,6 @@ const formatTime = (seconds: number) => {
 
 export default function StoryScreen({
   isGenerating,
-  currentStage,
   title,
   audioUrl,
   durationSeconds,
@@ -86,9 +75,6 @@ export default function StoryScreen({
   // Build download URL with ?download=true
   const downloadUrl = audioUrl ? `${audioUrl}?download=true` : "";
 
-  const currentStageIndex = STAGES.indexOf(currentStage);
-  const label = STAGE_LABELS[currentStage] || "Creating your story...";
-
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <AnimatePresence mode="wait">
@@ -133,50 +119,10 @@ export default function StoryScreen({
               }
             `}</style>
 
-            {/* Stage Label */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={currentStage}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="text-xl font-display text-glow text-ethereal"
-              >
-                {label}
-              </motion.p>
-            </AnimatePresence>
-
-            {/* Progress Dots */}
-            <div className="flex gap-3">
-              {STAGES.map((stage, i) => {
-                const isCompleted = i < currentStageIndex;
-                const isCurrent = i === currentStageIndex;
-                return (
-                  <motion.div
-                    key={stage}
-                    className="w-3 h-3 rounded-full"
-                    style={{
-                      backgroundColor: isCompleted
-                        ? "#7c3aed"
-                        : isCurrent
-                          ? "#a78bfa"
-                          : "rgba(255, 255, 255, 0.15)",
-                    }}
-                    animate={
-                      isCurrent
-                        ? { scale: [1, 1.4, 1], opacity: [0.7, 1, 0.7] }
-                        : {}
-                    }
-                    transition={
-                      isCurrent
-                        ? { duration: 1, repeat: Infinity, ease: "easeInOut" }
-                        : {}
-                    }
-                  />
-                );
-              })}
-            </div>
+            {/* Label */}
+            <p className="text-xl font-display text-glow text-ethereal">
+              Creating your story...
+            </p>
 
             {/* Subtitle */}
             <p className="text-sm text-starlight/40">

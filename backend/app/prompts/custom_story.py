@@ -94,9 +94,9 @@ CHILD'S DETAILS (weave naturally into the story if provided):
 
 ---
 
-STEP 1 — PLAN THE STORY SKELETON (do this internally before writing):
+BEFORE YOU WRITE, plan the story skeleton internally (DO NOT output your planning — go straight to the final TITLE/STORY output):
 
-Fill out this structure in your mind before drafting:
+Story Spine to follow:
 - Once upon a time... [World + character + what's normal]
 - Every day... [The protagonist's routine / status quo]
 - Until one day... [The inciting incident that disrupts everything]
@@ -106,13 +106,9 @@ Fill out this structure in your mind before drafting:
 - Until finally... [The climax — the protagonist faces the biggest challenge]
 - And ever since then... [The new normal — what changed]
 
-Before writing, answer these four questions:
-1. Who do I care about and WHY? (Give {name} a specific, concrete desire)
-2. What does {name} want? (Not generic "be happy" — something tangible)
-3. What's stopping them? (A real obstacle, not easily overcome)
-4. What happens if they fail? (Real stakes the listener can feel)
+Consider: What does {name} want? What's stopping them? What happens if they fail?
 
-STEP 2 — WRITE THE STORY following these rules:
+WRITING RULES:
 
 {age_guide}
 

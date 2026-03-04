@@ -198,7 +198,6 @@ export default function App() {
               <motion.div key="story" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                 <StoryScreen
                   isGenerating={isGenerating}
-                  currentStage={currentStage}
                   title={storyTitle}
                   audioUrl={audioUrl}
                   durationSeconds={storyDuration}

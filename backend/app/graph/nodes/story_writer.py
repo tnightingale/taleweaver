@@ -73,6 +73,11 @@ async def story_writer(state: StoryState) -> dict:
     ])
 
     text = response.content
+
+    # Strip any leaked planning/thinking the LLM may have output before TITLE:
+    if "TITLE:" in text:
+        text = text[text.index("TITLE:"):]
+
     title = ""
     story_text = text
 
