@@ -66,10 +66,13 @@ export default function CraftScreen({
   const [events, setEvents] = useState<HistoricalEvent[]>([]);
   const [selectedGenre, setSelectedGenre] = useState("");
   const [description, setDescription] = useState("");
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
-    fetchGenres().then(setGenres);
-    fetchHistoricalEvents().then(setEvents);
+    Promise.all([
+      fetchGenres().then(setGenres),
+      fetchHistoricalEvents().then(setEvents),
+    ]).then(() => setDataLoaded(true));
   }, []);
 
   const canSubmitCustom = selectedGenre !== "" && description.trim() !== "";
@@ -128,8 +131,15 @@ export default function CraftScreen({
         </button>
       </motion.div>
 
+      {/* Loading state */}
+      {!dataLoaded && (
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--color-mystic)] border-t-transparent animate-spin" />
+        </div>
+      )}
+
       {/* Custom Story Path */}
-      {storyType === "custom" && (
+      {dataLoaded && storyType === "custom" && (
         <motion.form
           key="custom"
           onSubmit={handleCustomSubmit}
@@ -282,7 +292,7 @@ export default function CraftScreen({
       )}
 
       {/* Historical Path */}
-      {storyType === "historical" && (
+      {dataLoaded && storyType === "historical" && (
         <motion.div
           key="historical"
           className="space-y-6"
