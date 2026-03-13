@@ -14,6 +14,7 @@ interface Props {
   title: string;
   audioUrl: string;
   durationSeconds: number;
+  transcript?: string;
   onCreateAnother: () => void;
 }
 
@@ -29,6 +30,7 @@ export default function StoryScreen({
   title,
   audioUrl,
   durationSeconds,
+  transcript,
   onCreateAnother,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -37,6 +39,7 @@ export default function StoryScreen({
   const [duration, setDuration] = useState(durationSeconds);
   const [isSeeking, setIsSeeking] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   // Sync duration from props when they change
   useEffect(() => {
@@ -248,6 +251,38 @@ export default function StoryScreen({
                   Create Another Story
                 </button>
               </div>
+
+              {/* Transcript Toggle */}
+              {transcript && (
+                <div className="w-full">
+                  <button
+                    onClick={() => setShowTranscript(!showTranscript)}
+                    className="w-full text-center text-sm text-starlight/50 hover:text-starlight/80 transition-colors py-2 cursor-pointer"
+                  >
+                    {showTranscript ? "Hide Story Text" : "Read the Story"}{" "}
+                    <span className="inline-block transition-transform" style={{ transform: showTranscript ? "rotate(180deg)" : "rotate(0deg)" }}>
+                      ▾
+                    </span>
+                  </button>
+                  <AnimatePresence>
+                    {showTranscript && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="glass-card p-6 mt-2 max-h-96 overflow-y-auto">
+                          <div className="text-starlight/80 text-sm leading-relaxed whitespace-pre-line">
+                            {transcript}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </motion.div>
           )
         )}

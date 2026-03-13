@@ -115,6 +115,7 @@ async def run_pipeline(job_id: str, state: dict):
         jobs[job_id]["title"] = final_state["title"]
         jobs[job_id]["duration_seconds"] = final_state["duration_seconds"]
         jobs[job_id]["final_audio"] = final_state["final_audio"]
+        jobs[job_id]["transcript"] = final_state.get("story_text", "")
 
         logger.info(f"[{job_id}] Pipeline complete: title='{final_state['title']}', duration={final_state['duration_seconds']}s")
     except Exception as e:
@@ -227,6 +228,7 @@ async def get_job_status(job_id: str):
             title=job["title"],
             duration_seconds=job["duration_seconds"],
             audio_url=f"/api/story/audio/{job_id}",
+            transcript=job.get("transcript", ""),
         )
 
     return JobStatusResponse(

@@ -47,6 +47,7 @@ export interface JobCompleteResponse {
   title: string;
   duration_seconds: number;
   audio_url: string;
+  transcript: string;
 }
 
 export type StoryType = "custom" | "historical";

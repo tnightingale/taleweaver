@@ -89,6 +89,7 @@ def test_get_job_status_complete():
         "title": "Test Story",
         "duration_seconds": 120,
         "final_audio": b"fake",
+        "transcript": "Once upon a time...",
         "created_at": time.time(),
     }
     response = client.get(f"/api/story/status/{job_id}")
@@ -98,6 +99,24 @@ def test_get_job_status_complete():
     assert data["title"] == "Test Story"
     assert data["duration_seconds"] == 120
     assert data["audio_url"] == f"/api/story/audio/{job_id}"
+    assert data["transcript"] == "Once upon a time..."
+    del jobs[job_id]
+
+
+def test_get_job_status_complete_without_transcript():
+    """Jobs completed before transcript feature should return empty string."""
+    job_id = "test-complete-no-transcript"
+    jobs[job_id] = {
+        "status": "complete",
+        "title": "Old Story",
+        "duration_seconds": 60,
+        "final_audio": b"fake",
+        "created_at": time.time(),
+    }
+    response = client.get(f"/api/story/status/{job_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["transcript"] == ""
     del jobs[job_id]
 
 

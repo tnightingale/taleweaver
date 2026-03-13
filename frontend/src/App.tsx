@@ -25,9 +25,12 @@ interface SessionData {
   jobId?: string;
   kidProfile?: KidProfile | null;
   storyType?: StoryType;
+  mood?: StoryMood;
+  length?: StoryLength;
   storyTitle?: string;
   storyDuration?: number;
   audioUrl?: string;
+  transcript?: string;
   isGenerating?: boolean;
   currentStage?: string;
 }
@@ -56,12 +59,13 @@ export default function App() {
   const [step, setStep] = useState<WizardStep>(saved.current?.step ?? "hero");
   const [kidProfile, setKidProfile] = useState<KidProfile | null>(saved.current?.kidProfile ?? null);
   const [storyType, setStoryType] = useState<StoryType>(saved.current?.storyType ?? "custom");
-  const [mood, setMood] = useState<StoryMood | undefined>();
-  const [length, setLength] = useState<StoryLength | undefined>();
+  const [mood, setMood] = useState<StoryMood | undefined>(saved.current?.mood);
+  const [length, setLength] = useState<StoryLength | undefined>(saved.current?.length);
   const [currentStage, setCurrentStage] = useState(saved.current?.currentStage ?? "writing");
   const [storyTitle, setStoryTitle] = useState(saved.current?.storyTitle ?? "");
   const [storyDuration, setStoryDuration] = useState(saved.current?.storyDuration ?? 0);
   const [audioUrl, setAudioUrl] = useState(saved.current?.audioUrl ?? "");
+  const [transcript, setTranscript] = useState(saved.current?.transcript ?? "");
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(saved.current?.isGenerating ?? false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -79,8 +83,9 @@ export default function App() {
           setStoryTitle(status.title);
           setStoryDuration(status.duration_seconds);
           setAudioUrl(url);
+          setTranscript(status.transcript);
           setIsGenerating(false);
-          saveSession({ step: "story", storyTitle: status.title, storyDuration: status.duration_seconds, audioUrl: url, isGenerating: false });
+          saveSession({ step: "story", storyTitle: status.title, storyDuration: status.duration_seconds, audioUrl: url, transcript: status.transcript, isGenerating: false });
         } else if (status.status === "failed") {
           clearInterval(pollingRef.current);
           setError("Something went wrong. Please try again.");
@@ -141,6 +146,7 @@ export default function App() {
     setStoryTitle("");
     setStoryDuration(0);
     setAudioUrl("");
+    setTranscript("");
     setError("");
     setIsGenerating(false);
     clearSession();
@@ -183,6 +189,7 @@ export default function App() {
                     setKidProfile(profile);
                     setStoryType(type);
                     setStep("craft");
+                    saveSession({ step: "craft", kidProfile: profile, storyType: type });
                   }}
                 />
               </motion.div>
@@ -194,12 +201,12 @@ export default function App() {
                   storyType={storyType}
                   mood={mood}
                   length={length}
-                  onMoodChange={setMood}
-                  onLengthChange={setLength}
+                  onMoodChange={(m) => { setMood(m); saveSession({ step: "craft", kidProfile, storyType, mood: m, length }); }}
+                  onLengthChange={(l) => { setLength(l); saveSession({ step: "craft", kidProfile, storyType, mood, length: l }); }}
                   onSubmitCustom={handleCreateStory}
                   onSubmitHistorical={handleHistoricalStory}
-                  onBack={() => setStep("hero")}
-                  onTypeChange={setStoryType}
+                  onBack={() => { setStep("hero"); clearSession(); }}
+                  onTypeChange={(t) => { setStoryType(t); saveSession({ step: "craft", kidProfile, storyType: t, mood, length }); }}
                 />
               </motion.div>
             )}
@@ -212,6 +219,7 @@ export default function App() {
                   title={storyTitle}
                   audioUrl={audioUrl}
                   durationSeconds={storyDuration}
+                  transcript={transcript}
                   onCreateAnother={handleCreateAnother}
                 />
               </motion.div>

@@ -22,3 +22,4 @@ class JobCompleteResponse(BaseModel):
     title: str
     duration_seconds: int
     audio_url: str
+    transcript: str = ""

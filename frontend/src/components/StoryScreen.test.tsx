@@ -193,3 +193,60 @@ describe('StoryScreen - audio player', () => {
     expect(screen.queryByText('Download MP3')).not.toBeInTheDocument();
   });
 });
+
+describe('StoryScreen - transcript panel', () => {
+  const baseProps = {
+    isGenerating: false,
+    title: 'Test Story',
+    audioUrl: '/api/story/audio/123',
+    durationSeconds: 60,
+    onCreateAnother: vi.fn(),
+  };
+
+  it('shows "Read the Story" button when transcript is provided', () => {
+    render(<StoryScreen {...baseProps} transcript="Once upon a time..." />);
+    expect(screen.getByText(/Read the Story/)).toBeInTheDocument();
+  });
+
+  it('does not show transcript button when transcript is empty', () => {
+    render(<StoryScreen {...baseProps} transcript="" />);
+    expect(screen.queryByText(/Read the Story/)).not.toBeInTheDocument();
+  });
+
+  it('does not show transcript button when transcript is undefined', () => {
+    render(<StoryScreen {...baseProps} />);
+    expect(screen.queryByText(/Read the Story/)).not.toBeInTheDocument();
+  });
+
+  it('toggles transcript visibility on button click', async () => {
+    render(<StoryScreen {...baseProps} transcript="Once upon a time in a magical forest..." />);
+
+    // Transcript text should not be visible initially
+    expect(screen.queryByText('Once upon a time in a magical forest...')).not.toBeInTheDocument();
+
+    // Click to show
+    fireEvent.click(screen.getByText(/Read the Story/));
+    expect(screen.getByText('Once upon a time in a magical forest...')).toBeInTheDocument();
+    expect(screen.getByText(/Hide Story Text/)).toBeInTheDocument();
+
+    // Click to hide
+    fireEvent.click(screen.getByText(/Hide Story Text/));
+    // After clicking hide, the button text should change back
+    expect(screen.getByText(/Read the Story/)).toBeInTheDocument();
+  });
+
+  it('does not show transcript during generation', () => {
+    render(
+      <StoryScreen
+        isGenerating={true}
+        currentStage="writing"
+        title=""
+        audioUrl=""
+        durationSeconds={0}
+        transcript="Some text"
+        onCreateAnother={vi.fn()}
+      />
+    );
+    expect(screen.queryByText(/Read the Story/)).not.toBeInTheDocument();
+  });
+});
