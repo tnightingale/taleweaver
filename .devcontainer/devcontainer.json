@@ -1,0 +1,39 @@
+{
+  "name": "Taleweaver",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+
+  "forwardPorts": [5173, 8000],
+  "portsAttributes": {
+    "5173": { "label": "Frontend", "onAutoForward": "openBrowser" },
+    "8000": { "label": "Backend API", "onAutoForward": "notify" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/taleweaver/backend/venv/bin/python",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "ELEVENLABS_API_KEY": "${localEnv:ELEVENLABS_API_KEY}",
+    "GROQ_API_KEY": "${localEnv:GROQ_API_KEY}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+  }
+}
