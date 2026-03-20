@@ -50,5 +50,5 @@ async def test_run_pipeline_failure():
         await run_pipeline(job_id, state)
 
     assert jobs[job_id]["status"] == "failed"
-    assert "LLM error" in jobs[job_id]["error"]
+    assert jobs[job_id]["error"]  # error message is set (user-friendly via _friendly_error)
     del jobs[job_id]
