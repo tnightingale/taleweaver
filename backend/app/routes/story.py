@@ -135,6 +135,35 @@ async def run_pipeline(job_id: str, state: dict):
         jobs[job_id]["final_audio"] = final_state["final_audio"]
         jobs[job_id]["transcript"] = final_state.get("story_text", "")
 
+        # Persist story to database
+        from app.db.crud import save_story
+        from app.db.database import SessionLocal
+        
+        db = SessionLocal()
+        try:
+            db_story = save_story(
+                db=db,
+                story_id=job_id,
+                title=final_state["title"],
+                kid_name=state["kid_name"],
+                kid_age=state["kid_age"],
+                story_type=state["story_type"],
+                genre=state.get("genre"),
+                event_id=state.get("event_id"),
+                mood=state.get("mood"),
+                length=state.get("length"),
+                transcript=final_state.get("story_text", ""),
+                duration_seconds=final_state["duration_seconds"],
+                audio_bytes=final_state["final_audio"],
+            )
+            jobs[job_id]["short_id"] = db_story.short_id
+            logger.info(f"[{job_id}] Story persisted with short_id={db_story.short_id}")
+        except Exception as persist_error:
+            logger.error(f"[{job_id}] Failed to persist story: {persist_error}", exc_info=True)
+            # Don't fail the job if persistence fails
+        finally:
+            db.close()
+
         logger.info(f"[{job_id}] Pipeline complete: title='{final_state['title']}', duration={final_state['duration_seconds']}s")
     except Exception as e:
         logger.error(f"[{job_id}] Pipeline failed: {e}", exc_info=True)
@@ -240,6 +269,7 @@ async def get_job_status(job_id: str):
     job = jobs[job_id]
 
     if job["status"] == "complete":
+        short_id = job.get("short_id", "")
         return JobCompleteResponse(
             job_id=job_id,
             status="complete",
@@ -247,6 +277,8 @@ async def get_job_status(job_id: str):
             duration_seconds=job["duration_seconds"],
             audio_url=f"/api/story/audio/{job_id}",
             transcript=job.get("transcript", ""),
+            short_id=short_id,
+            permalink=f"/s/{short_id}" if short_id else "",
         )
 
     return JobStatusResponse(
