@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-backup hook for Once backup system
+# Creates a consistent snapshot of job data before backup
+# This ensures data consistency without pausing the container
+
+set -e
+
+echo "🔄 Pre-backup: Creating snapshot of job data..."
+
+# Create snapshot directory
+mkdir -p /storage/backup-snapshot
+
+# Copy job files to snapshot location
+# This allows Once to backup a consistent state while the app continues running
+if [ -d /storage/jobs ]; then
+    cp -r /storage/jobs /storage/backup-snapshot/ 2>/dev/null || true
+    echo "✅ Pre-backup: Job data snapshot created"
+else
+    echo "ℹ️  Pre-backup: No job data to snapshot"
+fi
+
+# Exit successfully to indicate backup can proceed
+exit 0

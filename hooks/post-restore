@@ -1,0 +1,24 @@
+#!/bin/bash
+# Post-restore hook for Once backup system
+# Restores job data from backup snapshot after restore
+# Called after Once restores files from backup, before starting the app
+
+set -e
+
+echo "🔄 Post-restore: Restoring job data from snapshot..."
+
+# Check if snapshot exists
+if [ -d /storage/backup-snapshot/jobs ]; then
+    # Restore jobs from snapshot
+    cp -r /storage/backup-snapshot/jobs /storage/
+    
+    # Clean up snapshot directory
+    rm -rf /storage/backup-snapshot
+    
+    echo "✅ Post-restore: Job data restored successfully"
+else
+    echo "ℹ️  Post-restore: No snapshot found, nothing to restore"
+fi
+
+# Exit successfully
+exit 0
