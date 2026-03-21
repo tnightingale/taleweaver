@@ -184,3 +184,58 @@ def get_unique_kid_names(db: Session) -> List[str]:
     """
     result = db.query(Story.kid_name).distinct().order_by(Story.kid_name).all()
     return [name[0] for name in result]
+
+
+def delete_story(db: Session, short_id: str) -> bool:
+    """
+    Delete story from database and remove audio file.
+    
+    Args:
+        db: SQLAlchemy database session
+        short_id: Compact short ID of story to delete
+        
+    Returns:
+        True if deleted, False if not found
+    """
+    story = db.query(Story).filter(Story.short_id == short_id).first()
+    if not story:
+        return False
+    
+    # Delete audio file
+    audio_path = Path(story.audio_path)
+    if audio_path.exists():
+        audio_path.unlink()
+        # Also try to remove the parent directory if empty
+        try:
+            audio_path.parent.rmdir()
+        except OSError:
+            pass  # Directory not empty or doesn't exist
+    
+    # Delete database record
+    db.delete(story)
+    db.commit()
+    
+    return True
+
+
+def update_story_title(db: Session, short_id: str, new_title: str) -> Optional[Story]:
+    """
+    Update story title.
+    
+    Args:
+        db: SQLAlchemy database session
+        short_id: Compact short ID of story to update
+        new_title: New title for the story
+        
+    Returns:
+        Updated Story record or None if not found
+    """
+    story = db.query(Story).filter(Story.short_id == short_id).first()
+    if not story:
+        return None
+    
+    story.title = new_title
+    db.commit()
+    db.refresh(story)
+    
+    return story
