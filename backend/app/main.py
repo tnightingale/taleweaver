@@ -110,8 +110,8 @@ async def status():
     }
 
 
-# Permalink routes (root level for clean sharing URLs)
-@app.get("/s/{short_id}", response_model=StoryResponse)
+# Permalink API routes (under /api for clarity)
+@app.get("/api/permalink/{short_id}", response_model=StoryResponse)
 async def get_story_permalink(short_id: str):
     """Get story metadata by compact short ID"""
     from app.db.crud import get_story_by_short_id
@@ -136,13 +136,13 @@ async def get_story_permalink(short_id: str):
             duration_seconds=story.duration_seconds,
             created_at=story.created_at.isoformat(),
             permalink=f"/s/{story.short_id}",
-            audio_url=f"/s/{story.short_id}/audio",
+            audio_url=f"/api/permalink/{story.short_id}/audio",
         )
     finally:
         db.close()
 
 
-@app.get("/s/{short_id}/audio")
+@app.get("/api/permalink/{short_id}/audio")
 async def get_story_audio_permalink(short_id: str):
     """Stream audio by compact short ID (efficient file streaming)"""
     from app.db.crud import get_story_by_short_id
@@ -206,10 +206,10 @@ async def list_all_stories(
                 genre=story.genre,
                 event_id=story.event_id,
                 transcript=story.transcript,
-                duration_seconds=story.duration_seconds,
-                created_at=story.created_at.isoformat(),
-                permalink=f"/s/{story.short_id}",
-                audio_url=f"/s/{story.short_id}/audio",
+            duration_seconds=story.duration_seconds,
+            created_at=story.created_at.isoformat(),
+            permalink=f"/s/{story.short_id}",
+            audio_url=f"/api/permalink/{story.short_id}/audio",
             )
             for story in stories
         ]
@@ -269,7 +269,7 @@ async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRe
             duration_seconds=story.duration_seconds,
             created_at=story.created_at.isoformat(),
             permalink=f"/s/{story.short_id}",
-            audio_url=f"/s/{story.short_id}/audio",
+            audio_url=f"/api/permalink/{story.short_id}/audio",
         )
     finally:
         db.close()

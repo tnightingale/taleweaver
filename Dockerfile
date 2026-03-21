@@ -62,18 +62,15 @@ RUN mkdir -p /storage/jobs /storage/music
 COPY backend/app/data/music /app/default-music
 
 # Create Caddyfile for reverse proxy
-# - Uses handle blocks for explicit routing priority
-# - /up, /api/*, and /s/* go to backend, everything else to frontend
+# - /up and /api/* go to backend
+# - /s/* goes to frontend SPA (React Router handles it)
+# - Everything else to frontend SPA
 RUN printf ':80 {\n\
     handle /up {\n\
         reverse_proxy localhost:8000\n\
     }\n\
     \n\
     handle /api/* {\n\
-        reverse_proxy localhost:8000\n\
-    }\n\
-    \n\
-    handle /s/* {\n\
         reverse_proxy localhost:8000\n\
     }\n\
     \n\

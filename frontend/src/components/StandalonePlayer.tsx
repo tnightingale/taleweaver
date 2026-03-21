@@ -14,7 +14,7 @@ export default function StandalonePlayer() {
   useEffect(() => {
     if (!shortId) return;
 
-    fetch(`/s/${shortId}`)
+    fetch(`/api/permalink/${shortId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Story not found");
         return res.json();
