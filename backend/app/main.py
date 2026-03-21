@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
@@ -144,33 +144,31 @@ async def get_story_permalink(short_id: str):
 
 @app.get("/s/{short_id}/audio")
 async def get_story_audio_permalink(short_id: str):
-    """Stream audio by compact short ID"""
+    """Stream audio by compact short ID (efficient file streaming)"""
     from app.db.crud import get_story_by_short_id
     from app.db.database import SessionLocal
     
     db = SessionLocal()
-    try:
-        story = get_story_by_short_id(db, short_id)
-        if not story:
-            raise HTTPException(status_code=404, detail="Story not found")
-        
-        audio_path = Path(story.audio_path)
-        if not audio_path.exists():
-            raise HTTPException(status_code=404, detail="Audio file not found")
-        
-        audio_bytes = audio_path.read_bytes()
-        
-        return Response(
-            content=audio_bytes,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": f'inline; filename="{story.title}.mp3"',
-                "Content-Length": str(len(audio_bytes)),
-                "Accept-Ranges": "bytes",
-            },
-        )
-    finally:
-        db.close()
+    story = get_story_by_short_id(db, short_id)
+    db.close()
+    
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+    
+    audio_path = Path(story.audio_path)
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    
+    # Use FileResponse for efficient streaming (doesn't load entire file into memory)
+    # Sanitize filename for safety
+    safe_filename = "".join(c for c in story.title if c.isalnum() or c in (' ', '-', '_')).strip()
+    safe_filename = safe_filename or "story"
+    
+    return FileResponse(
+        path=audio_path,
+        media_type="audio/mpeg",
+        filename=f"{safe_filename}.mp3",
+    )
 
 
 # Library routes

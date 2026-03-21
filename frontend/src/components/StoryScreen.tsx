@@ -245,7 +245,7 @@ export default function StoryScreen({
               <div className="flex flex-col sm:flex-row gap-4 w-full">
                 <a
                   href={downloadUrl}
-                  download
+                  download={`${title}.mp3`}
                   className="glass-card px-6 py-3 text-center font-semibold text-starlight transition-all hover:text-glow"
                 >
                   Download MP3
