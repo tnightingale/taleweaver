@@ -24,3 +24,5 @@ class JobCompleteResponse(BaseModel):
     duration_seconds: int
     audio_url: str
     transcript: str = ""
+    short_id: str = ""
+    permalink: str = ""
