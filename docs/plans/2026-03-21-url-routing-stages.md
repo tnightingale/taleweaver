@@ -1,17 +1,19 @@
 # URL Routing Implementation - Stages
 
 **Feature:** URL-based navigation with React Router  
-**Branch:** `feature/url-routing`  
-**Status:** Stage 1 complete (1/4)
+**Branch:** `feature/url-routing` (merged)  
+**Status:** ✅ COMPLETE
 
 ## Stage Overview
 
-| Stage | Description | Status | 
-|-------|-------------|--------|
-| 1 | Setup React Router | ✅ COMPLETE |
-| 2 | Convert simple routes (Hero, Library) | 🔄 NEXT |
-| 3 | Convert complex routes (Craft, Story) | ⏳ PENDING |
-| 4 | Test & Polish | ⏳ PENDING |
+| Stage | Description | Status | Commits |
+|-------|-------------|--------|---------|
+| 1 | Setup React Router | ✅ COMPLETE | 4 |
+| 2 | Convert simple routes (Hero, Library) | ✅ COMPLETE | 2 |
+| 3 | Convert complex routes (Craft, Story) | ✅ COMPLETE | 3 |
+| 4 | Test & Polish | ✅ COMPLETE | 3 |
+
+**Total:** 12 commits, all routes verified manually
 
 ---
 
@@ -26,43 +28,44 @@
 
 ---
 
-## Stage 2: Simple Routes (Hero, Library)
+## Completed Implementation
 
-Convert stateless screens to routes:
-- [ ] Add Routes wrapper to App.tsx
-- [ ] Create / route (HeroScreen)
-- [ ] Create /library route (LibraryScreen)  
-- [ ] Create /s/:shortId route (StandalonePlayer)
-- [ ] Update HeroScreen to navigate() instead of callbacks
-- [ ] Update LibraryScreen to navigate() instead of callbacks
-- [ ] Test: Visit /, /library, /s/abc123 directly
+**All Stages Done:**
 
-**Target:** ~8 commits, 1 hour
+✅ **Stage 1: Setup**
+- react-router-dom added
+- BrowserRouter configured
+- StandalonePlayer component created
+- Commits: d05c22e, d0c2464, d34dc43, 960eef4
 
----
+✅ **Stage 2 & 3: Route Components**
+- Created route wrappers: HeroRoute, LibraryRoute, CraftRoute, StoryRoute
+- Refactored App.tsx to use Routes
+- Moved permalink API to /api/permalink/*
+- Frontend handles /s/* for player UI
+- Commits: ed8c3b9, 6c29667, 310a7d4, 994af43, cf8ffb2
 
-## Stage 3: Complex Routes (Craft, Story with state)
+✅ **Stage 4: Test & Polish**
+- Updated Caddyfile routing
+- Fixed TypeScript union types
+- Production build verified
+- All routes manually tested
+- Commits: 28d440d, 69d1ef1
 
-Convert stateful screens:
-- [ ] Create /craft route with form state
-- [ ] Create /story/:jobId route with generation polling
-- [ ] Move story creation logic to route handlers
-- [ ] Handle session storage for form data only
-- [ ] Add migration logic for old sessions
-- [ ] Test: Full create flow, refresh mid-generation
+**Routes Verified:**
+- ✓ / (Hero screen)
+- ✓ /craft (Craft screen)
+- ✓ /story/:jobId (Story generation/playback)
+- ✓ /library (Library grid)
+- ✓ /s/:shortId (Standalone player)
+- ✓ Health check (/up)
+- ✓ All API endpoints (/api/*)
 
-**Target:** ~10 commits, 1.5 hours
-
----
-
-## Stage 4: Test & Polish
-
-- [ ] Test all navigation paths
-- [ ] Test browser back button
-- [ ] Test refresh behavior
-- [ ] Test permalink sharing
-- [ ] Build production container
-- [ ] Merge to main
-
-**Target:** ~5 commits, 1 hour
+**What Works:**
+- ✅ URL-based navigation (no state conflicts)
+- ✅ Browser back/forward buttons
+- ✅ Bookmarkable URLs
+- ✅ Shareable permalinks show player UI
+- ✅ Session storage only for form data
+- ✅ Refresh during generation resumes correctly
 
