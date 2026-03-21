@@ -2,8 +2,9 @@
 import secrets
 import string
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from .models import Story
 from app.config import settings
 
@@ -118,3 +119,68 @@ def get_story_by_short_id(db: Session, short_id: str) -> Optional[Story]:
         Story record or None if not found
     """
     return db.query(Story).filter(Story.short_id == short_id).first()
+
+
+def list_stories(
+    db: Session,
+    kid_name: Optional[str] = None,
+    story_type: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+    sort: str = "created_desc"
+) -> Tuple[List[Story], int]:
+    """
+    List stories with optional filters, pagination, and sorting.
+    
+    Args:
+        db: SQLAlchemy database session
+        kid_name: Optional filter by kid name
+        story_type: Optional filter by story type (custom/historical)
+        limit: Number of stories to return (default 20)
+        offset: Number of stories to skip (for pagination)
+        sort: Sort order - created_desc, created_asc, title, duration
+        
+    Returns:
+        Tuple of (stories list, total count)
+    """
+    query = db.query(Story)
+    
+    # Apply filters
+    if kid_name:
+        query = query.filter(Story.kid_name == kid_name)
+    if story_type:
+        query = query.filter(Story.story_type == story_type)
+    
+    # Get total count before pagination
+    total = query.count()
+    
+    # Apply sorting
+    if sort == "created_desc":
+        query = query.order_by(Story.created_at.desc())
+    elif sort == "created_asc":
+        query = query.order_by(Story.created_at.asc())
+    elif sort == "title":
+        query = query.order_by(Story.title.asc())
+    elif sort == "duration":
+        query = query.order_by(Story.duration_seconds.desc())
+    else:
+        query = query.order_by(Story.created_at.desc())
+    
+    # Apply pagination
+    stories = query.offset(offset).limit(limit).all()
+    
+    return stories, total
+
+
+def get_unique_kid_names(db: Session) -> List[str]:
+    """
+    Get list of unique kid names from all stories.
+    
+    Args:
+        db: SQLAlchemy database session
+        
+    Returns:
+        List of unique kid names, sorted alphabetically
+    """
+    result = db.query(Story.kid_name).distinct().order_by(Story.kid_name).all()
+    return [name[0] for name in result]
