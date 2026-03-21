@@ -5,12 +5,13 @@ from typing import Optional
 
 from pydub import AudioSegment
 
+from app.config import settings
 from app.graph.state import StoryState
 
 logger = logging.getLogger(__name__)
 
 PAUSE_MS = 500  # Half-second pause between segments
-MUSIC_DIR = Path(__file__).parent.parent / "data" / "music"
+MUSIC_DIR = settings.music_path
 MUSIC_VOLUME_DB = -18
 
 
