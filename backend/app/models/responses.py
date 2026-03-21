@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class JobCreatedResponse(BaseModel):
@@ -26,3 +27,20 @@ class JobCompleteResponse(BaseModel):
     transcript: str = ""
     short_id: str = ""
     permalink: str = ""
+
+
+class StoryResponse(BaseModel):
+    """Response model for permalink story retrieval"""
+    id: str
+    short_id: str
+    title: str
+    kid_name: str
+    kid_age: int
+    story_type: str
+    genre: Optional[str] = None
+    event_id: Optional[str] = None
+    transcript: str
+    duration_seconds: int
+    created_at: str
+    permalink: str
+    audio_url: str
