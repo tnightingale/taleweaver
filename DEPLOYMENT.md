@@ -11,6 +11,75 @@ This guide covers deploying Taleweaver using [Basecamp Once](https://github.com/
   - One LLM provider (Groq, Anthropic, or OpenAI)
   - ElevenLabs (for text-to-speech)
 
+## Building and Publishing the Docker Image
+
+### Option 1: Automated (GitHub Actions) - Recommended
+
+The repository includes a GitHub Actions workflow that automatically builds and publishes Docker images.
+
+**One-time setup:**
+
+1. Fork or push this repository to your GitHub account
+2. The workflow runs automatically on:
+   - Every push to `main` branch → tagged as `latest`
+   - Every new tag (e.g., `v1.0.0`) → tagged with version number
+   - Manual trigger via GitHub Actions UI
+
+**To trigger a build:**
+
+```bash
+# Push to main for latest tag
+git push origin main
+
+# Or create a version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The image will be published to: `ghcr.io/YOUR_USERNAME/taleweaver:latest`
+
+**View your published images:** https://github.com/YOUR_USERNAME/taleweaver/pkgs/container/taleweaver
+
+### Option 2: Manual Build and Push
+
+If you prefer to build manually:
+
+```bash
+# 1. Log in to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+
+# 2. Build the image (this takes 5-10 minutes)
+docker build -t ghcr.io/YOUR_USERNAME/taleweaver:latest .
+
+# 3. Push to registry
+docker push ghcr.io/YOUR_USERNAME/taleweaver:latest
+```
+
+**Generate a GitHub token:**
+1. Go to https://github.com/settings/tokens
+2. Click "Generate new token (classic)"
+3. Select scope: `write:packages`
+4. Copy the token and use it as `GITHUB_TOKEN`
+
+### Option 3: Local Build Only (for testing)
+
+To test the build locally without publishing:
+
+```bash
+# Build for your platform only (faster)
+docker build -t taleweaver:test .
+
+# Run locally to test
+docker run -d -p 80:80 \
+  -e LLM_PROVIDER=groq \
+  -e GROQ_API_KEY=your-key \
+  -e ELEVENLABS_API_KEY=your-key \
+  taleweaver:test
+
+# Test health check
+curl http://localhost/up
+```
+
 ## Quick Start
 
 ### 1. Install Once
@@ -28,10 +97,14 @@ This will install Once and its background service.
 When Once prompts you to choose an application, select "Enter custom Docker image" and provide:
 
 ```
-ghcr.io/yourusername/taleweaver:latest
+ghcr.io/YOUR_USERNAME/taleweaver:latest
 ```
 
-(Replace `yourusername` with the actual GitHub username/org where the image is published)
+Replace `YOUR_USERNAME` with your actual GitHub username.
+
+**Important:** If your repository is private, you'll need to authenticate Once with GitHub:
+- The image must be public, OR
+- Use `docker login ghcr.io` on your server before running Once
 
 ### 3. Configure Hostname
 
