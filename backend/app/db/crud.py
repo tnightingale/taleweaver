@@ -2,6 +2,7 @@
 import secrets
 import string
 from pathlib import Path
+from typing import Optional
 from sqlalchemy.orm import Session
 from .models import Story
 from app.config import settings
@@ -91,7 +92,7 @@ def save_story(
     return db_story
 
 
-def get_story_by_id(db: Session, story_id: str) -> Story | None:
+def get_story_by_id(db: Session, story_id: str) -> Optional[Story]:
     """
     Get story by UUID.
     
@@ -105,7 +106,7 @@ def get_story_by_id(db: Session, story_id: str) -> Story | None:
     return db.query(Story).filter(Story.id == story_id).first()
 
 
-def get_story_by_short_id(db: Session, short_id: str) -> Story | None:
+def get_story_by_short_id(db: Session, short_id: str) -> Optional[Story]:
     """
     Get story by compact short ID.
     
