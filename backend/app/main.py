@@ -5,11 +5,14 @@ logging.basicConfig(
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
 
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
+from app.models.responses import StoryResponse
 
 app = FastAPI(title="Taleweaver")
 
@@ -101,3 +104,66 @@ async def status():
         "tts_configured": has_tts,
         "ready": has_llm and has_tts,
     }
+
+
+# Permalink routes (root level for clean sharing URLs)
+@app.get("/s/{short_id}", response_model=StoryResponse)
+async def get_story_permalink(short_id: str):
+    """Get story metadata by compact short ID"""
+    from app.db.crud import get_story_by_short_id
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        
+        return StoryResponse(
+            id=story.id,
+            short_id=story.short_id,
+            title=story.title,
+            kid_name=story.kid_name,
+            kid_age=story.kid_age,
+            story_type=story.story_type,
+            genre=story.genre,
+            event_id=story.event_id,
+            transcript=story.transcript,
+            duration_seconds=story.duration_seconds,
+            created_at=story.created_at.isoformat(),
+            permalink=f"/s/{story.short_id}",
+            audio_url=f"/s/{story.short_id}/audio",
+        )
+    finally:
+        db.close()
+
+
+@app.get("/s/{short_id}/audio")
+async def get_story_audio_permalink(short_id: str):
+    """Stream audio by compact short ID"""
+    from app.db.crud import get_story_by_short_id
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        
+        audio_path = Path(story.audio_path)
+        if not audio_path.exists():
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        audio_bytes = audio_path.read_bytes()
+        
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f'inline; filename="{story.title}.mp3"',
+                "Content-Length": str(len(audio_bytes)),
+                "Accept-Ranges": "bytes",
+            },
+        )
+    finally:
+        db.close()
