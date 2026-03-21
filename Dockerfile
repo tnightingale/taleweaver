@@ -62,13 +62,13 @@ RUN mkdir -p /storage/jobs /storage/music
 COPY backend/app/data/music /app/default-music
 
 # Create Caddyfile for reverse proxy
+# - Proxies /api/* and /up to FastAPI backend on :8000 (must be before try_files)
 # - Serves frontend static files from /app/frontend/dist
-# - Proxies /api/* and /up to FastAPI backend on :8000
 # - Uses try_files to support SPA routing (all routes -> index.html)
 RUN printf ':80 {\n\
-    root * /app/frontend/dist\n\
     reverse_proxy /api/* localhost:8000\n\
     reverse_proxy /up localhost:8000\n\
+    root * /app/frontend/dist\n\
     file_server\n\
     try_files {path} /index.html\n\
 }\n' > /etc/caddy/Caddyfile
