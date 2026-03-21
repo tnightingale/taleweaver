@@ -19,6 +19,7 @@ interface Props {
   onSubmitHistorical: (eventId: string) => void;
   onBack: () => void;
   onTypeChange: (type: StoryType) => void;
+  onViewLibrary: () => void;
 }
 
 const MOODS: { value: StoryMood; emoji: string; label: string }[] = [
@@ -86,11 +87,23 @@ export default function CraftScreen({
 
   return (
     <motion.div
-      className="max-w-3xl mx-auto px-4 py-8"
+      className="max-w-3xl mx-auto px-4 py-8 relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Library Icon (top-right) */}
+      <motion.button
+        onClick={onViewLibrary}
+        className="absolute top-4 right-4 p-3 glass-card hover:shadow-[0_0_20px_rgba(124,58,237,0.3)]
+                   transition-all text-2xl"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        title="View Library"
+      >
+        📚
+      </motion.button>
+
       {/* Title */}
       <motion.h1
         className="text-3xl md:text-4xl font-bold text-center text-glow mb-8"
