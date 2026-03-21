@@ -6,7 +6,7 @@ interface Props {
   story: StoryMetadata;
   onPlay: () => void;
   onDelete: () => void;
-  onUpdateTitle: (newTitle: string) => void;
+  onUpdateTitle: (newTitle: string) => Promise<void>;
 }
 
 const formatDuration = (seconds: number) => {
@@ -30,10 +30,18 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(story.title);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveTitle = () => {
+  const handleSaveTitle = async () => {
     if (editedTitle.trim() && editedTitle !== story.title) {
-      onUpdateTitle(editedTitle.trim());
+      setIsSaving(true);
+      try {
+        await onUpdateTitle(editedTitle.trim());
+      } catch (err) {
+        // Reset on error
+        setEditedTitle(story.title);
+      }
+      setIsSaving(false);
     }
     setIsEditing(false);
   };
@@ -67,16 +75,24 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
     >
       {/* Title */}
       {isEditing ? (
-        <input
-          type="text"
-          value={editedTitle}
-          onChange={(e) => setEditedTitle(e.target.value)}
-          onBlur={handleSaveTitle}
-          onKeyDown={handleKeyDown}
-          autoFocus
-          className="text-lg font-display text-glow bg-black/50 border border-purple-500/50 
-                     rounded px-2 py-1 text-white focus:outline-none focus:border-purple-400"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onBlur={handleSaveTitle}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            disabled={isSaving}
+            className="text-lg font-display text-glow bg-black/50 border border-purple-500/50 
+                       rounded px-2 py-1 text-white focus:outline-none focus:border-purple-400 w-full
+                       disabled:opacity-50"
+            placeholder="Story title"
+          />
+          <div className="text-xs text-starlight/40 mt-1">
+            Press Enter to save, Esc to cancel
+          </div>
+        </div>
       ) : (
         <h3 className="text-lg font-display text-glow line-clamp-2 min-h-[3.5rem]">
           {story.title}
