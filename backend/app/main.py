@@ -6,13 +6,14 @@ logging.basicConfig(
 )
 
 from pathlib import Path
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
-from app.models.responses import StoryResponse
+from app.models.responses import StoryResponse, StoriesListResponse
 
 app = FastAPI(title="Taleweaver")
 
@@ -164,6 +165,60 @@ async def get_story_audio_permalink(short_id: str):
                 "Content-Length": str(len(audio_bytes)),
                 "Accept-Ranges": "bytes",
             },
+        )
+    finally:
+        db.close()
+
+
+# Library routes
+@app.get("/api/stories", response_model=StoriesListResponse)
+async def list_all_stories(
+    kid_name: Optional[str] = None,
+    story_type: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+    sort: str = "created_desc"
+):
+    """List stories with optional filters and pagination"""
+    from app.db.crud import list_stories
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        stories, total = list_stories(
+            db=db,
+            kid_name=kid_name,
+            story_type=story_type,
+            limit=limit,
+            offset=offset,
+            sort=sort
+        )
+        
+        story_responses = [
+            StoryResponse(
+                id=story.id,
+                short_id=story.short_id,
+                title=story.title,
+                kid_name=story.kid_name,
+                kid_age=story.kid_age,
+                story_type=story.story_type,
+                genre=story.genre,
+                event_id=story.event_id,
+                transcript=story.transcript,
+                duration_seconds=story.duration_seconds,
+                created_at=story.created_at.isoformat(),
+                permalink=f"/s/{story.short_id}",
+                audio_url=f"/s/{story.short_id}/audio",
+            )
+            for story in stories
+        ]
+        
+        has_more = (offset + len(stories)) < total
+        
+        return StoriesListResponse(
+            stories=story_responses,
+            total=total,
+            has_more=has_more
         )
     finally:
         db.close()
