@@ -104,12 +104,31 @@ CREATE INDEX idx_short_id ON stories(short_id);
 }
 ```
 
+## Development Environment Setup
+
+**Approach**: Feature branch with docker-compose for consistent Python 3.9 environment
+
+```bash
+# Switch to feature branch
+git checkout feature/story-persistence
+
+# Run backend with auto-reload
+docker-compose -f docker-compose.dev.yml up backend-dev
+
+# Run tests (in separate terminal)
+docker-compose -f docker-compose.dev.yml run --rm backend-test
+
+# Or run specific test file
+docker run --rm -v $(pwd)/backend:/app -w /app python:3.9-slim \
+  sh -c "pip install -q -r requirements.txt && pytest tests/test_story_persistence.py -v"
+```
+
 ## Implementation Phases
 
-### Phase 1: Setup Worktree & Branch
-- Create git worktree
-- Create feature branch
-- Add dependencies
+### Phase 1: Setup Branch & Dependencies
+- ✅ Create feature branch
+- ✅ Add SQLAlchemy to requirements.txt
+- ✅ Create docker-compose.dev.yml for TDD workflow
 
 ### Phase 2: Database Layer (TDD)
 - Write failing tests for CRUD operations
