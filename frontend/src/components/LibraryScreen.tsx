@@ -213,7 +213,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                         story={story}
                         onPlay={() => onPlayStory(story)}
                         onDelete={() => handleDelete(story)}
-                        onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                        onUpdateTitle={async (newTitle) => await handleUpdateTitle(story, newTitle)}
                       />
                     ))}
                   </div>
