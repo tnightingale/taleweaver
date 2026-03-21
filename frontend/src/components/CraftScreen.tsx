@@ -62,6 +62,7 @@ export default function CraftScreen({
   onSubmitHistorical,
   onBack,
   onTypeChange,
+  onViewLibrary,
 }: Props) {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [events, setEvents] = useState<HistoricalEvent[]>([]);
