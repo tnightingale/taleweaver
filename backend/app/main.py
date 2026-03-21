@@ -42,6 +42,8 @@ async def startup_event():
     
     # Initialize database
     try:
+        # Import models to register them with Base.metadata before calling init_db()
+        from app.db import models  # noqa: F401 - Ensure models are loaded
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
