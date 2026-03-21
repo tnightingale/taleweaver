@@ -14,6 +14,7 @@ from fastapi.responses import Response
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
 from app.models.responses import StoryResponse, StoriesListResponse
+from app.models.requests import UpdateStoryTitleRequest
 
 app = FastAPI(title="Taleweaver")
 
@@ -219,6 +220,56 @@ async def list_all_stories(
             stories=story_responses,
             total=total,
             has_more=has_more
+        )
+    finally:
+        db.close()
+
+
+@app.delete("/api/stories/{short_id}", status_code=204)
+async def delete_story_endpoint(short_id: str):
+    """Delete story by short ID"""
+    from app.db.crud import delete_story
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        deleted = delete_story(db, short_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Story not found")
+        return None  # 204 No Content
+    finally:
+        db.close()
+
+
+@app.patch("/api/stories/{short_id}", response_model=StoryResponse)
+async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRequest):
+    """Update story title"""
+    from app.db.crud import update_story_title
+    from app.db.database import SessionLocal
+    
+    if not request.title or not request.title.strip():
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+    
+    db = SessionLocal()
+    try:
+        story = update_story_title(db, short_id, request.title.strip())
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        
+        return StoryResponse(
+            id=story.id,
+            short_id=story.short_id,
+            title=story.title,
+            kid_name=story.kid_name,
+            kid_age=story.kid_age,
+            story_type=story.story_type,
+            genre=story.genre,
+            event_id=story.event_id,
+            transcript=story.transcript,
+            duration_seconds=story.duration_seconds,
+            created_at=story.created_at.isoformat(),
+            permalink=f"/s/{story.short_id}",
+            audio_url=f"/s/{story.short_id}/audio",
         )
     finally:
         db.close()
