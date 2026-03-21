@@ -43,13 +43,11 @@ services:
       - STORAGE_PATH=/tmp/test-storage
     command: >
       bash -c "
-        if [ ! -d test-venv ]; then
-          python -m venv test-venv &&
-          . test-venv/bin/activate &&
-          pip install -q --upgrade pip &&
-          pip install -q -r requirements.txt
-        fi &&
-        . test-venv/bin/activate &&
+        apt-get update -qq && apt-get install -qq -y ffmpeg > /dev/null 2>&1 &&
+        python -m venv /tmp/venv &&
+        . /tmp/venv/bin/activate &&
+        pip install -q --upgrade pip &&
+        pip install -q -r requirements.txt &&
         python -m pytest tests/ -v
       "
     networks:
