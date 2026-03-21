@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { JobCompleteResponse } from "../types";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -15,6 +16,7 @@ interface Props {
   audioUrl: string;
   durationSeconds: number;
   transcript?: string;
+  storyData?: JobCompleteResponse;
   onCreateAnother: () => void;
 }
 
@@ -31,6 +33,7 @@ export default function StoryScreen({
   audioUrl,
   durationSeconds,
   transcript,
+  storyData,
   onCreateAnother,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -40,6 +43,7 @@ export default function StoryScreen({
   const [isSeeking, setIsSeeking] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Sync duration from props when they change
   useEffect(() => {
@@ -251,6 +255,39 @@ export default function StoryScreen({
                   Create Another Story
                 </button>
               </div>
+
+              {/* Permalink Share Section */}
+              {storyData?.short_id && (
+                <div className="w-full glass-card p-4">
+                  <p className="text-purple-300 text-sm mb-3 font-medium">
+                    Share this story:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/s/${storyData.short_id}`}
+                      className="flex-1 px-3 py-2 bg-black/50 border border-purple-500/50 
+                                 rounded text-purple-100 text-sm font-mono"
+                      onClick={(e) => e.currentTarget.select()}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/s/${storyData.short_id}`
+                        );
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded 
+                                 text-white text-sm font-semibold transition-all
+                                 hover:shadow-lg hover:shadow-purple-500/50"
+                    >
+                      {copied ? "Copied!" : "Copy Link"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Transcript Toggle */}
               {transcript && (

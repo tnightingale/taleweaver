@@ -66,6 +66,7 @@ export default function App() {
   const [storyDuration, setStoryDuration] = useState(saved.current?.storyDuration ?? 0);
   const [audioUrl, setAudioUrl] = useState(saved.current?.audioUrl ?? "");
   const [transcript, setTranscript] = useState(saved.current?.transcript ?? "");
+  const [storyData, setStoryData] = useState<JobCompleteResponse | undefined>(undefined);
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(saved.current?.isGenerating ?? false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -84,6 +85,7 @@ export default function App() {
           setStoryDuration(status.duration_seconds);
           setAudioUrl(url);
           setTranscript(status.transcript);
+          setStoryData(status);
           setIsGenerating(false);
           saveSession({ step: "story", storyTitle: status.title, storyDuration: status.duration_seconds, audioUrl: url, transcript: status.transcript, isGenerating: false });
         } else if (status.status === "failed") {
@@ -222,6 +224,7 @@ export default function App() {
                   audioUrl={audioUrl}
                   durationSeconds={storyDuration}
                   transcript={transcript}
+                  storyData={storyData}
                   onCreateAnother={handleCreateAnother}
                 />
               </motion.div>
