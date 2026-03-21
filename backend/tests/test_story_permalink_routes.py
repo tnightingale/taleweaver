@@ -1,16 +1,19 @@
 """
 TDD Tests for Permalink API Routes
-RED Phase: These tests should FAIL initially
+Testing the permalink endpoints work correctly
 """
 import pytest
 from fastapi.testclient import TestClient
 from pathlib import Path
 
 from app.main import app
-from app.db.database import SessionLocal
+from app.db.database import SessionLocal, init_db
 from app.db.crud import save_story
 
 client = TestClient(app)
+
+# Initialize database tables for tests
+init_db()
 
 
 def test_get_story_by_short_id_returns_metadata():
@@ -91,12 +94,30 @@ def test_short_id_audio_not_found_returns_404():
     assert response.status_code == 404
 
 
-def test_audio_streaming_has_correct_headers(saved_story):
+def test_audio_streaming_has_correct_headers():
     """Audio response has proper Content-Type and Content-Disposition"""
-    response = client.get(f"/s/{saved_story.short_id}/audio")
+    # Create story
+    db = SessionLocal()
+    try:
+        story = save_story(
+            db=db,
+            story_id="permalink-test-headers-check",
+            title="Header Test Story",
+            kid_name="Test",
+            kid_age=6,
+            story_type="custom",
+            transcript="Test",
+            duration_seconds=120,
+            audio_bytes=b"audio data",
+        )
+        short_id = story.short_id
+    finally:
+        db.close()
+    
+    response = client.get(f"/s/{short_id}/audio")
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/mpeg"
     assert "inline" in response.headers["content-disposition"]
-    assert "Permalink Test Story.mp3" in response.headers["content-disposition"]
+    assert "Header Test Story.mp3" in response.headers["content-disposition"]
     assert "content-length" in response.headers
     assert "accept-ranges" in response.headers
