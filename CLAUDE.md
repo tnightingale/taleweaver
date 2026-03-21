@@ -121,6 +121,9 @@ python -m pytest tests/ -v
 | `/api/story/historical` | POST | Create historical story job (accepts mood + length) |
 | `/api/story/status/{job_id}` | GET | Poll job progress (now includes short_id) |
 | `/api/story/audio/{job_id}` | GET | Download completed audio (temporary, for active jobs) |
+| `/api/stories` | GET | List all stories with filters/pagination (library) |
+| `/api/stories/{short_id}` | DELETE | Delete story (DB record + audio file) |
+| `/api/stories/{short_id}` | PATCH | Update story title |
 | `/s/{short_id}` | GET | Get story metadata by permalink (permanent) |
 | `/s/{short_id}/audio` | GET | Stream audio by permalink (permanent) |
 
