@@ -22,94 +22,46 @@ Stories are age-adaptive (3-12 years), use multi-voice narration (narrator + cha
 ## Project Structure
 
 ```
-audio-story-creator/
+taleweaver/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI app, CORS, router registration
-│   │   ├── config.py            # Pydantic settings (reads .env)
-│   │   ├── routes/
-│   │   │   ├── config.py        # GET /api/genres, GET /api/historical-events
-│   │   │   └── story.py         # POST /api/story/custom, /historical, GET /status, /audio
-│   │   ├── graph/
-│   │   │   ├── llm.py           # Configurable LLM provider (anthropic/groq/openai)
-│   │   │   ├── pipeline.py      # LangGraph StateGraph assembly
-│   │   │   ├── state.py         # StoryState and Segment TypedDicts
-│   │   │   └── nodes/
-│   │   │       ├── story_writer.py      # Generates story text via LLM
-│   │   │       ├── script_splitter.py   # Parses into narrator/character segments
-│   │   │       ├── voice_synthesizer.py # ElevenLabs TTS per segment
-│   │   │       └── audio_stitcher.py    # Concatenates MP3 segments + mixes background music
-│   │   ├── models/
-│   │   │   ├── requests.py      # KidProfile, CustomStoryRequest, HistoricalStoryRequest (+ mood, length fields)
-│   │   │   └── responses.py     # Job responses (created, status, complete, error)
-│   │   ├── data/
-│   │   │   ├── genres.yaml      # 7 genres (adventure, fantasy, bedtime, funny, space, underwater, magical-forest)
-│   │   │   ├── historical_events.yaml  # 20 events with key_facts for LLM grounding
-│   │   │   └── music/           # Background music files (per mood)
-│   │   │       ├── exciting.mp3
-│   │   │       ├── heartwarming.mp3
-│   │   │       ├── funny.mp3
-│   │   │       ├── mysterious.mp3
-│   │   │       └── default.mp3
-│   │   └── prompts/
-│   │       ├── custom_story.py      # Storytelling-science prompts (Story Spine, age-calibrated, audio rules)
-│   │       └── historical_story.py  # Same approach, enforcing silent observer + accuracy
-│   ├── tests/
-│   ├── requirements.txt
-│   ├── .env                     # API keys (not committed)
-│   └── .env.example
+│   │   ├── main.py          # FastAPI app, permalink routes, library routes
+│   │   ├── db/              # SQLAlchemy models, CRUD operations
+│   │   ├── graph/           # LangGraph pipeline (story generation)
+│   │   ├── routes/          # API routes (config, story)
+│   │   ├── models/          # Pydantic models (requests, responses)
+│   │   ├── data/            # Genres, historical events, music
+│   │   └── prompts/         # Story generation prompts
+│   └── tests/               # 137 pytest tests
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx              # 3-screen immersive flow (hero → craft → story)
-│   │   ├── components/
-│   │   │   ├── HeroScreen.tsx          # Landing screen with app title and "Begin" CTA
-│   │   │   ├── CraftScreen.tsx         # Story creation: kid profile, story type, genre/event, mood, length
-│   │   │   ├── StoryScreen.tsx         # Generation progress + audio playback/download
-│   │   │   └── ParticleBackground.tsx  # Floating particle animation overlay
-│   │   ├── api/client.ts        # All API calls to backend
-│   │   └── types/index.ts       # TypeScript interfaces
-│   ├── package.json
-│   └── vite.config.ts           # Tailwind plugin + /api proxy to :8000
-└── docs/plans/
-    ├── 2026-03-01-audio-story-creator-design.md
-    ├── 2026-03-01-audio-story-creator-plan.md
-    ├── 2026-03-02-storyforge-v2-design.md
-    └── 2026-03-02-taleweaver-v2-plan.md
+│   │   ├── App.tsx          # Router setup
+│   │   ├── routes/          # Route components (Hero, Craft, Story, Library)
+│   │   ├── components/      # UI components
+│   │   └── api/client.ts    # API calls
+│   └── package.json
+├── docs/plans/              # Implementation plans & stage tracking
+├── scripts/                 # Backup/restore scripts
+├── Dockerfile               # Production build
+└── docker-compose.dev.yml   # Dev/test environments
 ```
 
-## Running Locally
+## Quick Start
 
+**Production-like (recommended):**
 ```bash
-# Backend (terminal 1)
-cd backend
-source venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-
-# Frontend (terminal 2)
-cd frontend
-npm run dev
+docker compose up app  # http://localhost
 ```
 
-Open http://localhost:5173
-
-### LAN access (other devices on same WiFi)
-
+**Local development:**
 ```bash
-# Backend
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Frontend
-npx vite --host 0.0.0.0 --port 5173
+# Backend: cd backend && uvicorn app.main:app --reload
+# Frontend: cd frontend && npm run dev
 ```
 
-Access via `http://<your-local-ip>:5173`
-
-## Running Tests
-
+**Run tests:**
 ```bash
-cd backend
-source venv/bin/activate
-python -m pytest tests/ -v
+docker compose run --rm backend-test
 ```
 
 ## API Endpoints
@@ -197,12 +149,11 @@ CHARACTER_FEMALE_VOICE_ID=
 CHARACTER_CHILD_VOICE_ID=
 ```
 
-## What's Not Built Yet (future ideas)
+## Future Ideas
 
-- User accounts and saved story library
-- Edge TTS as free alternative to ElevenLabs
-- Story sharing (link or QR code)
-- Story illustrations generated with an image model
-- Content moderation beyond LLM system prompt guardrails
-- Persistent job storage (database instead of in-memory)
+- User accounts / authentication
+- Edge TTS (free alternative to ElevenLabs)
+- QR code sharing
+- AI-generated story illustrations
+- Content moderation
 - Rate limiting
