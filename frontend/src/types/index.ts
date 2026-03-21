@@ -61,4 +61,29 @@ export type StoryLength = "short" | "medium" | "long";
 export type WizardStep =
   | "hero"
   | "craft"
-  | "story";
+  | "story"
+  | "library";
+
+export interface StoryMetadata {
+  id: string;
+  short_id: string;
+  title: string;
+  kid_name: string;
+  kid_age: number;
+  story_type: StoryType;
+  genre?: string;
+  event_id?: string;
+  transcript: string;
+  duration_seconds: number;
+  created_at: string;
+  permalink: string;
+  audio_url: string;
+}
+
+export interface StoriesListResponse {
+  stories: StoryMetadata[];
+  total: number;
+  has_more: boolean;
+}
+
+export type LibraryView = "grid" | "grouped" | "timeline";
