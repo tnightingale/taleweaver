@@ -36,10 +36,12 @@ export default function StoryRoute() {
           setIsGenerating(false);
         } else if (status.status === "failed") {
           clearInterval(pollingRef.current);
-          setError(status.error || "Story generation failed");
+          const errorMsg = "error" in status ? status.error : "Story generation failed";
+          setError(errorMsg || "Story generation failed");
           setIsGenerating(false);
         } else {
-          setCurrentStage(status.current_stage || "writing");
+          const stage = "current_stage" in status ? status.current_stage : "writing";
+          setCurrentStage(stage || "writing");
         }
       } catch (err) {
         clearInterval(pollingRef.current);
