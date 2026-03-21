@@ -119,8 +119,10 @@ python -m pytest tests/ -v
 | `/api/historical-events` | GET | List curated historical events (20) |
 | `/api/story/custom` | POST | Create custom story job (accepts mood + length) |
 | `/api/story/historical` | POST | Create historical story job (accepts mood + length) |
-| `/api/story/status/{job_id}` | GET | Poll job progress |
-| `/api/story/audio/{job_id}` | GET | Download completed audio |
+| `/api/story/status/{job_id}` | GET | Poll job progress (now includes short_id) |
+| `/api/story/audio/{job_id}` | GET | Download completed audio (temporary, for active jobs) |
+| `/s/{short_id}` | GET | Get story metadata by permalink (permanent) |
+| `/s/{short_id}/audio` | GET | Stream audio by permalink (permanent) |
 
 ## LangGraph Pipeline
 
@@ -129,9 +131,39 @@ python -m pytest tests/ -v
 ```
 
 - Jobs are async — POST returns a `job_id`, frontend polls `/status/{job_id}` every 2 seconds
-- Jobs stored in-memory (lost on server restart)
+- Jobs stored in-memory during generation, then persisted to SQLite database
+- Stories are permanent with compact permalinks (e.g., `/s/a7x9k2mn`)
 - Typical generation time: 20-90 seconds depending on story length
 - Audio stitcher mixes mood-based background music under narration
+
+## Storage Structure
+
+Stories are permanently stored:
+
+```
+/storage/
+├── taleweaver.db              # SQLite database with story metadata
+├── stories/
+│   ├── {uuid-1}/
+│   │   └── audio.mp3          # Generated MP3 file
+│   ├── {uuid-2}/
+│   │   └── audio.mp3
+│   └── ...
+├── jobs/                       # Temporary (unused, legacy)
+└── music/                      # Background music files
+```
+
+**Database schema:**
+- Story metadata (title, kid name/age, genre/event, mood, length)
+- Compact short_id (8 chars, a-z0-9) for permalinks
+- Transcript and duration
+- File path reference to audio MP3
+- Creation timestamp
+
+**Permalinks:**
+- Format: `/s/{short_id}` (e.g., `/s/a7x9k2mn`)
+- Permanent, shareable URLs
+- No authentication required
 
 ## Key Design Decisions
 
