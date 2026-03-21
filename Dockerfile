@@ -24,7 +24,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies (ffmpeg for pydub, curl for Caddy install)
+# Install system dependencies (ffmpeg for pydub, curl and gnupg for Caddy install)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ffmpeg \
@@ -32,7 +32,8 @@ RUN apt-get update && \
         ca-certificates \
         debian-keyring \
         debian-archive-keyring \
-        apt-transport-https && \
+        apt-transport-https \
+        gnupg && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Caddy web server
