@@ -30,3 +30,7 @@ class HistoricalStoryRequest(BaseModel):
     event_id: str = Field(max_length=100)
     mood: Optional[VALID_MOODS] = None
     length: Optional[VALID_LENGTHS] = None
+
+
+class UpdateStoryTitleRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
