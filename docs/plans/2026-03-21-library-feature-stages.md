@@ -2,7 +2,7 @@
 
 **Feature:** Story Library with delete/edit capabilities  
 **Started:** 2026-03-21  
-**Status:** IN PROGRESS (3/5 stages complete)
+**Status:** IN PROGRESS (4/5 stages complete)
 
 ---
 
@@ -13,8 +13,8 @@
 | 1 | List API (GET /api/stories) | ✅ COMPLETE | 4 | 6/6 pass |
 | 2 | Delete & Update API | ✅ COMPLETE | 5 | 10/10 pass |
 | 3 | Frontend Components | ✅ COMPLETE | 4 | - |
-| 4 | Navigation Integration | 🔄 NEXT | - | - |
-| 5 | Polish & Documentation | ⏳ PENDING | - | - |
+| 4 | Navigation Integration | ✅ COMPLETE | 4 | - |
+| 5 | Polish & Documentation | 🔄 NEXT | - | - |
 
 **Overall Progress:** 137/137 tests passing (100%)
 
@@ -185,34 +185,41 @@ PATCH /api/stories/abc123de
 
 ---
 
-## Stage 4: Navigation Integration 🔄 NEXT
+## Stage 4: Navigation Integration ✅ COMPLETE
 
-**Branch:** `feature/library-nav` (to be created)  
-**Worktree:** `/home/tnightingale/Work/taleweaver-library-nav` (to be created)
+**Branch:** `feature/library-nav`  
+**Worktree:** `/home/tnightingale/Work/taleweaver-library-nav`  
+**Merged:** 8c8fb11  
+**Pushed:** ✅ Yes
 
-### Plan
+### What Was Delivered
 
-**HeroScreen:**
-- Add "📚 View Library" button (secondary action)
+**Navigation:**
+- ✅ "📚 View Library" button on HeroScreen
+- ✅ Library icon (📚) in CraftScreen header (top-right)
+- ✅ Hero → Library navigation
+- ✅ Craft → Library navigation
+- ✅ Library → Story Player (when playing a story)
+- ✅ Story Player → Library (back button when from library)
 
-**CraftScreen:**
-- Add library icon button in top-right header
+**App.tsx Updates:**
+- ✅ Added `library` to WizardStep type (already in Stage 3)
+- ✅ Added `fromLibrary` state tracking
+- ✅ Added `handleViewLibrary()` navigation handler
+- ✅ Added `handlePlayStoryFromLibrary()` - loads story metadata into player
+- ✅ Added `handleBackToLibrary()` - returns to library view
+- ✅ Integrated LibraryScreen into AnimatePresence
 
-**App.tsx:**
-- Add `library` to WizardStep type
-- Add navigation: Hero → Library, Craft → Library
-- Add state management for library view
-- Handle Library → StoryScreen (play action)
+**StoryScreen Updates:**
+- ✅ Added `onBackToLibrary` optional prop
+- ✅ Conditional "Back to Library" button (only when fromLibrary=true)
+- ✅ Adjusted button layout for library context
 
-**StoryScreen:**
-- Add `fromLibrary` prop
-- Add "Back to Library" button (conditional)
-- Handle back navigation
-
-**Session Storage:**
-- Track library state across refreshes
-
-**Estimated:** 1-1.5 hours
+**Commits:**
+1. `f54eb10` - Add View Library button to HeroScreen
+2. `6f5097f` - Add library icon button to CraftScreen header
+3. `200367f` - Integrate LibraryScreen into App navigation flow
+4. `8c8fb11` - Add Back to Library navigation when playing from library
 
 ---
 
