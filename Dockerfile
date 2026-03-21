@@ -63,13 +63,17 @@ COPY backend/app/data/music /app/default-music
 
 # Create Caddyfile for reverse proxy
 # - Uses handle blocks for explicit routing priority
-# - /up and /api/* go to backend, everything else to frontend
+# - /up, /api/*, and /s/* go to backend, everything else to frontend
 RUN printf ':80 {\n\
     handle /up {\n\
         reverse_proxy localhost:8000\n\
     }\n\
     \n\
     handle /api/* {\n\
+        reverse_proxy localhost:8000\n\
+    }\n\
+    \n\
+    handle /s/* {\n\
         reverse_proxy localhost:8000\n\
     }\n\
     \n\
