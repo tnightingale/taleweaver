@@ -27,3 +27,9 @@ app.include_router(story_router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/up")
+async def health_check():
+    """Health check endpoint required by Once deployment platform."""
+    return {"status": "ok"}
