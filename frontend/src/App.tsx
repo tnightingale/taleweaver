@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { KidProfile, StoryMood, StoryLength, StoryType, WizardStep, JobCompleteResponse } from "./types";
+import type { KidProfile, StoryMood, StoryLength, StoryType, WizardStep, JobCompleteResponse, StoryMetadata } from "./types";
 import HeroScreen from "./components/HeroScreen";
 import CraftScreen from "./components/CraftScreen";
 import StoryScreen from "./components/StoryScreen";
+import LibraryScreen from "./components/LibraryScreen";
 import ParticleBackground from "./components/ParticleBackground";
 import {
   createCustomStory,
@@ -151,9 +152,33 @@ export default function App() {
     setStoryDuration(0);
     setAudioUrl("");
     setTranscript("");
+    setStoryData(undefined);
     setError("");
     setIsGenerating(false);
     clearSession();
+  };
+
+  const handleViewLibrary = () => {
+    setStep("library");
+  };
+
+  const handlePlayStoryFromLibrary = (story: StoryMetadata) => {
+    // Load story into StoryScreen
+    setStoryTitle(story.title);
+    setStoryDuration(story.duration_seconds);
+    setAudioUrl(story.audio_url);
+    setTranscript(story.transcript);
+    setStoryData({
+      job_id: story.id,
+      status: "complete",
+      title: story.title,
+      duration_seconds: story.duration_seconds,
+      audio_url: story.audio_url,
+      transcript: story.transcript,
+      short_id: story.short_id,
+      permalink: story.permalink,
+    });
+    setStep("story");
   };
 
   return (
@@ -195,6 +220,7 @@ export default function App() {
                     setStep("craft");
                     saveSession({ step: "craft", kidProfile: profile, storyType: type });
                   }}
+                  onViewLibrary={handleViewLibrary}
                 />
               </motion.div>
             )}
@@ -210,7 +236,17 @@ export default function App() {
                   onSubmitCustom={handleCreateStory}
                   onSubmitHistorical={handleHistoricalStory}
                   onBack={() => { setStep("hero"); clearSession(); }}
-                  onTypeChange={(t) => { setStoryType(t); saveSession({ step: "craft", kidProfile, storyType: t, mood, length }); }}
+                  onTypeChange={setStoryType}
+                  onViewLibrary={handleViewLibrary}
+                />
+              </motion.div>
+            )}
+
+            {step === "library" && (
+              <motion.div key="library" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+                <LibraryScreen
+                  onClose={() => setStep("hero")}
+                  onPlayStory={handlePlayStoryFromLibrary}
                 />
               </motion.div>
             )}
