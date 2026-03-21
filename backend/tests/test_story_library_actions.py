@@ -244,4 +244,4 @@ def test_update_story_title_api_empty_title():
     
     # Try to update with empty title
     response = client.patch(f"/api/stories/{short_id}", json={"title": ""})
-    assert response.status_code == 400, "Should reject empty title"
+    assert response.status_code == 422, "Should reject empty title with validation error"
