@@ -18,6 +18,7 @@ interface Props {
   transcript?: string;
   storyData?: JobCompleteResponse;
   onCreateAnother: () => void;
+  onBackToLibrary?: () => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -35,6 +36,7 @@ export default function StoryScreen({
   transcript,
   storyData,
   onCreateAnother,
+  onBackToLibrary,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -248,12 +250,29 @@ export default function StoryScreen({
                 >
                   Download MP3
                 </a>
-                <button
-                  onClick={onCreateAnother}
-                  className="btn-glow flex-1 text-center"
-                >
-                  Create Another Story
-                </button>
+                {onBackToLibrary ? (
+                  <>
+                    <button
+                      onClick={onBackToLibrary}
+                      className="glass-card px-6 py-3 text-center font-semibold text-starlight transition-all hover:text-glow"
+                    >
+                      ← Back to Library
+                    </button>
+                    <button
+                      onClick={onCreateAnother}
+                      className="btn-glow flex-1 text-center"
+                    >
+                      Create Another
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={onCreateAnother}
+                    className="btn-glow flex-1 text-center"
+                  >
+                    Create Another Story
+                  </button>
+                )}
               </div>
 
               {/* Permalink Share Section */}

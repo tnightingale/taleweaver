@@ -153,6 +153,7 @@ export default function App() {
     setAudioUrl("");
     setTranscript("");
     setStoryData(undefined);
+    setFromLibrary(false);
     setError("");
     setIsGenerating(false);
     clearSession();
@@ -161,6 +162,8 @@ export default function App() {
   const handleViewLibrary = () => {
     setStep("library");
   };
+
+  const [fromLibrary, setFromLibrary] = useState(false);
 
   const handlePlayStoryFromLibrary = (story: StoryMetadata) => {
     // Load story into StoryScreen
@@ -178,7 +181,13 @@ export default function App() {
       short_id: story.short_id,
       permalink: story.permalink,
     });
+    setFromLibrary(true);
     setStep("story");
+  };
+
+  const handleBackToLibrary = () => {
+    setFromLibrary(false);
+    setStep("library");
   };
 
   return (
@@ -262,6 +271,7 @@ export default function App() {
                   transcript={transcript}
                   storyData={storyData}
                   onCreateAnother={handleCreateAnother}
+                  onBackToLibrary={fromLibrary ? handleBackToLibrary : undefined}
                 />
               </motion.div>
             )}
