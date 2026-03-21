@@ -44,3 +44,10 @@ class StoryResponse(BaseModel):
     created_at: str
     permalink: str
     audio_url: str
+
+
+class StoriesListResponse(BaseModel):
+    """Response model for library story listing"""
+    stories: list[StoryResponse]
+    total: int
+    has_more: bool
