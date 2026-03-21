@@ -2,7 +2,7 @@
 
 **Feature:** Story Library with delete/edit capabilities  
 **Started:** 2026-03-21  
-**Status:** IN PROGRESS (2/5 stages complete)
+**Status:** IN PROGRESS (3/5 stages complete)
 
 ---
 
@@ -11,9 +11,9 @@
 | Stage | Description | Status | Commits | Tests |
 |-------|-------------|--------|---------|-------|
 | 1 | List API (GET /api/stories) | ✅ COMPLETE | 4 | 6/6 pass |
-| 2 | Delete & Update API | ✅ COMPLETE | 4 | 10/10 pass |
-| 3 | Frontend Components | 🔄 NEXT | - | - |
-| 4 | Navigation Integration | ⏳ PENDING | - | - |
+| 2 | Delete & Update API | ✅ COMPLETE | 5 | 10/10 pass |
+| 3 | Frontend Components | ✅ COMPLETE | 4 | - |
+| 4 | Navigation Integration | 🔄 NEXT | - | - |
 | 5 | Polish & Documentation | ⏳ PENDING | - | - |
 
 **Overall Progress:** 137/137 tests passing (100%)
@@ -136,7 +136,56 @@ PATCH /api/stories/abc123de
 
 ---
 
-## Stage 4: Navigation Integration ⏳ PENDING
+## Stage 3: Frontend Components ✅ COMPLETE
+
+**Branch:** `feature/library-frontend`  
+**Worktree:** `/home/tnightingale/Work/taleweaver-library-frontend`  
+**Merged:** d0df1d6  
+**Pushed:** ✅ Yes
+
+### What Was Delivered
+
+**Components:**
+- ✅ `StoryCard.tsx` - Story card with play, share, download, edit title, delete actions
+- ✅ `LibraryScreen.tsx` - Main library with 3 views (Grid, By Kid, Timeline)
+- ✅ All views implemented (grid, grouped by kid, timeline by date)
+- ✅ Filter by kid dropdown
+- ✅ "Load More" pagination
+- ✅ Empty state
+- ✅ Loading states
+- ✅ Error handling
+- ✅ Inline title editing
+- ✅ Delete confirmation (browser confirm dialog)
+
+**API Client:**
+- ✅ `listStories()` - Fetch stories with filters/pagination
+- ✅ `deleteStory()` - Delete story by short_id
+- ✅ `updateStoryTitle()` - Update story title
+
+**TypeScript:**
+- ✅ `StoryMetadata` interface
+- ✅ `StoriesListResponse` interface
+- ✅ `LibraryView` type
+- ✅ `WizardStep` updated with "library"
+
+**Features:**
+- Grid view with responsive columns
+- Grouped view (collapsible sections by kid)
+- Timeline view (Today, Yesterday, This Week, Older)
+- View toggle buttons
+- Empty state with CTA
+- Loading spinner
+- Error messages
+
+**Commits:**
+1. `faa2d8f` - Add TypeScript types for library feature
+2. `9b05e07` - Add library API client methods (list, delete, update)
+3. `5247ac2` - Create StoryCard component with play, share, download, edit, delete actions
+4. `d0df1d6` - Create LibraryScreen with grid, grouped, and timeline views
+
+---
+
+## Stage 4: Navigation Integration 🔄 NEXT
 
 **Branch:** `feature/library-nav` (to be created)  
 **Worktree:** `/home/tnightingale/Work/taleweaver-library-nav` (to be created)
