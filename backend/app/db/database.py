@@ -1,7 +1,12 @@
 """Database connection and session management"""
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
+
+# Ensure storage directory exists
+storage_dir = Path(settings.storage_path)
+storage_dir.mkdir(parents=True, exist_ok=True)
 
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{settings.storage_path}/taleweaver.db"
 

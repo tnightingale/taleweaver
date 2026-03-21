@@ -31,6 +31,9 @@ def test_db_env(tmp_path):
     db_module.SQLALCHEMY_DATABASE_URL = f"sqlite:///{test_db_path}"
     config_module.settings.storage_path = tmp_path
     
+    # Ensure storage directory exists
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    
     # Recreate engine
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
