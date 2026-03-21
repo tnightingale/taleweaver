@@ -28,11 +28,19 @@ app.include_router(story_router)
 async def startup_event():
     """Log configuration status on startup."""
     from app.config import settings
+    from app.db.database import init_db
     
     logger = logging.getLogger(__name__)
     logger.info("=" * 60)
     logger.info("Taleweaver Starting")
     logger.info("=" * 60)
+    
+    # Initialize database
+    try:
+        init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
     
     # Check LLM configuration
     llm_configured = False
