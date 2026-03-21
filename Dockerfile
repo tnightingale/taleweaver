@@ -24,7 +24,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies (ffmpeg for pydub, curl and gnupg for Caddy install)
+# Install system dependencies (ffmpeg for pydub, curl for Caddy install + healthcheck, gnupg for Caddy GPG key)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ffmpeg \
@@ -81,7 +81,8 @@ RUN chmod +x /docker-entrypoint.sh /hooks/*
 EXPOSE 80
 
 # Health check endpoint: /up (Once requirement)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+# Longer start-period to allow for initialization
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost/up || exit 1
 
 # Use custom entrypoint
