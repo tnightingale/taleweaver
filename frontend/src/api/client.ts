@@ -5,6 +5,8 @@ import type {
   JobCreatedResponse,
   JobStatusResponse,
   JobCompleteResponse,
+  StoriesListResponse,
+  StoryMetadata,
 } from "../types";
 
 const BASE = "/api";
@@ -65,4 +67,43 @@ export async function pollJobStatus(
 
 export function getAudioUrl(jobId: string): string {
   return `${BASE}/story/audio/${jobId}`;
+}
+
+// Library API
+export async function listStories(
+  kidName?: string,
+  limit: number = 20,
+  offset: number = 0,
+  sort: string = "created_desc"
+): Promise<StoriesListResponse> {
+  const params = new URLSearchParams();
+  if (kidName) params.append("kid_name", kidName);
+  params.append("limit", limit.toString());
+  params.append("offset", offset.toString());
+  params.append("sort", sort);
+
+  const res = await fetch(`${BASE}/stories?${params}`);
+  return handleResponse(res);
+}
+
+export async function deleteStory(shortId: string): Promise<void> {
+  const res = await fetch(`${BASE}/stories/${shortId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to delete story: ${res.status}`);
+  }
+}
+
+export async function updateStoryTitle(
+  shortId: string,
+  newTitle: string
+): Promise<StoryMetadata> {
+  const res = await fetch(`${BASE}/stories/${shortId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: newTitle }),
+  });
+  return handleResponse(res);
 }
