@@ -1,5 +1,7 @@
 # Audio Story Creator for Kids — Taleweaver
 
+> **For developers/agents:** See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete development standards, workflows, and processes. Follow those guidelines for all development work.
+
 ## What This Is
 
 A web app where parents create personalized audio stories for their kids. Two modes:
