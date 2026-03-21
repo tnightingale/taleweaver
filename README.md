@@ -10,7 +10,23 @@ Parents enter their child's name, age, and interests. Taleweaver writes a story 
 
 Stories adapt to the child's age (3-12), use multi-voice narration, and are built on storytelling science (Story Spine structure, age-calibrated language, audio-first writing rules).
 
-## Quick Start
+## Deployment
+
+### Production Deployment with Once
+
+Taleweaver is fully compatible with [Basecamp Once](https://github.com/basecamp/once) for easy self-hosting with automatic SSL, backups, and updates.
+
+```bash
+# On your server
+curl https://get.once.com | sh
+
+# When prompted, enter:
+ghcr.io/yourusername/taleweaver:latest
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.
+
+## Quick Start (Local Development)
 
 ### Using an AI coding agent (recommended)
 
