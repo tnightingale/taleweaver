@@ -50,5 +50,6 @@ async def test_run_pipeline_failure():
         await run_pipeline(job_id, state)
 
     assert jobs[job_id]["status"] == "failed"
-    assert "LLM error" in jobs[job_id]["error"]
+    # Error is sanitized by _friendly_error() for user-facing display
+    assert jobs[job_id]["error"] == "Something unexpected went wrong. Check the server logs for details."
     del jobs[job_id]

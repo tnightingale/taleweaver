@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { KidProfile, StoryMood, StoryLength, StoryType, WizardStep } from "./types";
+import type { KidProfile, StoryMood, StoryLength, StoryType, WizardStep, JobCompleteResponse } from "./types";
 import HeroScreen from "./components/HeroScreen";
 import CraftScreen from "./components/CraftScreen";
 import StoryScreen from "./components/StoryScreen";
