@@ -87,13 +87,18 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-6xl mb-8"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-display text-glow">📚 Your Story Library</h1>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl md:text-4xl font-display text-glow">📚 Your Story Library</h1>
           <button
             onClick={onClose}
-            className="px-4 py-2 glass-card text-starlight hover:text-glow transition-all"
+            className="shrink-0 w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 
+                       flex items-center justify-center
+                       glass-card text-starlight hover:text-glow transition-all
+                       text-xl md:text-base rounded-lg"
+            aria-label="Close library"
           >
-            ✕ Close
+            <span className="md:hidden">✕</span>
+            <span className="hidden md:inline">✕ Close</span>
           </button>
         </div>
 
