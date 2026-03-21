@@ -4,6 +4,7 @@ import type { KidProfile, StoryType } from "../types";
 
 interface Props {
   onSubmit: (profile: KidProfile, type: StoryType) => void;
+  onViewLibrary: () => void;
 }
 
 const PERSONALITIES = ["adventurous", "curious", "shy", "funny"];
@@ -22,7 +23,7 @@ const item = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 260, damping: 20 } },
 };
 
-export default function HeroScreen({ onSubmit }: Props) {
+export default function HeroScreen({ onSubmit, onViewLibrary }: Props) {
   const [name, setName] = useState("");
   const [age, setAge] = useState<number | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
@@ -237,6 +238,21 @@ export default function HeroScreen({ onSubmit }: Props) {
             <p className="text-starlight/50 text-sm">
               Travel through time
             </p>
+          </motion.button>
+        </div>
+
+        {/* View Library Button */}
+        <div className="mt-6 text-center">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onViewLibrary}
+            className="px-6 py-3 bg-black/40 border border-purple-500/40 rounded-lg 
+                       text-purple-300 hover:text-purple-200 hover:border-purple-400/60
+                       transition-all text-sm font-medium"
+          >
+            📚 View Your Library
           </motion.button>
         </div>
       </motion.div>
