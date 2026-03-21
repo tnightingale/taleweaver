@@ -1,8 +1,34 @@
 name: taleweaver-dev
 
 services:
-  # Backend development server with auto-reload
+  # Production-like deployment (matches Once deployment)
+  # Single container with Caddy + FastAPI, exactly like production
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - taleweaver-storage:/storage
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+    networks:
+      - taleweaver-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Backend development server with auto-reload (for development only)
   backend-dev:
+    profiles:
+      - dev
     image: python:3.9-slim
     working_dir: /app
     volumes:
@@ -55,8 +81,10 @@ services:
     profiles:
       - test
 
-  # Frontend development server with hot reload
+  # Frontend development server with hot reload (for development only)
   frontend-dev:
+    profiles:
+      - dev
     image: node:20-slim
     working_dir: /app
     volumes:
@@ -83,6 +111,7 @@ networks:
     driver: bridge
 
 volumes:
+  taleweaver-storage:
   backend-dev-venv:
   backend-test-venv:
   frontend-node-modules:
