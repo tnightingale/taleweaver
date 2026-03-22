@@ -23,6 +23,9 @@ class Scene(TypedDict):
 
 
 class StoryState(TypedDict):
+    # Job tracking
+    job_id: str  # UUID for this job/story
+    
     # Input
     kid_name: str
     kid_age: int

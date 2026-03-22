@@ -1,12 +1,16 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JobCompleteResponse } from "../types";
+import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
+  analyzing_scenes: "Analyzing story structure...",
   splitting: "Preparing character voices...",
   synthesizing: "Generating audio...",
+  generating_illustrations: "Creating illustrations...",
   stitching: "Mixing the final track...",
+  finalizing: "Adding final touches...",
 };
 
 interface Props {
@@ -149,14 +153,28 @@ export default function StoryScreen({
           </motion.div>
         ) : (
           audioUrl && (
-            /* ─── Phase 2: Audio Player ─── */
-            <motion.div
-              key="player"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="flex flex-col items-center space-y-8 w-full max-w-md"
-            >
+            /* ─── Phase 2: Audio Player (Illustrated or Standard) ─── */
+            storyData?.has_illustrations && storyData?.scenes ? (
+              /* Illustrated Player with Page Turn Animation */
+              <IllustratedStoryPlayer
+                key="illustrated-player"
+                audioUrl={audioUrl}
+                scenes={storyData.scenes}
+                title={title}
+                durationSeconds={durationSeconds}
+                transcript={transcript}
+                onCreateAnother={onCreateAnother}
+                onBackToLibrary={onBackToLibrary}
+              />
+            ) : (
+              /* Standard Audio Player */
+              <motion.div
+                key="player"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="flex flex-col items-center space-y-8 w-full max-w-md"
+              >
               {/* Story Title */}
               <h2 className="text-3xl md:text-4xl font-display text-glow text-center leading-snug">
                 {title}
@@ -340,6 +358,7 @@ export default function StoryScreen({
                 </div>
               )}
             </motion.div>
+            )
           )
         )}
       </AnimatePresence>

@@ -1,0 +1,138 @@
+"""
+NanoBanana 2 (Google Gemini 3.1 Flash Image) provider implementation
+"""
+import logging
+import os
+from typing import Optional
+from io import BytesIO
+import base64
+
+import google.generativeai as genai
+from PIL import Image
+
+from app.services.illustration.base import IllustrationProvider
+
+logger = logging.getLogger(__name__)
+
+
+class NanoBanana2Provider(IllustrationProvider):
+    """
+    NanoBanana 2 illustration provider using Google's Gemini 3.1 Flash Image model.
+    
+    Uses google-generativeai Python client for image generation.
+    """
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """
+        Initialize NanoBanana 2 provider.
+        
+        Args:
+            api_key: Google AI API key (defaults to GOOGLE_API_KEY env var)
+        """
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        if not self.api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable not set")
+        
+        # Configure genai
+        genai.configure(api_key=self.api_key)
+        self.model_id = "gemini-3.1-flash-image-preview"
+        self.model = genai.GenerativeModel(model_name=self.model_id)
+        
+        logger.info(f"NanoBanana2Provider initialized with model: {self.model_id}")
+    
+    async def generate_image(
+        self,
+        prompt: str,
+        art_style: str,
+        reference_image_url: Optional[str] = None,
+        aspect_ratio: str = "4:3",
+        resolution: str = "2K",
+        **kwargs
+    ) -> bytes:
+        """
+        Generate image using NanoBanana 2 (Gemini 3.1 Flash Image).
+        
+        Args:
+            prompt: Scene description
+            art_style: Style prompt to append
+            reference_image_url: Optional reference for consistency (image-to-image)
+            aspect_ratio: "1:1", "4:3", "16:9", etc.
+            resolution: "1K", "2K", or "4K"
+            
+        Returns:
+            Raw PNG image bytes
+        """
+        # Combine prompt with art style
+        full_prompt = f"{prompt}, {art_style}" if art_style else prompt
+        
+        logger.info(f"Generating image with NanoBanana 2 (aspect_ratio={aspect_ratio})")
+        logger.debug(f"Prompt: {full_prompt[:200]}...")
+        
+        try:
+            # Prepare generation config
+            generation_config = {}
+            
+            # Note: Not all parameters supported by all Gemini image models
+            # Gemini 3.1 Flash Image may have limited config options
+            
+            if reference_image_url:
+                # Image-to-image mode: include reference image
+                logger.warning("Reference image support not yet implemented, using text-to-image")
+                # TODO: Download reference image and include in request
+            
+            # Generate image (synchronous - google-generativeai doesn't have async yet)
+            # We'll run in executor to avoid blocking
+            import asyncio
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.model.generate_content(
+                    full_prompt,
+                    generation_config=generation_config
+                )
+            )
+            
+            # Extract image from response
+            # Response may have image data in different formats
+            if hasattr(response, 'parts'):
+                for part in response.parts:
+                    # Check for inline data (image)
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        # Get image data as base64
+                        image_data = part.inline_data.data
+                        
+                        # Decode if needed
+                        if isinstance(image_data, str):
+                            image_bytes = base64.b64decode(image_data)
+                        else:
+                            image_bytes = image_data
+                        
+                        # Convert to PNG if not already
+                        try:
+                            img = Image.open(BytesIO(image_bytes))
+                            img_byte_arr = BytesIO()
+                            img.save(img_byte_arr, format='PNG')
+                            png_bytes = img_byte_arr.getvalue()
+                            
+                            logger.info(f"Image generated successfully ({len(png_bytes)} bytes)")
+                            return png_bytes
+                        except Exception as img_err:
+                            # Already PNG, return as-is
+                            logger.info(f"Image generated successfully ({len(image_bytes)} bytes)")
+                            return image_bytes
+            
+            # No image found in response
+            raise Exception("No image found in Gemini response")
+            
+        except Exception as e:
+            logger.error(f"NanoBanana 2 image generation failed: {e}")
+            raise
+    
+    def get_provider_info(self) -> dict:
+        """Get provider metadata"""
+        return {
+            "name": "NanoBanana 2",
+            "provider": "Google Gemini",
+            "model": self.model_id,
+            "version": "3.1-flash-image-preview"
+        }

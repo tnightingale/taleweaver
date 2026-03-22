@@ -185,21 +185,46 @@ EOF
 ### Before Creating PR
 
 ```bash
-# 1. Run all tests
+# 1. Run all tests in Docker (REQUIRED)
 COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
-# ✅ All tests must pass
+# ✅ All tests must pass (146+ tests)
+# ⚠️ DO NOT skip this - local tests may pass but Docker tests fail
 
-# 2. Test production build
+# 2. Test production build (REQUIRED)
 docker build -t taleweaver:test .
 # ✅ Build must succeed
+# ✅ No errors during image creation
 
-# 3. Check git status
+# 3. Verify no uncommitted changes
 git status
 # ✅ No uncommitted changes
 # ✅ All changes committed with clear messages
 
 # 4. Push branch
 git push -u origin feature/your-branch-name
+
+# 5. Check CI status (REQUIRED after push)
+gh pr checks  # Wait for CI to pass
+# Or manually check: https://github.com/YOUR_ORG/taleweaver/actions
+# ✅ CI must be green before creating/updating PR
+# ⚠️ Fix any CI failures before proceeding
+```
+
+### During Development
+
+```bash
+# Run tests frequently (after each logical change)
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
+
+# Run specific test file during active development
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test \
+  bash -c "python -m venv /tmp/venv && . /tmp/venv/bin/activate && \
+           pip install -q -r requirements.txt && \
+           apt-get update -qq && apt-get install -qq -y ffmpeg > /dev/null 2>&1 && \
+           python -m pytest tests/test_your_new_file.py -v"
+
+# Commit frequently (after each passing test or logical unit)
+git add -A && git commit -m "Descriptive message"
 ```
 
 ### PR Title Format

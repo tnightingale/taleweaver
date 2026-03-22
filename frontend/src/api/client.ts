@@ -2,6 +2,7 @@ import type {
   KidProfile,
   Genre,
   HistoricalEvent,
+  ArtStyle,
   JobCreatedResponse,
   JobStatusResponse,
   JobCompleteResponse,
@@ -29,17 +30,32 @@ export async function fetchHistoricalEvents(): Promise<HistoricalEvent[]> {
   return handleResponse(res);
 }
 
+export async function fetchArtStyles(): Promise<ArtStyle[]> {
+  const res = await fetch(`${BASE}/art-styles`);
+  return handleResponse(res);
+}
+
 export async function createCustomStory(
   kid: KidProfile,
   genre: string,
   description: string,
   mood?: string,
   length?: string,
+  artStyle?: string,
+  customArtStylePrompt?: string,
 ): Promise<JobCreatedResponse> {
   const res = await fetch(`${BASE}/story/custom`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kid, genre, description, mood, length }),
+    body: JSON.stringify({ 
+      kid, 
+      genre, 
+      description, 
+      mood, 
+      length,
+      art_style: artStyle,
+      custom_art_style_prompt: customArtStylePrompt,
+    }),
   });
   return handleResponse(res);
 }
@@ -49,11 +65,20 @@ export async function createHistoricalStory(
   eventId: string,
   mood?: string,
   length?: string,
+  artStyle?: string,
+  customArtStylePrompt?: string,
 ): Promise<JobCreatedResponse> {
   const res = await fetch(`${BASE}/story/historical`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kid, event_id: eventId, mood, length }),
+    body: JSON.stringify({ 
+      kid, 
+      event_id: eventId, 
+      mood, 
+      length,
+      art_style: artStyle,
+      custom_art_style_prompt: customArtStylePrompt,
+    }),
   });
   return handleResponse(res);
 }

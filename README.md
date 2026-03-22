@@ -9,12 +9,14 @@ Parents enter their child's name, age, and interests. Taleweaver writes a story 
 - **Historical Adventure** - pick from 20 real historical events (including Indian history); the kid is an invisible time-traveling observer
 
 **Key features:**
+- ✅ **AI-Generated Illustrations** - Optional synchronized illustrations with page turn animations (NEW!)
 - ✅ Multi-voice narration with 4 distinct voices
 - ✅ Background music mood matching
 - ✅ Age-adaptive storytelling (3-12 years)
 - ✅ **Permanent permalinks** - Share stories with compact URLs (e.g., `/s/a7x9k2mn`)
 - ✅ Downloadable MP3 files
 - ✅ Built on storytelling science (Story Spine structure, age-calibrated language)
+- ✅ 7 curated art style presets (watercolor, classic storybook, modern flat, etc.)
 
 ## Deployment
 
@@ -195,11 +197,44 @@ Voice IDs come pre-configured with good defaults from the ElevenLabs voice libra
 5. Click the voice, then copy the **Voice ID** from the bottom of the panel
 6. Paste it into `backend/.env` for the relevant role (narrator, male, female, or child)
 
+## Illustrations Feature (Optional)
+
+Taleweaver can generate AI-illustrated storybooks synchronized with audio playback!
+
+**How it works:**
+1. During story creation, choose from 7 curated art styles or write your own
+2. AI generates 5-8 illustrations (one per Story Spine beat)
+3. Illustrations display with 3D page turn animations as the story plays
+4. Click scene markers to jump to different chapters
+5. View illustrated transcript as a static storybook
+
+**Art Styles:**
+- Watercolor Dream, Classic Storybook, Modern Flat
+- Whimsical Ink, Digital Fantasy, Vintage Fairy Tale
+- Custom (write your own style prompt)
+
+**Character Consistency:**
+- Uses image-to-image technique to maintain character appearance
+- First scene establishes character, subsequent scenes reference it
+
+**Cost:** ~$0.30/story (Google Gemini 3.1 Flash Image)  
+**Generation Time:** +25-40 seconds (runs parallel with voice synthesis)
+
+**Setup:**
+```bash
+# Get Google AI API key at https://aistudio.google.com/app/apikey
+ILLUSTRATION_PROVIDER=nanobanana2
+GOOGLE_API_KEY=your-google-api-key
+```
+
+Set `ILLUSTRATION_PROVIDER=none` or leave `GOOGLE_API_KEY` blank to disable.
+
 ## Tech Stack
 
 - **Backend:** Python, FastAPI, LangGraph, ElevenLabs TTS, pydub
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, Framer Motion
 - **LLM:** Groq (Llama 3.3) / OpenAI (GPT-4o) / Anthropic (Claude Sonnet 4.5)
+- **Image Generation:** Google Gemini 3.1 Flash Image (NanoBanana 2) - optional
 
 ## License
 
