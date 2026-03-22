@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import StoryScreen from "../components/StoryScreen";
-import { pollJobStatus, getAudioUrl } from "../api/client";
+import { pollJobStatus, getAudioUrl, retryJob } from "../api/client";
 import type { JobCompleteResponse } from "../types";
 
 export default function StoryRoute() {
@@ -100,16 +100,67 @@ export default function StoryRoute() {
     navigate("/library");
   };
 
+  const handleRetry = async () => {
+    if (!jobId) return;
+    
+    try {
+      setError("");
+      setIsGenerating(true);
+      await retryJob(jobId);
+      // Resume polling
+      startPolling(jobId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to retry. Please try again.");
+      setIsGenerating(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="glass-card p-8 max-w-md text-center">
-          <div className="text-6xl mb-4">😔</div>
-          <h2 className="text-2xl font-display text-glow mb-2">Oops!</h2>
-          <p className="text-starlight/60 mb-6">{error}</p>
-          <button onClick={() => navigate("/craft")} className="btn-glow">
-            Try Again
-          </button>
+        <div className="glass-card p-8 max-w-md text-center space-y-4">
+          <div className="text-6xl">😔</div>
+          <h2 className="text-2xl font-display text-glow">Generation Failed</h2>
+          <p className="text-starlight/60">{error}</p>
+          
+          {/* Show partial progress if available */}
+          {storyData?.partial_progress && (
+            <div className="glass-card p-4 space-y-2 text-left bg-starlight/5">
+              <p className="text-sm font-semibold text-starlight/80">Progress before failure:</p>
+              <ul className="text-sm text-starlight/60 space-y-1">
+                {storyData.partial_progress.segments_completed && (
+                  <li>
+                    ✅ Voice: {storyData.partial_progress.segments_completed} of{" "}
+                    {storyData.partial_progress.segments_total} segments
+                  </li>
+                )}
+                {storyData.partial_progress.illustrations_completed && (
+                  <li>
+                    ✅ Images: {storyData.partial_progress.illustrations_completed} of{" "}
+                    {storyData.partial_progress.illustrations_total} illustrations
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+          
+          <div className="flex gap-3 justify-center">
+            {/* Retry button if resumable */}
+            {storyData?.resumable && (
+              <button onClick={handleRetry} className="btn-glow text-sm cursor-pointer">
+                🔄 Try Again
+                {(storyData.retry_count || 0) > 0 && ` (${storyData.retry_count}/3)`}
+              </button>
+            )}
+            
+            {/* Start over button */}
+            <button 
+              onClick={() => navigate("/craft")} 
+              className="px-6 py-3 rounded-xl glass-card text-ethereal hover:text-white text-sm transition-all cursor-pointer"
+            >
+              ✨ Start Over
+            </button>
+          </div>
         </div>
       </div>
     );

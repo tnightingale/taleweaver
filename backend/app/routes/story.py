@@ -353,13 +353,27 @@ async def get_job_status(job_id: str):
                 scenes=scenes,
             )
 
+        # Parse partial progress if available
+        partial_progress = None
+        if job.partial_data_json:
+            from app.models.responses import PartialProgress
+            partial_data = json.loads(job.partial_data_json)
+            partial_progress = PartialProgress(
+                segments_completed=partial_data.get("segments_completed"),
+                segments_total=partial_data.get("segments_total"),
+                checkpoint_node=partial_data.get("checkpoint_node")
+            )
+        
         return JobStatusResponse(
             job_id=job_id,
             status=job.status,
             current_stage=job.current_stage or "",
-            progress=job.progress or 0,
+            progress=int(job.progress or 0),
             total_segments=0,  # Deprecated field
             error=job.error_message or "",
+            resumable=job.resumable,
+            partial_progress=partial_progress,
+            retry_count=job.retry_count,
         )
     finally:
         db.close()
@@ -391,6 +405,46 @@ async def get_audio(job_id: str, download: bool = False):
             media_type="audio/mpeg",
             headers={"Content-Disposition": f'{disposition}; filename="story.mp3"'},
         )
+    finally:
+        db.close()
+
+
+@router.post("/retry/{job_id}")
+async def retry_job(job_id: str):
+    """
+    Resume a failed job from last checkpoint.
+    
+    Only works for jobs marked as resumable (quota/rate limit errors).
+    """
+    from app.db.crud import get_job_state
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        job = get_job_state(db, job_id)
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job.status not in ["failed"]:
+            raise HTTPException(status_code=400, detail="Job is not in a failed state")
+        
+        if not job.resumable:
+            raise HTTPException(status_code=400, detail="Job cannot be resumed (permanent error)")
+        
+        if job.retry_count >= 3:
+            raise HTTPException(status_code=400, detail="Maximum retry limit reached (3 attempts)")
+        
+        # Update retry count and status
+        job.retry_count += 1
+        job.status = "processing"
+        job.error_message = None
+        db.commit()
+        
+        logger.info(f"Job {job_id} resuming (retry {job.retry_count}/3)")
+        
+        return {"job_id": job_id, "status": "resuming", "retry_count": job.retry_count}
+        
     finally:
         db.close()
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 
 class JobCreatedResponse(BaseModel):
@@ -9,6 +9,15 @@ class JobCreatedResponse(BaseModel):
     current_stage: str
 
 
+class PartialProgress(BaseModel):
+    """Partial completion details for failed jobs"""
+    segments_completed: Optional[int] = None
+    segments_total: Optional[int] = None
+    illustrations_completed: Optional[int] = None
+    illustrations_total: Optional[int] = None
+    checkpoint_node: Optional[str] = None
+
+
 class JobStatusResponse(BaseModel):
     job_id: str
     status: str
@@ -16,6 +25,9 @@ class JobStatusResponse(BaseModel):
     progress: int = 0
     total_segments: int = 0
     error: str = ""
+    resumable: bool = False
+    partial_progress: Optional[PartialProgress] = None
+    retry_count: int = 0
 
 
 class SceneResponse(BaseModel):

@@ -33,6 +33,14 @@ export interface JobCreatedResponse {
   current_stage: string;
 }
 
+export interface PartialProgress {
+  segments_completed?: number;
+  segments_total?: number;
+  illustrations_completed?: number;
+  illustrations_total?: number;
+  checkpoint_node?: string;
+}
+
 export interface JobStatusResponse {
   job_id: string;
   status: string;
@@ -40,6 +48,9 @@ export interface JobStatusResponse {
   progress: number;
   total_segments: number;
   error: string;
+  resumable: boolean;
+  partial_progress?: PartialProgress;
+  retry_count: number;
 }
 
 export interface Scene {
@@ -63,6 +74,11 @@ export interface JobCompleteResponse {
   has_illustrations: boolean;
   art_style?: string;
   scenes?: Scene[];
+  // Error/resume fields (when status is "failed")
+  resumable?: boolean;
+  partial_progress?: PartialProgress;
+  retry_count?: number;
+  error?: string;
 }
 
 export type StoryType = "custom" | "historical";

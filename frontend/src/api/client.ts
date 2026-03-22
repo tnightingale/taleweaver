@@ -94,6 +94,13 @@ export function getAudioUrl(jobId: string): string {
   return `${BASE}/story/audio/${jobId}`;
 }
 
+export async function retryJob(jobId: string): Promise<{job_id: string; status: string; retry_count: number}> {
+  const res = await fetch(`${BASE}/story/retry/${jobId}`, {
+    method: "POST",
+  });
+  return handleResponse(res);
+}
+
 // Library API
 export async function listStories(
   kidName?: string,
