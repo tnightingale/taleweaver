@@ -63,6 +63,7 @@ COPY backend/app/data/music /app/default-music
 
 # Create Caddyfile for reverse proxy
 # - /up and /api/* go to backend
+# - /storage/* serves static files (illustrations, audio)
 # - /s/* goes to frontend SPA (React Router handles it)
 # - Everything else to frontend SPA
 RUN printf ':80 {\n\
@@ -72,6 +73,11 @@ RUN printf ':80 {\n\
     \n\
     handle /api/* {\n\
         reverse_proxy localhost:8000\n\
+    }\n\
+    \n\
+    handle /storage/* {\n\
+        root * /\n\
+        file_server\n\
     }\n\
     \n\
     handle {\n\
