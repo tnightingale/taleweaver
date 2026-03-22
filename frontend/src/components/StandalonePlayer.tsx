@@ -82,6 +82,9 @@ export default function StandalonePlayer() {
         transcript: story.transcript,
         short_id: story.short_id,
         permalink: story.permalink,
+        has_illustrations: story.has_illustrations || false,
+        art_style: story.art_style,
+        scenes: story.scenes,
       }}
       onCreateAnother={() => navigate("/")}
     />

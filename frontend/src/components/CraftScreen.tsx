@@ -8,13 +8,18 @@ import type {
   HistoricalEvent,
 } from "../types";
 import { fetchGenres, fetchHistoricalEvents } from "../api/client";
+import ArtStyleSelector from "./ArtStyleSelector";
 
 interface Props {
   storyType: StoryType;
   mood?: StoryMood;
   length?: StoryLength;
+  artStyle: string | null;
+  customArtStylePrompt: string;
   onMoodChange: (mood: StoryMood | undefined) => void;
   onLengthChange: (length: StoryLength | undefined) => void;
+  onArtStyleChange: (artStyle: string | null) => void;
+  onCustomArtStylePromptChange: (prompt: string) => void;
   onSubmitCustom: (genre: string, description: string) => void;
   onSubmitHistorical: (eventId: string) => void;
   onBack: () => void;
@@ -56,8 +61,12 @@ export default function CraftScreen({
   storyType,
   mood,
   length,
+  artStyle,
+  customArtStylePrompt,
   onMoodChange,
   onLengthChange,
+  onArtStyleChange,
+  onCustomArtStylePromptChange,
   onSubmitCustom,
   onSubmitHistorical,
   onBack,
@@ -283,6 +292,16 @@ export default function CraftScreen({
             </div>
           </motion.div>
 
+          {/* Art Style Selector */}
+          <motion.div variants={itemVariants}>
+            <ArtStyleSelector
+              selectedStyle={artStyle}
+              onSelect={onArtStyleChange}
+              customPrompt={customArtStylePrompt}
+              onCustomPromptChange={onCustomArtStylePromptChange}
+            />
+          </motion.div>
+
           {/* Actions */}
           <motion.div
             className="flex items-center justify-between pt-4"
@@ -315,6 +334,23 @@ export default function CraftScreen({
           animate="visible"
           variants={containerVariants}
         >
+          {/* Art Style Selector for historical stories */}
+          <motion.div variants={itemVariants}>
+            <ArtStyleSelector
+              selectedStyle={artStyle}
+              onSelect={onArtStyleChange}
+              customPrompt={customArtStylePrompt}
+              onCustomPromptChange={onCustomArtStylePromptChange}
+            />
+          </motion.div>
+
+          {/* Choose Historical Event */}
+          <motion.div variants={itemVariants}>
+            <h2 className="text-lg font-semibold text-[var(--color-ethereal)] mb-4 text-center">
+              Choose Your Historical Adventure
+            </h2>
+          </motion.div>
+
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
             variants={containerVariants}

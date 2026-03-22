@@ -42,6 +42,15 @@ export interface JobStatusResponse {
   error: string;
 }
 
+export interface Scene {
+  beat_index: number;
+  beat_name: string;
+  text_excerpt: string;
+  timestamp_start: number;
+  timestamp_end: number;
+  image_url?: string;
+}
+
 export interface JobCompleteResponse {
   job_id: string;
   status: string;
@@ -51,6 +60,9 @@ export interface JobCompleteResponse {
   transcript: string;
   short_id: string;
   permalink: string;
+  has_illustrations: boolean;
+  art_style?: string;
+  scenes?: Scene[];
 }
 
 export type StoryType = "custom" | "historical";
@@ -78,6 +90,16 @@ export interface StoryMetadata {
   created_at: string;
   permalink: string;
   audio_url: string;
+  has_illustrations: boolean;
+  art_style?: string;
+  scenes?: Scene[];
+}
+
+export interface ArtStyle {
+  id: string;
+  name: string;
+  description: string;
+  prompt: string | null;
 }
 
 export interface StoriesListResponse {
