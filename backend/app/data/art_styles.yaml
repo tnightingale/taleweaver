@@ -1,0 +1,34 @@
+- id: watercolor_dream
+  name: Watercolor Dream
+  description: Soft watercolor painting with gentle brush strokes
+  prompt: soft watercolor painting, children's book illustration, gentle brush strokes, pastel colors, dreamy atmosphere, hand-painted feel, delicate washes, flowing colors
+
+- id: classic_storybook
+  name: Classic Storybook
+  description: Traditional illustration with warm, inviting colors
+  prompt: traditional children's book illustration, gouache painting, warm colors, detailed linework, timeless classic style, rich textures, professional illustration
+
+- id: modern_flat
+  name: Modern Flat
+  description: Bold colors and geometric shapes
+  prompt: flat illustration, bold colors, geometric shapes, minimalist, Scandinavian children's book style, clean composition, simple forms, contemporary design
+
+- id: whimsical_ink
+  name: Whimsical Ink
+  description: Playful pen and ink with watercolor washes
+  prompt: pen and ink with watercolor washes, hand-drawn, playful details, whimsical line art, Quentin Blake style, expressive sketches, loose brushwork
+
+- id: digital_fantasy
+  name: Digital Fantasy
+  description: Vibrant fantasy art with rich details
+  prompt: digital painting, vibrant colors, fantasy art, detailed backgrounds, magical atmosphere, professional illustration, cinematic lighting, epic composition
+
+- id: vintage_fairy_tale
+  name: Vintage Fairy Tale
+  description: Nostalgic vintage storybook aesthetic
+  prompt: vintage children's book, muted tones, nostalgic illustration style, 1960s picture book, classic fairy tale art, retro colors, timeless quality
+
+- id: custom
+  name: Custom Style
+  description: Write your own art style prompt
+  prompt: null

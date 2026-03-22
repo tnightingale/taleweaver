@@ -14,6 +14,9 @@ with open(DATA_DIR / "genres.yaml") as f:
 with open(DATA_DIR / "historical_events.yaml") as f:
     _historical_events = yaml.safe_load(f)
 
+with open(DATA_DIR / "art_styles.yaml") as f:
+    _art_styles = yaml.safe_load(f)
+
 
 @router.get("/genres")
 async def get_genres():
@@ -23,3 +26,9 @@ async def get_genres():
 @router.get("/historical-events")
 async def get_historical_events():
     return _historical_events
+
+
+@router.get("/art-styles")
+async def get_art_styles():
+    """Get available art style presets for story illustrations"""
+    return _art_styles
