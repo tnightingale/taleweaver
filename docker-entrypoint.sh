@@ -30,6 +30,15 @@ if ! caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
     exit 1
 fi
 
-# Start FastAPI backend server
+# Start FastAPI backend server with gunicorn for production
 echo "🚀 Starting FastAPI backend on port 8000..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Use gunicorn with uvicorn workers for true concurrent request handling
+# 4 workers allows 4 concurrent story generations + regular API requests
+# Timeout set to 600s (10 min) for long-running story generation
+exec gunicorn app.main:app \
+  --workers 4 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000 \
+  --timeout 600 \
+  --access-logfile - \
+  --error-logfile -
