@@ -669,51 +669,57 @@ def test_progress_reaches_100_on_completion(test_client, test_db):
 
 **Add to Progress Indicator Implementation:**
 
-#### 1. Persist In-Progress Jobs
+#### 1. Track In-Progress Jobs (Database Only)
 
-**RECOMMENDED APPROACH: Hybrid (localStorage + Database)**
+**RECOMMENDED APPROACH: Database-Only (No localStorage)**
 
-**Why Hybrid:**
-- Database (job_state) already tracks all jobs ✅
-- No auth system → can show ALL recent jobs to ANY user ✅
-- localStorage provides quick "last job" shortcut ✅
-- Works across devices (via DB) and within session (via localStorage) ✅
+**Why Database Only:**
+- ✅ job_state table already exists and tracks all jobs
+- ✅ Single source of truth (no sync issues)
+- ✅ Works across devices/browsers automatically
+- ✅ Simpler implementation (fewer moving parts)
+- ✅ More reliable (can't get out of sync)
+- ✅ No browser storage limits or clearing issues
 
-**Store in localStorage (quick access):**
-```typescript
-// When job created
-localStorage.setItem('taleweaver_active_job', JSON.stringify({
-  jobId: job.job_id,
-  startedAt: Date.now(),
-  kidName: request.kid.name
-}));
+**Backend Already Has:**
+- job_state table with status, current_stage, progress, title, created_at
+- All in-progress jobs are in database
+- Just need to expose via API endpoint
 
-// Clear when complete or user creates new story
-localStorage.removeItem('taleweaver_active_job');
-```
+#### 2. "In Progress" Display
 
-#### 2. "Continue Watching" Link
-
-**Add to navigation/hero screen:**
+**Add to hero screen or navigation:**
 ```tsx
-// Check for active job on mount
-const activeJob = localStorage.getItem('taleweaver_active_job');
-if (activeJob) {
-  const { jobId, startedAt } = JSON.parse(activeJob);
-  const elapsed = Date.now() - startedAt;
-  
-  // If recent (< 30 min), show link
-  if (elapsed < 30 * 60 * 1000) {
-    return (
-      <div className="glass-card p-4">
-        <p>Story in progress...</p>
-        <button onClick={() => navigate(`/story/${jobId}`)}>
-          Continue Watching
-        </button>
-      </div>
-    );
-  }
-}
+// Fetch from database
+const [inProgressJobs, setInProgressJobs] = useState([]);
+
+useEffect(() => {
+  fetch('/api/jobs/recent')
+    .then(res => res.json())
+    .then(data => {
+      const processing = data.jobs.filter(j => j.status === 'processing');
+      setInProgressJobs(processing);
+    });
+}, []);
+
+// Show prominently if any in progress
+{inProgressJobs.length > 0 && (
+  <div className="glass-card p-4">
+    <h3 className="font-semibold mb-2">Story Generating...</h3>
+    {inProgressJobs.map(job => (
+      <button
+        key={job.job_id}
+        onClick={() => navigate(`/story/${job.job_id}`)}
+        className="glass-card p-3 w-full text-left hover:shadow-glow"
+      >
+        <p>{job.title || 'Writing story...'}</p>
+        <p className="text-sm text-starlight/60">
+          {job.current_stage} - {job.progress}%
+        </p>
+      </button>
+    ))}
+  </div>
+)}
 ```
 
 #### 3. Recent Generations List (Database-Backed)
@@ -793,22 +799,27 @@ useEffect(() => {
 
 **Implementation:**
 
-**Frontend:**
-- Save active job to localStorage on job creation
-- Check localStorage on HeroRoute mount
-- Show "Continue Watching" if active job exists
-- Clear localStorage when job completes or user creates new
-
 **Backend:**
-- GET /api/jobs/recent endpoint (return jobs from last 24h)
-- Cleanup old jobs from job_state (>24h and complete/failed)
+- [ ] Add GET /api/jobs/recent endpoint (return jobs from last 24h)
+- [ ] Include status, progress, title, current_stage
+- [ ] Update cleanup_old_jobs to preserve jobs for 24h (currently deletes too aggressively)
+
+**Frontend:**
+- [ ] Add "In Progress" section to HeroRoute (fetches from /api/jobs/recent)
+- [ ] Show in-progress jobs prominently with progress/stage
+- [ ] Click job → navigate to `/story/{jobId}`
+- [ ] Optional: Add to Library as separate "Generating" tab
+- [ ] Auto-refresh in-progress jobs every 5 seconds
 
 **Tasks:**
-- [ ] Add localStorage persistence in CraftRoute after job creation
-- [ ] Add "Continue Watching" UI in HeroRoute
-- [ ] Add GET /api/jobs/recent endpoint
-- [ ] Add RecentJobs component (optional tab in library)
-- [ ] Update cleanup to preserve jobs for 24h (not 1h)
+- [ ] Backend: Add GET /api/jobs/recent endpoint in routes/story.py
+- [ ] Backend: Update cleanup_old_jobs() to keep jobs 24h instead of 1h
+- [ ] Frontend: Add fetchRecentJobs() to api/client.ts
+- [ ] Frontend: Add InProgressJobs component
+- [ ] Frontend: Integrate into HeroRoute or navigation
+- [ ] Optional: Add to LibraryRoute as "Generating" filter
+
+**NO localStorage needed** - database is single source of truth
 
 **Estimated Additional Time:** +2 hours
 
