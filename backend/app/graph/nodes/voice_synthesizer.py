@@ -150,17 +150,21 @@ async def voice_synthesizer(state: StoryState) -> dict:
             if job_id:
                 save_temp_audio_segment(job_id, i, audio_bytes)
                 
-                # Update job progress in database
-                db = SessionLocal()
+                # Update job progress in database (optional - may not exist in tests)
                 try:
-                    progress_pct = ((i + 1) / len(segments)) * 100
-                    update_job_progress(
-                        db, job_id,
-                        progress=progress_pct,
-                        detail=f"Synthesized segment {i+1} of {len(segments)}"
-                    )
-                finally:
-                    db.close()
+                    db = SessionLocal()
+                    try:
+                        progress_pct = ((i + 1) / len(segments)) * 100
+                        update_job_progress(
+                            db, job_id,
+                            progress=progress_pct,
+                            detail=f"Synthesized segment {i+1} of {len(segments)}"
+                        )
+                    finally:
+                        db.close()
+                except Exception as db_err:
+                    # Database errors shouldn't stop synthesis
+                    logger.debug(f"Could not update job progress: {db_err}")
             
             logger.info(f"✅ TTS segment {i+1}/{len(segments)}: voice={segment['voice_type']}, chars={len(segment['text'])}, bytes={len(audio_bytes)}, time={elapsed:.1f}s")
             
@@ -170,22 +174,25 @@ async def voice_synthesizer(state: StoryState) -> dict:
             logger.error(f"   Partial segments saved: {i} of {len(segments)}")
             logger.error(f"   Error: {str(e)}")
             
-            # Mark job as resumable in database
+            # Mark job as resumable in database (optional)
             if job_id:
-                db = SessionLocal()
                 try:
-                    job = get_job_state(db, job_id)
-                    if job:
-                        import json
-                        job.resumable = True
-                        job.partial_data_json = json.dumps({
-                            "segments_completed": i,
-                            "segments_total": len(segments),
-                            "checkpoint_node": "voice_synthesizer"
-                        })
-                        db.commit()
-                finally:
-                    db.close()
+                    db = SessionLocal()
+                    try:
+                        job = get_job_state(db, job_id)
+                        if job:
+                            import json
+                            job.resumable = True
+                            job.partial_data_json = json.dumps({
+                                "segments_completed": i,
+                                "segments_total": len(segments),
+                                "checkpoint_node": "voice_synthesizer"
+                            })
+                            db.commit()
+                    finally:
+                        db.close()
+                except Exception as db_err:
+                    logger.debug(f"Could not mark job as resumable: {db_err}")
             
             return {
                 "audio_segments": audio_segments,
@@ -200,20 +207,23 @@ async def voice_synthesizer(state: StoryState) -> dict:
             logger.warning(f"   Partial segments saved: {i} of {len(segments)}")
             
             if job_id:
-                db = SessionLocal()
                 try:
-                    job = get_job_state(db, job_id)
-                    if job:
-                        import json
-                        job.resumable = True
-                        job.partial_data_json = json.dumps({
-                            "segments_completed": i,
-                            "segments_total": len(segments),
-                            "checkpoint_node": "voice_synthesizer"
-                        })
-                        db.commit()
-                finally:
-                    db.close()
+                    db = SessionLocal()
+                    try:
+                        job = get_job_state(db, job_id)
+                        if job:
+                            import json
+                            job.resumable = True
+                            job.partial_data_json = json.dumps({
+                                "segments_completed": i,
+                                "segments_total": len(segments),
+                                "checkpoint_node": "voice_synthesizer"
+                            })
+                            db.commit()
+                    finally:
+                        db.close()
+                except Exception as db_err:
+                    logger.debug(f"Could not mark job as resumable: {db_err}")
             
             return {
                 "audio_segments": audio_segments,

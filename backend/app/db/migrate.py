@@ -32,22 +32,28 @@ def run_migrations():
     try:
         migrations_applied = []
         
-        # Get existing columns in stories table
-        cursor.execute("PRAGMA table_info(stories)")
-        existing_columns = {row[1] for row in cursor.fetchall()}
+        # Check if stories table exists first
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='stories'")
+        stories_exists = cursor.fetchone() is not None
+        
+        # Get existing columns in stories table (if it exists)
+        existing_columns = set()
+        if stories_exists:
+            cursor.execute("PRAGMA table_info(stories)")
+            existing_columns = {row[1] for row in cursor.fetchall()}
         
         # Migration 1: Add illustration fields to stories (2026-03-22)
-        if "art_style" not in existing_columns:
+        if stories_exists and "art_style" not in existing_columns:
             cursor.execute("ALTER TABLE stories ADD COLUMN art_style TEXT")
             migrations_applied.append("stories.art_style")
             logger.info("✅ Added column: stories.art_style")
         
-        if "has_illustrations" not in existing_columns:
+        if stories_exists and "has_illustrations" not in existing_columns:
             cursor.execute("ALTER TABLE stories ADD COLUMN has_illustrations INTEGER DEFAULT 0 NOT NULL")
             migrations_applied.append("stories.has_illustrations")
             logger.info("✅ Added column: stories.has_illustrations")
         
-        if "scene_data" not in existing_columns:
+        if stories_exists and "scene_data" not in existing_columns:
             cursor.execute("ALTER TABLE stories ADD COLUMN scene_data TEXT")
             migrations_applied.append("stories.scene_data")
             logger.info("✅ Added column: stories.scene_data")

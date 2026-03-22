@@ -62,13 +62,15 @@ async def test_voice_synthesizer_saves_segments_incrementally(test_db):
 @pytest.mark.asyncio
 async def test_voice_synthesizer_quota_error_preserves_partial(test_db):
     """Should preserve partial segments when quota is exceeded"""
+    from app.graph.nodes.voice_synthesizer import QuotaExceededError
+    
     call_count = [0]
     fake_audio = b"fake-mp3"
     
     def mock_synthesize(client, voice_id, text):
         call_count[0] += 1
         if call_count[0] > 3:  # Fail after 3 segments
-            raise Exception("quota_exceeded: ElevenLabs quota limit reached")
+            raise QuotaExceededError("ElevenLabs quota limit reached")
         return fake_audio
     
     with patch("app.graph.nodes.voice_synthesizer._synthesize_segment", side_effect=mock_synthesize):
@@ -166,13 +168,15 @@ async def test_voice_synthesizer_resumes_from_checkpoint(test_db):
 @pytest.mark.asyncio
 async def test_voice_synthesizer_retries_transient_errors():
     """Should retry transient errors with exponential backoff"""
+    from app.graph.nodes.voice_synthesizer import TransientError
+    
     call_count = [0]
     fake_audio = b"fake-mp3"
     
     def mock_synthesize_with_transient_error(client, voice_id, text):
         call_count[0] += 1
         if call_count[0] <= 2:  # Fail first 2 attempts
-            raise Exception("503 Service Temporarily Unavailable")
+            raise TransientError("503 Service Temporarily Unavailable")
         return fake_audio  # Succeed on 3rd attempt
     
     with patch("app.graph.nodes.voice_synthesizer._synthesize_segment", side_effect=mock_synthesize_with_transient_error):
@@ -214,9 +218,11 @@ async def test_voice_synthesizer_retries_transient_errors():
 @pytest.mark.asyncio
 async def test_voice_synthesizer_distinguishes_quota_vs_rate_limit():
     """Should handle quota errors differently from rate limits"""
+    from app.graph.nodes.voice_synthesizer import QuotaExceededError
+    
     # Test quota error (not retryable immediately)
     def mock_quota_error(client, voice_id, text):
-        raise Exception("quota_exceeded: Monthly character limit reached")
+        raise QuotaExceededError("Monthly character limit reached")
     
     with patch("app.graph.nodes.voice_synthesizer._synthesize_segment", side_effect=mock_quota_error):
         with patch("app.graph.nodes.voice_synthesizer.save_temp_audio_segment"):
