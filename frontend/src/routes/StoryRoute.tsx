@@ -96,6 +96,10 @@ export default function StoryRoute() {
     navigate("/craft");
   };
 
+  const handleBackToLibrary = () => {
+    navigate("/library");
+  };
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -121,6 +125,7 @@ export default function StoryRoute() {
       transcript={transcript}
       storyData={storyData}
       onCreateAnother={handleCreateAnother}
+      onBackToLibrary={handleBackToLibrary}
     />
   );
 }
