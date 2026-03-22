@@ -4,9 +4,63 @@
 
 ---
 
-## ✅ All Fixed!
+## 🔴 Active Issues
 
-All known test issues have been resolved. All 146 tests now pass consistently.
+### Issue 1: Only First Illustration Generates (2026-03-22)
+
+**Severity:** High  
+**Affects:** Story generation with illustrations  
+**Status:** 🔴 ACTIVE - Under investigation
+
+**Symptom:**
+- Story generation with illustrations only produces first image
+- Scenes 1-7 have `image_url: null` in database
+- Only scene_0.png exists on filesystem
+- No error logs visible
+
+**Example:** http://taleweaver.lan/story/aa0a8b72-f68f-40e7-8eaf-2b65db1993e4
+
+**Evidence:**
+```
+Timeline from logs:
+18:27:07 - illustration_generator starts (parallel with voice synthesis)
+18:27:26 - Illustration 1/8 generated ✅ (scene_0.png saved)
+18:27:42 - audio_stitcher starts (voice synthesis complete)
+         - illustration_generator should still be running...
+         - but NO logs for illustrations 2-8
+         - NO error logs
+18:27:54 - Stage label "generating_illustrations" (misleading - already done)
+18:28:02 - Pipeline completes
+
+API Response:
+- has_illustrations: true
+- scenes[0].image_url: "/storage/.../scene_0.png" ✅
+- scenes[1-7].image_url: null ❌
+```
+
+**Possible Causes:**
+1. **Google API quota/rate limit** - First succeeds, rest fail silently
+2. **Exception caught without logging** - try/except in illustration_generator
+3. **Image-to-image reference not working** - reference_image_url causes silent failure  
+4. **Async loop issue** - await in loop not working as expected
+5. **Provider returning early** - generate_image() failing after first call
+
+**Investigation Needed:**
+- [ ] Add verbose logging in illustration_generator loop
+- [ ] Log each Google API call attempt
+- [ ] Catch and log exceptions per-image (not whole loop)
+- [ ] Test with 2-3 images instead of 8
+- [ ] Check Google API error responses
+
+**Workaround:**
+- Stories still work (audio + transcript + 1 image)
+- Disable illustrations: `ILLUSTRATION_PROVIDER=none`
+
+**Priority:** High - Degrades feature value
+
+---
+
+## ✅ Resolved Issues
 
 ---
 
