@@ -671,7 +671,15 @@ def test_progress_reaches_100_on_completion(test_client, test_db):
 
 #### 1. Persist In-Progress Jobs
 
-**Store in localStorage:**
+**RECOMMENDED APPROACH: Hybrid (localStorage + Database)**
+
+**Why Hybrid:**
+- Database (job_state) already tracks all jobs ✅
+- No auth system → can show ALL recent jobs to ANY user ✅
+- localStorage provides quick "last job" shortcut ✅
+- Works across devices (via DB) and within session (via localStorage) ✅
+
+**Store in localStorage (quick access):**
 ```typescript
 // When job created
 localStorage.setItem('taleweaver_active_job', JSON.stringify({
@@ -708,22 +716,71 @@ if (activeJob) {
 }
 ```
 
-#### 3. Recent Generations List
+#### 3. Recent Generations List (Database-Backed)
 
-**Add to library or separate tab:**
-- Show jobs from last 24 hours (from job_state table)
-- Include status: processing, complete, failed
-- Click to navigate to `/story/{jobId}`
-- Auto-refresh processing jobs
-
-**Query:**
-```sql
-SELECT job_id, status, current_stage, progress, title, created_at
-FROM job_state
-WHERE created_at > datetime('now', '-24 hours')
-ORDER BY created_at DESC
-LIMIT 10
+**Backend Endpoint:**
+```python
+@router.get("/jobs/recent")
+async def get_recent_jobs():
+    \"\"\"Get jobs from last 24 hours (in-progress and recent completions)\"\"\"
+    from datetime import datetime, timedelta
+    from app.db.database import SessionLocal
+    from app.db.models import JobState
+    
+    db = SessionLocal()
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        jobs = db.query(JobState).filter(
+            JobState.created_at > cutoff
+        ).order_by(
+            JobState.created_at.desc()
+        ).limit(20).all()
+        
+        return {
+            "jobs": [
+                {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "current_stage": job.current_stage,
+                    "progress": job.progress or 0,
+                    "title": job.title,
+                    "created_at": job.created_at.isoformat() + 'Z',
+                    "error": job.error_message if job.status == "failed" else None
+                }
+                for job in jobs
+            ]
+        }
+    finally:
+        db.close()
 ```
+
+**Frontend Component:**
+```tsx
+// In HeroRoute or Library
+const [recentJobs, setRecentJobs] = useState([]);
+
+useEffect(() => {
+  fetch('/api/jobs/recent')
+    .then(res => res.json())
+    .then(data => setRecentJobs(data.jobs.filter(j => j.status === 'processing')));
+}, []);
+
+// Show in-progress jobs
+{recentJobs.map(job => (
+  <Link to={`/story/${job.job_id}`} key={job.job_id}>
+    <div className="glass-card p-4">
+      <p>{job.title || 'Generating...'}</p>
+      <p>{job.current_stage} - {job.progress}%</p>
+    </div>
+  </Link>
+))}
+```
+
+**Benefits:**
+- Works across devices/browsers (database source of truth)
+- Shows ALL in-progress jobs (no auth system)
+- Can see others' jobs (acceptable for family app)
+- Survives browser data clearing
 
 #### 4. Make Job URLs Bookmarkable
 
