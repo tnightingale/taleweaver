@@ -2,14 +2,15 @@ import asyncio
 import logging
 import time
 import uuid
+import json
 from pathlib import Path
 from typing import Optional
 
 import yaml
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response, FileResponse
 
 logger = logging.getLogger(__name__)
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import Response
 
 from app.graph.pipeline import create_story_pipeline
 from app.models.requests import CustomStoryRequest, HistoricalStoryRequest
@@ -19,25 +20,9 @@ router = APIRouter(prefix="/api/story")
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-# In-memory job store
-jobs: dict[str, dict] = {}
-
-# Max age for completed jobs (1 hour)
-JOB_TTL_SECONDS = 3600
-
-
-def _cleanup_old_jobs():
-    """Remove completed/failed jobs older than JOB_TTL_SECONDS."""
-    now = time.time()
-    expired = [
-        jid for jid, job in jobs.items()
-        if job["status"] in ("complete", "failed")
-        and now - job.get("created_at", now) > JOB_TTL_SECONDS
-    ]
-    for jid in expired:
-        del jobs[jid]
-    if expired:
-        logger.info(f"Cleaned up {len(expired)} expired jobs")
+# Job state is now stored in database (job_state table)
+# This enables multi-worker support - all workers share the same job state
+# See app/db/crud.py for job state CRUD functions
 
 
 def _format_kid_details(kid) -> str:
@@ -108,11 +93,16 @@ def _friendly_error(e: Exception) -> str:
 
 
 async def run_pipeline(job_id: str, state: dict):
+    from app.db.crud import update_job_stage, mark_job_complete, mark_job_failed, save_story
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    
     try:
         pipeline = create_story_pipeline()
 
         logger.info(f"[{job_id}] Starting pipeline: type={state['story_type']}")
-        jobs[job_id]["current_stage"] = "writing"
+        update_job_stage(db, job_id, "writing")
 
         # Stream node-by-node to track progress
         final_state = None
@@ -123,7 +113,7 @@ async def run_pipeline(job_id: str, state: dict):
                 idx = STAGE_ORDER.index(node_name) if node_name in STAGE_ORDER else -1
                 if idx + 1 < len(STAGE_ORDER):
                     next_stage = NODE_TO_STAGE[STAGE_ORDER[idx + 1]]
-                    jobs[job_id]["current_stage"] = next_stage
+                    update_job_stage(db, job_id, next_stage)
                     logger.info(f"[{job_id}] Stage: {next_stage}")
                 # Merge node output into our tracked state
                 if final_state is None:
@@ -131,19 +121,6 @@ async def run_pipeline(job_id: str, state: dict):
                 else:
                     final_state.update(event[node_name])
 
-        jobs[job_id]["status"] = "complete"
-        jobs[job_id]["current_stage"] = "done"
-        jobs[job_id]["title"] = final_state["title"]
-        jobs[job_id]["duration_seconds"] = final_state["duration_seconds"]
-        jobs[job_id]["final_audio"] = final_state["final_audio"]
-        jobs[job_id]["transcript"] = final_state.get("story_text", "")
-        jobs[job_id]["art_style"] = state.get("art_style")
-        jobs[job_id]["scenes"] = final_state.get("scenes")
-
-        # Persist story to database
-        from app.db.crud import save_story
-        from app.db.database import SessionLocal
-        
         # Build scene_data for database
         scene_data = None
         if final_state.get("scenes"):
@@ -153,7 +130,7 @@ async def run_pipeline(job_id: str, state: dict):
                 "character_description": final_state.get("character_description"),
             }
         
-        db = SessionLocal()
+        # Persist story to permanent storage
         try:
             db_story = save_story(
                 db=db,
@@ -172,24 +149,47 @@ async def run_pipeline(job_id: str, state: dict):
                 art_style=state.get("art_style"),
                 scene_data=scene_data,
             )
-            jobs[job_id]["short_id"] = db_story.short_id
-            logger.info(f"[{job_id}] Story persisted with short_id={db_story.short_id}")
+            short_id = db_story.short_id
+            logger.info(f"[{job_id}] Story persisted with short_id={short_id}")
+            
+            # Mark job complete in job_state
+            mark_job_complete(
+                db,
+                job_id,
+                title=final_state["title"],
+                duration_seconds=final_state["duration_seconds"],
+                transcript=final_state.get("story_text", ""),
+                short_id=short_id,
+                art_style=state.get("art_style"),
+                scenes=final_state.get("scenes"),
+            )
+            
         except Exception as persist_error:
             logger.error(f"[{job_id}] Failed to persist story: {persist_error}", exc_info=True)
-            # Don't fail the job if persistence fails
-        finally:
-            db.close()
+            # Mark job as failed
+            mark_job_failed(db, job_id, str(persist_error))
+            raise  # Re-raise to trigger outer except
 
         logger.info(f"[{job_id}] Pipeline complete: title='{final_state['title']}', duration={final_state['duration_seconds']}s")
+        
     except Exception as e:
         logger.error(f"[{job_id}] Pipeline failed: {e}", exc_info=True)
-        jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = _friendly_error(e)
+        mark_job_failed(db, job_id, _friendly_error(e))
+    finally:
+        db.close()
 
 
 @router.post("/custom", response_model=JobCreatedResponse)
 async def create_custom_story(request: CustomStoryRequest):
-    _cleanup_old_jobs()
+    from app.db.crud import create_job_state, cleanup_old_jobs
+    from app.db.database import SessionLocal
+    
+    # Cleanup old completed/failed jobs
+    db = SessionLocal()
+    try:
+        cleanup_old_jobs(db, max_age_hours=24)
+    finally:
+        db.close()
 
     job_id = str(uuid.uuid4())
     
@@ -199,12 +199,12 @@ async def create_custom_story(request: CustomStoryRequest):
     else:
         stages = ["writing", "splitting", "synthesizing", "stitching"]
     
-    jobs[job_id] = {
-        "status": "processing",
-        "current_stage": "writing",
-        "stages": stages,
-        "created_at": time.time(),
-    }
+    # Create job state in database (shared across workers)
+    db = SessionLocal()
+    try:
+        create_job_state(db, job_id, stages)
+    finally:
+        db.close()
 
     state = {
         "job_id": job_id,
@@ -232,7 +232,6 @@ async def create_custom_story(request: CustomStoryRequest):
     }
 
     task = asyncio.create_task(run_pipeline(job_id, state))
-    jobs[job_id]["_task"] = task
 
     return JobCreatedResponse(
         job_id=job_id,
@@ -244,11 +243,19 @@ async def create_custom_story(request: CustomStoryRequest):
 
 @router.post("/historical", response_model=JobCreatedResponse)
 async def create_historical_story(request: HistoricalStoryRequest):
+    from app.db.crud import create_job_state, cleanup_old_jobs
+    from app.db.database import SessionLocal
+    
     event_data = _load_event(request.event_id)
     if not event_data:
         raise HTTPException(status_code=404, detail=f"Event '{request.event_id}' not found")
 
-    _cleanup_old_jobs()
+    # Cleanup old completed/failed jobs
+    db = SessionLocal()
+    try:
+        cleanup_old_jobs(db, max_age_hours=24)
+    finally:
+        db.close()
 
     job_id = str(uuid.uuid4())
     
@@ -258,12 +265,12 @@ async def create_historical_story(request: HistoricalStoryRequest):
     else:
         stages = ["writing", "splitting", "synthesizing", "stitching"]
     
-    jobs[job_id] = {
-        "status": "processing",
-        "current_stage": "writing",
-        "stages": stages,
-        "created_at": time.time(),
-    }
+    # Create job state in database (shared across workers)
+    db = SessionLocal()
+    try:
+        create_job_state(db, job_id, stages)
+    finally:
+        db.close()
 
     state = {
         "job_id": job_id,
@@ -290,8 +297,8 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "character_description": None,
     }
 
-    task = asyncio.create_task(run_pipeline(job_id, state))
-    jobs[job_id]["_task"] = task
+    # Start pipeline in background
+    asyncio.create_task(run_pipeline(job_id, state))
 
     return JobCreatedResponse(
         job_id=job_id,
@@ -303,73 +310,87 @@ async def create_historical_story(request: HistoricalStoryRequest):
 
 @router.get("/status/{job_id}")
 async def get_job_status(job_id: str):
-    if job_id not in jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
+    from app.db.crud import get_job_state
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        job = get_job_state(db, job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
 
-    job = jobs[job_id]
+        if job.status == "complete":
+            short_id = job.short_id or ""
+            
+            # Build scenes response if illustrations exist
+            scenes = None
+            if job.scenes_json:
+                from app.models.responses import SceneResponse
+                scenes_data = json.loads(job.scenes_json)
+                scenes = [
+                    SceneResponse(
+                        beat_index=s["beat_index"],
+                        beat_name=s["beat_name"],
+                        text_excerpt=s["text_excerpt"],
+                        timestamp_start=s["timestamp_start"],
+                        timestamp_end=s["timestamp_end"],
+                        image_url=s.get("image_url")
+                    )
+                    for s in scenes_data
+                ]
+            
+            return JobCompleteResponse(
+                job_id=job_id,
+                status="complete",
+                title=job.title,
+                duration_seconds=job.duration_seconds,
+                audio_url=f"/api/story/audio/{job_id}",
+                transcript=job.transcript or "",
+                short_id=short_id,
+                permalink=f"/s/{short_id}" if short_id else "",
+                has_illustrations=bool(job.scenes_json),
+                art_style=job.art_style,
+                scenes=scenes,
+            )
 
-    if job["status"] == "complete":
-        short_id = job.get("short_id", "")
-        
-        # Build scenes response if illustrations exist
-        scenes = None
-        if job.get("scenes"):
-            from app.models.responses import SceneResponse
-            scenes = [
-                SceneResponse(
-                    beat_index=s["beat_index"],
-                    beat_name=s["beat_name"],
-                    text_excerpt=s["text_excerpt"],
-                    timestamp_start=s["timestamp_start"],
-                    timestamp_end=s["timestamp_end"],
-                    image_url=s.get("image_url")
-                )
-                for s in job["scenes"]
-            ]
-        
-        return JobCompleteResponse(
+        return JobStatusResponse(
             job_id=job_id,
-            status="complete",
-            title=job["title"],
-            duration_seconds=job["duration_seconds"],
-            audio_url=f"/api/story/audio/{job_id}",
-            transcript=job.get("transcript", ""),
-            short_id=short_id,
-            permalink=f"/s/{short_id}" if short_id else "",
-            has_illustrations=bool(job.get("scenes")),
-            art_style=job.get("art_style"),
-            scenes=scenes,
+            status=job.status,
+            current_stage=job.current_stage or "",
+            progress=job.progress or 0,
+            total_segments=0,  # Deprecated field
+            error=job.error_message or "",
         )
-
-    return JobStatusResponse(
-        job_id=job_id,
-        status=job["status"],
-        current_stage=job.get("current_stage", ""),
-        progress=job.get("progress", 0),
-        total_segments=job.get("total_segments", 0),
-        error=job.get("error", ""),
-    )
+    finally:
+        db.close()
 
 
 @router.get("/audio/{job_id}")
 async def get_audio(job_id: str, download: bool = False):
-    if job_id not in jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    job = jobs[job_id]
-    if job["status"] != "complete" or "final_audio" not in job:
-        raise HTTPException(status_code=404, detail="Audio not ready")
-
-    audio_bytes = job["final_audio"]
-    disposition = "attachment" if download else "inline"
-
-    return Response(
-        content=audio_bytes,
-        media_type="audio/mpeg",
-        headers={
-            "Content-Disposition": f'{disposition}; filename="story-{job_id}.mp3"',
-            "Content-Length": str(len(audio_bytes)),
-            "Accept-Ranges": "bytes",
-        },
-    )
+    """
+    Get audio for completed job (streams from saved file).
+    Note: Audio is saved to filesystem when story completes.
+    """
+    from app.db.crud import get_story_by_id
+    from app.db.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        # job_id is the same as story_id
+        story = get_story_by_id(db, job_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found or not yet complete")
+        
+        audio_path = Path(story.audio_path)
+        if not audio_path.exists():
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        disposition = "attachment" if download else "inline"
+        return FileResponse(
+            path=audio_path,
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": f'{disposition}; filename="story.mp3"'},
+        )
+    finally:
+        db.close()
 

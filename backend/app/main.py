@@ -46,6 +46,10 @@ async def startup_event():
         from app.db import models  # noqa: F401 - Ensure models are loaded
         init_db()
         logger.info("Database initialized successfully")
+        
+        # Run migrations to add any missing columns/tables
+        from app.db.migrate import run_migrations
+        run_migrations()
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
     

@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 from app.main import app
-from app.routes.story import jobs, _format_kid_details, _cleanup_old_jobs, _friendly_error, JOB_TTL_SECONDS
+from app.routes.story import _format_kid_details, _friendly_error
 
 client = TestClient(app)
 

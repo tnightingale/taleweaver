@@ -1,11 +1,13 @@
 """CRUD operations for story persistence"""
 import secrets
 import string
+import json
 from pathlib import Path
 from typing import Optional, List, Tuple
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from .models import Story
+from .models import Story, JobState
 from app.config import settings
 
 
@@ -244,5 +246,164 @@ def update_story_title(db: Session, short_id: str, new_title: str) -> Optional[S
     story.title = new_title
     db.commit()
     db.refresh(story)
-    
     return story
+
+
+# ============================================================================
+# Job State CRUD (for multi-worker job tracking)
+# ============================================================================
+
+def create_job_state(db: Session, job_id: str, stages: List[str]) -> JobState:
+    """
+    Create new job state entry.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: UUID for the job
+        stages: List of stage names for this job
+        
+    Returns:
+        Created JobState record
+    """
+    job = JobState(
+        job_id=job_id,
+        status="processing",
+        current_stage=stages[0] if stages else "writing",
+        stages=json.dumps(stages),
+        progress=0.0,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def get_job_state(db: Session, job_id: str) -> Optional[JobState]:
+    """
+    Get job state by ID.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        
+    Returns:
+        JobState if found, None otherwise
+    """
+    return db.query(JobState).filter(JobState.job_id == job_id).first()
+
+
+def update_job_stage(db: Session, job_id: str, stage: str, progress: Optional[float] = None):
+    """
+    Update job's current stage and optionally progress.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        stage: New stage name
+        progress: Optional progress percentage (0-100)
+    """
+    job = get_job_state(db, job_id)
+    if job:
+        job.current_stage = stage
+        if progress is not None:
+            job.progress = progress
+        job.updated_at = datetime.utcnow()
+        db.commit()
+
+
+def update_job_progress(db: Session, job_id: str, progress: float, detail: str):
+    """
+    Update job progress and detail message.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        progress: Progress percentage (0-100)
+        detail: Detailed status message (e.g., "Synthesizing segment 5 of 12")
+    """
+    job = get_job_state(db, job_id)
+    if job:
+        job.progress = progress
+        job.progress_detail = detail
+        job.updated_at = datetime.utcnow()
+        db.commit()
+
+
+def mark_job_complete(
+    db: Session,
+    job_id: str,
+    title: str,
+    duration_seconds: int,
+    transcript: str,
+    short_id: str,
+    art_style: Optional[str] = None,
+    scenes: Optional[list] = None,
+):
+    """
+    Mark job as complete with final metadata.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        title: Story title
+        duration_seconds: Audio duration
+        transcript: Full story text
+        short_id: Compact short ID for permalink
+        art_style: Optional art style ID
+        scenes: Optional scene list with illustrations
+    """
+    job = get_job_state(db, job_id)
+    if job:
+        job.status = "complete"
+        job.current_stage = "done"
+        job.progress = 100.0
+        job.title = title
+        job.duration_seconds = duration_seconds
+        job.transcript = transcript
+        job.short_id = short_id
+        job.art_style = art_style
+        if scenes:
+            job.scenes_json = json.dumps(scenes)
+        job.updated_at = datetime.utcnow()
+        db.commit()
+
+
+def mark_job_failed(db: Session, job_id: str, error: str):
+    """
+    Mark job as failed with error message.
+    
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        error: Error message
+    """
+    job = get_job_state(db, job_id)
+    if job:
+        job.status = "failed"
+        job.error_message = error
+        job.updated_at = datetime.utcnow()
+        db.commit()
+
+
+def cleanup_old_jobs(db: Session, max_age_hours: int = 24) -> int:
+    """
+    Delete completed/failed jobs older than threshold.
+    
+    Args:
+        db: SQLAlchemy database session
+        max_age_hours: Maximum age in hours for completed/failed jobs
+        
+    Returns:
+        Number of jobs deleted
+    """
+    cutoff_time = datetime.utcnow() - timedelta(hours=max_age_hours)
+    
+    deleted = db.query(JobState).filter(
+        JobState.status.in_(["complete", "failed"]),
+        JobState.created_at < cutoff_time
+    ).delete(synchronize_session=False)
+    
+    db.commit()
+    return deleted

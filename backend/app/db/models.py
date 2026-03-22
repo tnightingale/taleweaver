@@ -1,5 +1,5 @@
 """SQLAlchemy models for story persistence"""
-from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON
+from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON, Float, LargeBinary, Index
 from datetime import datetime
 from .database import Base
 
@@ -36,6 +36,51 @@ class Story(Base):
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class JobState(Base):
+    """
+    Job state for story generation (shared across gunicorn workers).
+    
+    Replaces in-memory jobs dict to enable multi-worker concurrency.
+    Jobs are stored in database so all workers can see the same state.
+    """
+    __tablename__ = "job_state"
+    
+    # Job identification
+    job_id = Column(String, primary_key=True)
+    
+    # Status tracking
+    status = Column(String, nullable=False, default="processing")  # processing, complete, failed
+    current_stage = Column(String)  # writing, splitting, synthesizing, etc.
+    stages = Column(Text)  # JSON array of stage names
+    
+    # Progress tracking
+    progress = Column(Float, default=0.0)  # 0-100
+    progress_detail = Column(String)  # "Synthesizing segment 5 of 12"
+    
+    # Story metadata (populated when complete)
+    title = Column(String)
+    duration_seconds = Column(Integer)
+    transcript = Column(Text)
+    short_id = Column(String)  # Compact ID for permalink
+    
+    # Illustration metadata
+    art_style = Column(String)
+    scenes_json = Column(Text)  # JSON array of scenes
+    
+    # Error tracking
+    error_message = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_job_status', 'status'),
+        Index('idx_job_created', 'created_at'),
+    )
     
     def __repr__(self):
         return f"<Story(id={self.id}, short_id={self.short_id}, title={self.title})>"
