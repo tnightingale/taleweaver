@@ -11,6 +11,8 @@ export default function CraftRoute() {
   const [craftData, setCraftData] = useState<{profile: KidProfile; type: StoryType} | null>(null);
   const [mood, setMood] = useState<StoryMood | undefined>(undefined);
   const [length, setLength] = useState<StoryLength | undefined>(undefined);
+  const [artStyle, setArtStyle] = useState<string | null>(null);
+  const [customArtStylePrompt, setCustomArtStylePrompt] = useState<string>("");
 
   useEffect(() => {
     const saved = sessionStorage.getItem("taleweaver_craft_data");
@@ -33,7 +35,9 @@ export default function CraftRoute() {
         genre,
         description,
         mood,
-        length
+        length,
+        artStyle || undefined,
+        customArtStylePrompt || undefined
       );
       // Navigate to story generation page
       navigate(`/story/${response.job_id}`);
@@ -48,7 +52,9 @@ export default function CraftRoute() {
         craftData.profile,
         eventId,
         mood,
-        length
+        length,
+        artStyle || undefined,
+        customArtStylePrompt || undefined
       );
       navigate(`/story/${response.job_id}`);
     } catch (err) {
@@ -70,8 +76,12 @@ export default function CraftRoute() {
       storyType={craftData.type}
       mood={mood}
       length={length}
+      artStyle={artStyle}
+      customArtStylePrompt={customArtStylePrompt}
       onMoodChange={setMood}
       onLengthChange={setLength}
+      onArtStyleChange={setArtStyle}
+      onCustomArtStylePromptChange={setCustomArtStylePrompt}
       onSubmitCustom={handleCustomStory}
       onSubmitHistorical={handleHistoricalStory}
       onBack={handleBack}

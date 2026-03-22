@@ -1,5 +1,5 @@
 """SQLAlchemy models for story persistence"""
-from sqlalchemy import Column, String, Integer, DateTime, Text
+from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON
 from datetime import datetime
 from .database import Base
 
@@ -28,6 +28,11 @@ class Story(Base):
     transcript = Column(Text, nullable=False)
     duration_seconds = Column(Integer, nullable=False)
     audio_path = Column(String, nullable=False)  # Filesystem path to MP3
+    
+    # Illustration metadata
+    art_style = Column(String, nullable=True)  # Art style preset ID or "custom"
+    has_illustrations = Column(Boolean, default=False, nullable=False)
+    scene_data = Column(JSON, nullable=True)  # Scene metadata with illustration info
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

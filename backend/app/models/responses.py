@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class JobCreatedResponse(BaseModel):
@@ -18,6 +18,16 @@ class JobStatusResponse(BaseModel):
     error: str = ""
 
 
+class SceneResponse(BaseModel):
+    """Scene metadata with illustration information"""
+    beat_index: int
+    beat_name: str
+    text_excerpt: str
+    timestamp_start: float
+    timestamp_end: float
+    image_url: Optional[str] = None
+
+
 class JobCompleteResponse(BaseModel):
     job_id: str
     status: str
@@ -27,6 +37,9 @@ class JobCompleteResponse(BaseModel):
     transcript: str = ""
     short_id: str = ""
     permalink: str = ""
+    has_illustrations: bool = False
+    art_style: Optional[str] = None
+    scenes: Optional[List[SceneResponse]] = None
 
 
 class StoryResponse(BaseModel):
@@ -44,6 +57,9 @@ class StoryResponse(BaseModel):
     created_at: str
     permalink: str
     audio_url: str
+    has_illustrations: bool = False
+    art_style: Optional[str] = None
+    scenes: Optional[List[SceneResponse]] = None
 
 
 class StoriesListResponse(BaseModel):

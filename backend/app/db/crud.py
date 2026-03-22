@@ -37,6 +37,8 @@ def save_story(
     event_id: str = None,
     mood: str = None,
     length: str = None,
+    art_style: str = None,
+    scene_data: dict = None,
 ) -> Story:
     """
     Save story to database and write audio to filesystem.
@@ -55,6 +57,8 @@ def save_story(
         event_id: Event ID for historical stories
         mood: Story mood (exciting, heartwarming, etc.)
         length: Story length (short, medium, long)
+        art_style: Art style preset ID or "custom"
+        scene_data: Scene metadata with illustration info (JSON)
         
     Returns:
         Created Story database record
@@ -85,6 +89,9 @@ def save_story(
         transcript=transcript,
         duration_seconds=duration_seconds,
         audio_path=str(audio_path),
+        art_style=art_style,
+        has_illustrations=bool(scene_data),
+        scene_data=scene_data,
     )
     db.add(db_story)
     db.commit()

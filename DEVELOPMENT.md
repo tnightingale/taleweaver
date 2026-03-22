@@ -1,6 +1,8 @@
 # Development Guide
 
-**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Docker](#docker) • [Git](#git)
+**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Pull Requests](#pull-requests) • [Docker](#docker) • [Git](#git)
+
+**See also:** [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md) for detailed pull request guidelines
 
 ---
 
@@ -30,10 +32,16 @@ cd /path/to/taleweaver && git merge feature/feature-name && git push
 
 **4. Testing - ALWAYS before push**
 ```bash
-docker compose run --rm backend-test        # All tests must pass
-docker build -t taleweaver:test .           # Build must succeed
-docker run -d -p 8080:80 taleweaver:test    # Container must run
-curl http://localhost:8080/up               # Endpoints must work
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test  # All 146 tests must pass
+docker build -t taleweaver:test .                                                      # Build must succeed
+docker run -d -p 8080:80 taleweaver:test                                              # Container must run
+curl http://localhost:8080/up                                                          # Endpoints must work
+```
+
+**Note:** GitHub Actions CI runs tests automatically on push. Check status before merging:
+```bash
+gh pr checks  # If you have a PR
+# Or check: https://github.com/YOUR_ORG/taleweaver/actions
 ```
 
 **5. Docker - All tests/builds**
@@ -45,10 +53,12 @@ curl http://localhost:8080/up               # Endpoints must work
 - Update `README.md` for new features
 - Create `docs/plans/YYYY-MM-DD-feature-stages.md` for complex features
 
-**7. Large Features - Break into stages**
+**7. Large Features - Staged PRs**
+- Break into logical stages (see [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md))
+- Create PR for each stage or group of related stages
 - Each stage in separate worktree
-- Merge each stage to main independently
 - Track progress in stages document
+- Example: Illustration feature has 5 PRs for 8 stages
 
 ### For Other Developers/Agents
 
@@ -156,18 +166,24 @@ git push origin main
 ### Backend Tests
 
 ```bash
-# All tests (use this most often)
-docker compose run --rm backend-test
+# All tests (use this most often) - MUST pass before pushing
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 
 # Specific file
-docker compose run --rm backend-test sh -c \
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test sh -c \
   "python -m venv /tmp/venv && . /tmp/venv/bin/activate && \
-   apt-get update -qq && apt-get install -qq -y ffmpeg && \
    pip install -q -r requirements.txt && \
+   apt-get update -qq && apt-get install -qq -y ffmpeg > /dev/null 2>&1 && \
    python -m pytest tests/test_story_library.py -v"
 ```
 
-**Current test count:** 137 tests (must all pass)
+**Current test count:** 146 tests (must all pass before pushing)
+
+**Test Isolation:**
+- All tests use isolated database fixtures from `conftest.py`
+- Each test gets a fresh temporary database (no state sharing)
+- Use `test_db` fixture for database access
+- Use `test_client` fixture for API endpoint testing
 
 ### Frontend Build
 

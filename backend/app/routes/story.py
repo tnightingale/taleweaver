@@ -79,9 +79,12 @@ def _load_event(event_id: str) -> Optional[dict]:
 # Maps LangGraph node names to frontend stage names
 NODE_TO_STAGE = {
     "story_writer": "writing",
+    "scene_analyzer": "analyzing_scenes",
     "script_splitter": "splitting",
     "voice_synthesizer": "synthesizing",
+    "illustration_generator": "generating_illustrations",
     "audio_stitcher": "stitching",
+    "timestamp_calculator": "finalizing",
 }
 STAGE_ORDER = list(NODE_TO_STAGE.keys())
 
@@ -134,10 +137,21 @@ async def run_pipeline(job_id: str, state: dict):
         jobs[job_id]["duration_seconds"] = final_state["duration_seconds"]
         jobs[job_id]["final_audio"] = final_state["final_audio"]
         jobs[job_id]["transcript"] = final_state.get("story_text", "")
+        jobs[job_id]["art_style"] = state.get("art_style")
+        jobs[job_id]["scenes"] = final_state.get("scenes")
 
         # Persist story to database
         from app.db.crud import save_story
         from app.db.database import SessionLocal
+        
+        # Build scene_data for database
+        scene_data = None
+        if final_state.get("scenes"):
+            scene_data = {
+                "scenes": final_state["scenes"],
+                "art_style_prompt": state.get("art_style"),
+                "character_description": final_state.get("character_description"),
+            }
         
         db = SessionLocal()
         try:
@@ -155,6 +169,8 @@ async def run_pipeline(job_id: str, state: dict):
                 transcript=final_state.get("story_text", ""),
                 duration_seconds=final_state["duration_seconds"],
                 audio_bytes=final_state["final_audio"],
+                art_style=state.get("art_style"),
+                scene_data=scene_data,
             )
             jobs[job_id]["short_id"] = db_story.short_id
             logger.info(f"[{job_id}] Story persisted with short_id={db_story.short_id}")
@@ -176,14 +192,22 @@ async def create_custom_story(request: CustomStoryRequest):
     _cleanup_old_jobs()
 
     job_id = str(uuid.uuid4())
+    
+    # Determine stages based on whether illustrations are enabled
+    if request.art_style:
+        stages = ["writing", "analyzing_scenes", "splitting", "synthesizing", "generating_illustrations", "stitching", "finalizing"]
+    else:
+        stages = ["writing", "splitting", "synthesizing", "stitching"]
+    
     jobs[job_id] = {
         "status": "processing",
         "current_stage": "writing",
-        "stages": ["writing", "splitting", "synthesizing", "stitching"],
+        "stages": stages,
         "created_at": time.time(),
     }
 
     state = {
+        "job_id": job_id,
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
         "kid_details": _format_kid_details(request.kid),
@@ -194,6 +218,8 @@ async def create_custom_story(request: CustomStoryRequest):
         "event_data": None,
         "mood": request.mood,
         "length": request.length,
+        "art_style": request.art_style,
+        "custom_art_style_prompt": request.custom_art_style_prompt,
         "story_text": "",
         "title": "",
         "segments": [],
@@ -201,6 +227,8 @@ async def create_custom_story(request: CustomStoryRequest):
         "final_audio": b"",
         "duration_seconds": 0,
         "error": None,
+        "scenes": None,
+        "character_description": None,
     }
 
     task = asyncio.create_task(run_pipeline(job_id, state))
@@ -209,7 +237,7 @@ async def create_custom_story(request: CustomStoryRequest):
     return JobCreatedResponse(
         job_id=job_id,
         status="processing",
-        stages=["writing", "splitting", "synthesizing", "stitching"],
+        stages=stages,
         current_stage="writing",
     )
 
@@ -223,14 +251,22 @@ async def create_historical_story(request: HistoricalStoryRequest):
     _cleanup_old_jobs()
 
     job_id = str(uuid.uuid4())
+    
+    # Determine stages based on whether illustrations are enabled
+    if request.art_style:
+        stages = ["writing", "analyzing_scenes", "splitting", "synthesizing", "generating_illustrations", "stitching", "finalizing"]
+    else:
+        stages = ["writing", "splitting", "synthesizing", "stitching"]
+    
     jobs[job_id] = {
         "status": "processing",
         "current_stage": "writing",
-        "stages": ["writing", "splitting", "synthesizing", "stitching"],
+        "stages": stages,
         "created_at": time.time(),
     }
 
     state = {
+        "job_id": job_id,
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
         "kid_details": _format_kid_details(request.kid),
@@ -241,6 +277,8 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "event_data": event_data,
         "mood": request.mood,
         "length": request.length,
+        "art_style": request.art_style,
+        "custom_art_style_prompt": request.custom_art_style_prompt,
         "story_text": "",
         "title": "",
         "segments": [],
@@ -248,6 +286,8 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "final_audio": b"",
         "duration_seconds": 0,
         "error": None,
+        "scenes": None,
+        "character_description": None,
     }
 
     task = asyncio.create_task(run_pipeline(job_id, state))
@@ -256,7 +296,7 @@ async def create_historical_story(request: HistoricalStoryRequest):
     return JobCreatedResponse(
         job_id=job_id,
         status="processing",
-        stages=["writing", "splitting", "synthesizing", "stitching"],
+        stages=stages,
         current_stage="writing",
     )
 
@@ -270,6 +310,23 @@ async def get_job_status(job_id: str):
 
     if job["status"] == "complete":
         short_id = job.get("short_id", "")
+        
+        # Build scenes response if illustrations exist
+        scenes = None
+        if job.get("scenes"):
+            from app.models.responses import SceneResponse
+            scenes = [
+                SceneResponse(
+                    beat_index=s["beat_index"],
+                    beat_name=s["beat_name"],
+                    text_excerpt=s["text_excerpt"],
+                    timestamp_start=s["timestamp_start"],
+                    timestamp_end=s["timestamp_end"],
+                    image_url=s.get("image_url")
+                )
+                for s in job["scenes"]
+            ]
+        
         return JobCompleteResponse(
             job_id=job_id,
             status="complete",
@@ -279,6 +336,9 @@ async def get_job_status(job_id: str):
             transcript=job.get("transcript", ""),
             short_id=short_id,
             permalink=f"/s/{short_id}" if short_id else "",
+            has_illustrations=bool(job.get("scenes")),
+            art_style=job.get("art_style"),
+            scenes=scenes,
         )
 
     return JobStatusResponse(

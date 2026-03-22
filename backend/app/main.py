@@ -123,6 +123,22 @@ async def get_story_permalink(short_id: str):
         if not story:
             raise HTTPException(status_code=404, detail="Story not found")
         
+        # Build scenes response if illustrations exist
+        scenes = None
+        if story.has_illustrations and story.scene_data:
+            from app.models.responses import SceneResponse
+            scenes = [
+                SceneResponse(
+                    beat_index=s["beat_index"],
+                    beat_name=s["beat_name"],
+                    text_excerpt=s["text_excerpt"],
+                    timestamp_start=s["timestamp_start"],
+                    timestamp_end=s["timestamp_end"],
+                    image_url=s.get("image_url")
+                )
+                for s in story.scene_data.get("scenes", [])
+            ]
+        
         return StoryResponse(
             id=story.id,
             short_id=story.short_id,
@@ -137,6 +153,9 @@ async def get_story_permalink(short_id: str):
             created_at=story.created_at.isoformat(),
             permalink=f"/s/{story.short_id}",
             audio_url=f"/api/permalink/{story.short_id}/audio",
+            has_illustrations=story.has_illustrations,
+            art_style=story.art_style,
+            scenes=scenes,
         )
     finally:
         db.close()
