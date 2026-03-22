@@ -2,8 +2,9 @@
 
 **Feature:** Detailed Progress Tracking with Progress Ring  
 **Created:** 2026-03-22  
+**Updated:** 2026-03-22 (added navigation persistence requirements)  
 **Status:** 🔵 PLANNING  
-**Estimated Time:** 4-6 hours
+**Estimated Time:** 6-8 hours (including navigation improvements)
 
 ---
 
@@ -30,7 +31,10 @@ Add detailed progress tracking to story generation with a visual progress ring a
 - Long waits without knowing what's happening (especially with illustrations)
 - No sense of completion percentage
 - Can't tell if it's stuck or just slow
-- Illustration generation can take 2-3 minutes with no feedback
+- Illustration generation can take 5-10 minutes with no feedback
+- **Can't navigate away during generation** - lose job ID if leaving page
+- **No way to get back to in-progress job** - URL not bookmarkable/shareable
+- **No "Recent Generations" list** to find in-progress jobs
 
 ---
 
@@ -61,6 +65,37 @@ Add detailed progress tracking to story generation with a visual progress ring a
 3. **Stage label** - Current stage name (existing, e.g., "Generating audio...")
 4. **Progress percentage** - "75% complete"
 5. **Detail message** - "Generating illustration 3 of 8", "Synthesizing segment 12 of 15"
+
+---
+
+## Context for Implementation
+
+### Current System Overview
+
+**Architecture:**
+- LangGraph pipeline with 7 nodes (with illustrations) or 4 nodes (without)
+- Job state stored in database (job_state table) - shared across gunicorn workers
+- Polling: Frontend polls `/api/story/status/{job_id}` every 2 seconds
+- Stages tracked in routes/story.py run_pipeline() function
+
+**Key Files:**
+- `backend/app/routes/story.py` - Job creation, status endpoint, run_pipeline
+- `backend/app/graph/pipeline.py` - LangGraph node definitions
+- `backend/app/graph/nodes/*.py` - Individual pipeline nodes
+- `backend/app/db/models.py` - JobState model
+- `frontend/src/routes/StoryRoute.tsx` - Polling and display logic
+- `frontend/src/components/StoryScreen.tsx` - Generation UI
+
+**How Progress Currently Works:**
+1. Job created → `create_job_state(db, job_id, stages)`
+2. Pipeline runs → `update_job_stage(db, job_id, next_stage)` after each node
+3. Frontend polls → `get_job_status()` returns current_stage
+4. Frontend displays → STAGE_LABELS[current_stage]
+
+**What's Missing:**
+- No sub-progress within stages (e.g., "segment 5 of 12")
+- No overall percentage (0-100%)
+- Progress updates not granular enough
 
 ---
 
@@ -122,9 +157,10 @@ Example:
 - [ ] Example: `jobs[job_id]["progress_detail"] = "Preparing character voices..."`
 
 **1.4 Add Progress to Voice Synthesizer Node**
-- [ ] Import jobs dict in voice_synthesizer.py
+- [ ] Import SessionLocal and update_job_progress from crud
 - [ ] Get job_id from state (state["job_id"])
 - [ ] In synthesis loop, update progress after each segment:
+- [ ] **NOTE:** Voice synthesizer already has this partially implemented! Check existing code first.
   ```python
   if job_id in jobs:
       segment_progress = (i + 1) / len(segments)
@@ -136,9 +172,11 @@ Example:
 - [ ] Handle job_id not in jobs (tests)
 
 **1.5 Add Progress to Illustration Generator Node**
-- [ ] Import jobs dict in illustration_generator.py
-- [ ] Get job_id from state
+- [ ] Import SessionLocal and update_job_progress from crud
+- [ ] Get job_id from state (already available: state["job_id"])
 - [ ] In illustration loop, update progress after each image:
+- [ ] **NOTE:** This may already be partially implemented. Check current code.
+- [ ] **IMPORTANT:** Wrap database calls in try/except (don't fail generation on DB errors)
   ```python
   if job_id in jobs:
       image_progress = (i + 1) / len(scenes)
@@ -610,6 +648,113 @@ def test_progress_reaches_100_on_completion(test_client, test_db):
 
 ---
 
-**Estimated Time:** 4-6 hours (2-3 backend + 2-3 frontend)  
-**Priority:** Medium (UX improvement)  
+---
+
+## Additional Requirements: Navigation Persistence
+
+### Problem
+
+**Current Limitation:**
+- Users CANNOT navigate away during generation (5-10 min wait)
+- If user leaves `/story/{jobId}` page, they lose the job ID
+- No way to return to check on in-progress job
+- URL is not shareable or bookmarkable during generation
+
+**User Scenarios:**
+1. User starts story generation → wants to do something else → can't leave page
+2. User accidentally closes tab → loses job ID → can't find their story
+3. Long generation (10 min) → user needs to multitask → stuck waiting
+
+### Solution Required
+
+**Add to Progress Indicator Implementation:**
+
+#### 1. Persist In-Progress Jobs
+
+**Store in localStorage:**
+```typescript
+// When job created
+localStorage.setItem('taleweaver_active_job', JSON.stringify({
+  jobId: job.job_id,
+  startedAt: Date.now(),
+  kidName: request.kid.name
+}));
+
+// Clear when complete or user creates new story
+localStorage.removeItem('taleweaver_active_job');
+```
+
+#### 2. "Continue Watching" Link
+
+**Add to navigation/hero screen:**
+```tsx
+// Check for active job on mount
+const activeJob = localStorage.getItem('taleweaver_active_job');
+if (activeJob) {
+  const { jobId, startedAt } = JSON.parse(activeJob);
+  const elapsed = Date.now() - startedAt;
+  
+  // If recent (< 30 min), show link
+  if (elapsed < 30 * 60 * 1000) {
+    return (
+      <div className="glass-card p-4">
+        <p>Story in progress...</p>
+        <button onClick={() => navigate(`/story/${jobId}`)}>
+          Continue Watching
+        </button>
+      </div>
+    );
+  }
+}
+```
+
+#### 3. Recent Generations List
+
+**Add to library or separate tab:**
+- Show jobs from last 24 hours (from job_state table)
+- Include status: processing, complete, failed
+- Click to navigate to `/story/{jobId}`
+- Auto-refresh processing jobs
+
+**Query:**
+```sql
+SELECT job_id, status, current_stage, progress, title, created_at
+FROM job_state
+WHERE created_at > datetime('now', '-24 hours')
+ORDER BY created_at DESC
+LIMIT 10
+```
+
+#### 4. Make Job URLs Bookmarkable
+
+**Ensure:**
+- `/story/{jobId}` works for in-progress jobs (already does ✅)
+- User can bookmark URL and return later
+- Share URL with others (e.g., parent shares with partner)
+
+**Implementation:**
+
+**Frontend:**
+- Save active job to localStorage on job creation
+- Check localStorage on HeroRoute mount
+- Show "Continue Watching" if active job exists
+- Clear localStorage when job completes or user creates new
+
+**Backend:**
+- GET /api/jobs/recent endpoint (return jobs from last 24h)
+- Cleanup old jobs from job_state (>24h and complete/failed)
+
+**Tasks:**
+- [ ] Add localStorage persistence in CraftRoute after job creation
+- [ ] Add "Continue Watching" UI in HeroRoute
+- [ ] Add GET /api/jobs/recent endpoint
+- [ ] Add RecentJobs component (optional tab in library)
+- [ ] Update cleanup to preserve jobs for 24h (not 1h)
+
+**Estimated Additional Time:** +2 hours
+
+---
+
+**Estimated Time:** 6-8 hours (4-6 progress indicator + 2 navigation)  
+**Priority:** Medium-High (UX improvement + safety)  
 **Ready to Implement:** Yes
