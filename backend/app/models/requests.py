@@ -23,6 +23,8 @@ class CustomStoryRequest(BaseModel):
     description: str = Field(max_length=500)
     mood: Optional[VALID_MOODS] = None
     length: Optional[VALID_LENGTHS] = None
+    art_style: Optional[str] = Field(default=None, max_length=50)  # Art style preset ID
+    custom_art_style_prompt: Optional[str] = Field(default=None, max_length=500)  # Custom style prompt
 
 
 class HistoricalStoryRequest(BaseModel):
@@ -30,6 +32,8 @@ class HistoricalStoryRequest(BaseModel):
     event_id: str = Field(max_length=100)
     mood: Optional[VALID_MOODS] = None
     length: Optional[VALID_LENGTHS] = None
+    art_style: Optional[str] = Field(default=None, max_length=50)  # Art style preset ID
+    custom_art_style_prompt: Optional[str] = Field(default=None, max_length=500)  # Custom style prompt
 
 
 class UpdateStoryTitleRequest(BaseModel):
