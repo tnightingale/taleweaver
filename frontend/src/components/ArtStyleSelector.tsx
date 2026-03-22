@@ -44,6 +44,7 @@ export default function ArtStyleSelector({
     <div className="space-y-4">
       {/* Collapsible header */}
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full glass-card p-4 flex items-center justify-between hover:shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all"
       >
@@ -82,6 +83,7 @@ export default function ArtStyleSelector({
             <div className="glass-card p-6 space-y-4">
               {/* Skip illustrations button */}
               <motion.button
+                type="button"
                 onClick={() => onSelect(null)}
                 className={`w-full p-4 rounded-lg border-2 transition-all ${
                   selectedStyle === null
@@ -107,6 +109,7 @@ export default function ArtStyleSelector({
                   .filter((style) => style.id !== "custom")
                   .map((style) => (
                     <motion.button
+                      type="button"
                       key={style.id}
                       onClick={() => onSelect(style.id)}
                       className={`p-4 rounded-lg border-2 transition-all text-left ${
@@ -133,6 +136,7 @@ export default function ArtStyleSelector({
               {/* Custom style option */}
               <div>
                 <motion.button
+                  type="button"
                   onClick={() => onSelect("custom")}
                   className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
                     selectedStyle === "custom"
