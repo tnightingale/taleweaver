@@ -69,8 +69,12 @@ class JobState(Base):
     art_style = Column(String)
     scenes_json = Column(Text)  # JSON array of scenes
     
-    # Error tracking
+    # Error tracking and resume capability
     error_message = Column(Text)
+    resumable = Column(Boolean, default=False, nullable=False)  # Can job be resumed?
+    partial_data_json = Column(Text)  # JSON checkpoint state
+    checkpoint_node = Column(String)  # Last successful node
+    retry_count = Column(Integer, default=0, nullable=False)  # Retry attempts
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

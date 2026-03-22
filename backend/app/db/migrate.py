@@ -79,6 +79,30 @@ def run_migrations():
             migrations_applied.append("job_state table")
             logger.info("✅ Created table: job_state with indexes")
         
+        # Migration 3: Add resume fields to job_state (2026-03-22)
+        cursor.execute("PRAGMA table_info(job_state)")
+        job_state_columns = {row[1] for row in cursor.fetchall()}
+        
+        if "resumable" not in job_state_columns:
+            cursor.execute("ALTER TABLE job_state ADD COLUMN resumable INTEGER DEFAULT 0 NOT NULL")
+            migrations_applied.append("job_state.resumable")
+            logger.info("✅ Added column: job_state.resumable")
+        
+        if "partial_data_json" not in job_state_columns:
+            cursor.execute("ALTER TABLE job_state ADD COLUMN partial_data_json TEXT")
+            migrations_applied.append("job_state.partial_data_json")
+            logger.info("✅ Added column: job_state.partial_data_json")
+        
+        if "checkpoint_node" not in job_state_columns:
+            cursor.execute("ALTER TABLE job_state ADD COLUMN checkpoint_node TEXT")
+            migrations_applied.append("job_state.checkpoint_node")
+            logger.info("✅ Added column: job_state.checkpoint_node")
+        
+        if "retry_count" not in job_state_columns:
+            cursor.execute("ALTER TABLE job_state ADD COLUMN retry_count INTEGER DEFAULT 0 NOT NULL")
+            migrations_applied.append("job_state.retry_count")
+            logger.info("✅ Added column: job_state.retry_count")
+        
         conn.commit()
         
         if migrations_applied:
