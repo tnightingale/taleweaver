@@ -1,6 +1,8 @@
 # Development Guide
 
-**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Docker](#docker) • [Git](#git)
+**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Pull Requests](#pull-requests) • [Docker](#docker) • [Git](#git)
+
+**See also:** [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md) for detailed pull request guidelines
 
 ---
 
@@ -51,10 +53,12 @@ gh pr checks  # If you have a PR
 - Update `README.md` for new features
 - Create `docs/plans/YYYY-MM-DD-feature-stages.md` for complex features
 
-**7. Large Features - Break into stages**
+**7. Large Features - Staged PRs**
+- Break into logical stages (see [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md))
+- Create PR for each stage or group of related stages
 - Each stage in separate worktree
-- Merge each stage to main independently
 - Track progress in stages document
+- Example: Illustration feature has 5 PRs for 8 stages
 
 ### For Other Developers/Agents
 
