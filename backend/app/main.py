@@ -150,7 +150,7 @@ async def get_story_permalink(short_id: str):
             event_id=story.event_id,
             transcript=story.transcript,
             duration_seconds=story.duration_seconds,
-            created_at=story.created_at.isoformat(),
+            created_at=story.created_at.isoformat() + 'Z',  # Append Z to indicate UTC
             permalink=f"/s/{story.short_id}",
             audio_url=f"/api/permalink/{story.short_id}/audio",
             has_illustrations=story.has_illustrations,
@@ -226,7 +226,7 @@ async def list_all_stories(
                 event_id=story.event_id,
                 transcript=story.transcript,
             duration_seconds=story.duration_seconds,
-            created_at=story.created_at.isoformat(),
+            created_at=story.created_at.isoformat() + 'Z',  # Append Z to indicate UTC
             permalink=f"/s/{story.short_id}",
             audio_url=f"/api/permalink/{story.short_id}/audio",
             )
@@ -286,7 +286,7 @@ async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRe
             event_id=story.event_id,
             transcript=story.transcript,
             duration_seconds=story.duration_seconds,
-            created_at=story.created_at.isoformat(),
+            created_at=story.created_at.isoformat() + 'Z',  # Append Z to indicate UTC
             permalink=f"/s/{story.short_id}",
             audio_url=f"/api/permalink/{story.short_id}/audio",
         )
