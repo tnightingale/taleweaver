@@ -65,8 +65,10 @@ class NanoBanana2Provider(IllustrationProvider):
         # Combine prompt with art style
         full_prompt = f"{prompt}, {art_style}" if art_style else prompt
         
-        logger.info(f"Generating image with NanoBanana 2 (aspect_ratio={aspect_ratio})")
-        logger.debug(f"Prompt: {full_prompt[:200]}...")
+        logger.info(f"🎨 Generating image with NanoBanana 2 (aspect_ratio={aspect_ratio})")
+        logger.debug(f"   Prompt: {full_prompt[:200]}...")
+        if reference_image_url:
+            logger.debug(f"   Reference image: {reference_image_url}")
         
         try:
             # Prepare generation config
@@ -125,8 +127,25 @@ class NanoBanana2Provider(IllustrationProvider):
             raise Exception("No image found in Gemini response")
             
         except Exception as e:
-            logger.error(f"NanoBanana 2 image generation failed: {e}")
-            raise
+            # Enhanced error logging for debugging
+            logger.exception(f"❌ NanoBanana 2 image generation failed")
+            logger.error(f"   Error type: {type(e).__name__}")
+            logger.error(f"   Error message: {str(e)}")
+            logger.error(f"   Prompt length: {len(full_prompt)} chars")
+            logger.error(f"   Model: {self.model_id}")
+            if reference_image_url:
+                logger.error(f"   Reference image: {reference_image_url}")
+            
+            # Check for specific error types
+            error_msg = str(e).lower()
+            if "quota" in error_msg or "limit exceeded" in error_msg:
+                logger.error(f"   🔴 QUOTA ERROR - Google Gemini quota exceeded")
+            elif "429" in error_msg or "rate limit" in error_msg:
+                logger.error(f"   🔴 RATE LIMIT - Too many requests to Google API")
+            elif "401" in error_msg or "403" in error_msg or "auth" in error_msg:
+                logger.error(f"   🔴 AUTH ERROR - Check GOOGLE_API_KEY environment variable")
+            
+            raise  # Re-raise with context
     
     def get_provider_info(self) -> dict:
         """Get provider metadata"""
