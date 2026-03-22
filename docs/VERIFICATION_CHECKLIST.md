@@ -183,6 +183,10 @@ curl http://localhost:8888/
 
 **Status:** Configuration valid ✅
 
+**⚠️ Note:** CI will not run until PR #1 is merged to main. GitHub Actions workflows must exist in the default branch to execute. The workflow file is in the feature branches but won't trigger until merged.
+
+**After PR #1 merges:** CI will automatically run on PRs #2, #3, #4
+
 ---
 
 ## Architecture Verification
