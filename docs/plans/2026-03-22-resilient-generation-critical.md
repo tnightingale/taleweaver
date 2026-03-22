@@ -59,10 +59,12 @@
 
 Given the active production bug and highest-value improvements:
 
-### Phase 1: Fix Illustration Generator (IMMEDIATE - 2-3 hours)
+### Phase 1: Fix Illustration Generator ✅ COMPLETE
 **Impact:** Fixes current bug, preserves partial images  
 **Complexity:** Low  
-**Priority:** 🔴 CRITICAL
+**Priority:** 🔴 CRITICAL  
+**Status:** ✅ Merged to main (commits 9c713e3, ddfc085)  
+**Tests:** 5 new tests (159/159 passing)
 
 ### Phase 2: Voice Synthesizer Resilience (HIGH - 3-4 hours)
 **Impact:** Prevents worst data loss (expensive TTS quota)  

@@ -6,11 +6,12 @@
 
 ## 🔴 Active Issues
 
-### Issue 1: Only First Illustration Generates (2026-03-22)
+### Issue 1: Only First Illustration Generates (2026-03-22) - ✅ FIXED
 
 **Severity:** High  
 **Affects:** Story generation with illustrations  
-**Status:** 🔴 ACTIVE - Under investigation
+**Status:** ✅ FIXED - Merged to main  
+**Fix Deployed:** Pending Once auto-update
 
 **Symptom:**
 - Story generation with illustrations only produces first image
