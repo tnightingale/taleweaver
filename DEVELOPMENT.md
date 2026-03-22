@@ -1,8 +1,10 @@
 # Development Guide
 
-**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Pull Requests](#pull-requests) • [Docker](#docker) • [Git](#git)
+**Quick Links:** [Standards](#standards) • [Workflows](#workflows) • [Testing](#testing) • [Pull Requests](#pull-requests) • [Database](#database-migrations) • [Docker](#docker) • [Git](#git)
 
-**See also:** [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md) for detailed pull request guidelines
+**See also:** 
+- [PR_WORKFLOW.md](./docs/PR_WORKFLOW.md) - Pull request guidelines
+- [DATABASE_MIGRATIONS.md](./docs/DATABASE_MIGRATIONS.md) - Database migration strategy
 
 ---
 
@@ -213,6 +215,38 @@ curl http://localhost:8080/                # Frontend
 # Clean up
 docker stop $(docker ps -q --filter ancestor=taleweaver:test)
 ```
+
+---
+
+## Database Migrations
+
+**Auto-Migration System:**
+- Migrations run automatically on container startup
+- No manual SQL execution required
+- Safe, idempotent, logged
+
+**See:** [DATABASE_MIGRATIONS.md](./docs/DATABASE_MIGRATIONS.md) for complete guide
+
+**Quick Reference:**
+
+```bash
+# Add new migration (edit this file)
+backend/app/db/migrate.py
+
+# Test locally
+docker compose up app
+# Check logs for: "✅ Created table: your_table"
+
+# Deploy
+git push origin main  # CI builds, Once auto-updates, migrations run
+
+# Verify in production
+once logs taleweaver | grep migration
+```
+
+**Current migrations:**
+1. Illustration fields (art_style, has_illustrations, scene_data)
+2. Job state table (job_state with indexes)
 
 ---
 
