@@ -1,6 +1,9 @@
 """
-TDD Tests for Permalink API Routes
-Testing the permalink endpoints work correctly
+Tests for Permalink API Routes
+Testing /api/permalink/{short_id} endpoints (backend API)
+
+Note: /s/{short_id} routes are handled by frontend SPA in production (Caddy routing).
+Backend provides /api/permalink/{short_id} which frontend fetches data from.
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +20,7 @@ init_db()
 
 
 def test_get_story_by_short_id_returns_metadata():
-    """GET /s/{short_id} returns story metadata"""
+    """GET /api/permalink/{short_id} returns story metadata"""
     # Create a story for testing
     db = SessionLocal()
     try:
@@ -39,7 +42,7 @@ def test_get_story_by_short_id_returns_metadata():
     finally:
         db.close()
     
-    response = client.get(f"/s/{short_id}")
+    response = client.get(f"/api/permalink/{short_id}")
     assert response.status_code == 200
     
     data = response.json()
@@ -52,12 +55,12 @@ def test_get_story_by_short_id_returns_metadata():
     assert data["genre"] == "fantasy"
     assert data["transcript"] == "Once upon a time in a magical land..."
     assert data["duration_seconds"] == 180
-    assert data["permalink"] == f"/s/{short_id}"
-    assert data["audio_url"] == f"/s/{short_id}/audio"
+    assert data["permalink"] == f"/s/{short_id}"  # Frontend permalink format
+    assert data["audio_url"] == f"/api/permalink/{short_id}/audio"  # Backend API format
 
 
 def test_get_story_audio_by_short_id():
-    """GET /s/{short_id}/audio streams audio file"""
+    """GET /api/permalink/{short_id}/audio streams audio file"""
     # Create story
     db = SessionLocal()
     try:
@@ -76,7 +79,7 @@ def test_get_story_audio_by_short_id():
     finally:
         db.close()
     
-    response = client.get(f"/s/{short_id}/audio")
+    response = client.get(f"/api/permalink/{short_id}/audio")
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/mpeg"
     assert b"test audio content for permalink" in response.content
@@ -84,13 +87,13 @@ def test_get_story_audio_by_short_id():
 
 def test_short_id_not_found_returns_404():
     """Non-existent short ID returns 404"""
-    response = client.get("/s/notfound")
+    response = client.get("/api/permalink/notfound")
     assert response.status_code == 404
 
 
 def test_short_id_audio_not_found_returns_404():
     """Non-existent short ID for audio returns 404"""
-    response = client.get("/s/notfound/audio")
+    response = client.get("/api/permalink/notfound/audio")
     assert response.status_code == 404
 
 
@@ -114,7 +117,7 @@ def test_audio_streaming_has_correct_headers():
     finally:
         db.close()
     
-    response = client.get(f"/s/{short_id}/audio")
+    response = client.get(f"/api/permalink/{short_id}/audio")
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/mpeg"
     assert "inline" in response.headers["content-disposition"]
