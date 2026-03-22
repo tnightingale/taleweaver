@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
-from app.routes.story import run_pipeline, jobs
+from app.routes.story import run_pipeline
 
 
 @pytest.mark.asyncio

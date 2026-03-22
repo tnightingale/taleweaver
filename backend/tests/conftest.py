@@ -47,6 +47,10 @@ def test_db():
     # Initialize tables
     init_db()
     
+    # Run migrations (creates job_state table and adds any missing columns)
+    from app.db.migrate import run_migrations
+    run_migrations()
+    
     # Create and yield session
     session = db_module.SessionLocal()
     try:
