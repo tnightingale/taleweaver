@@ -777,10 +777,12 @@ useEffect(() => {
 ```
 
 **Benefits:**
-- Works across devices/browsers (database source of truth)
-- Shows ALL in-progress jobs (no auth system)
-- Can see others' jobs (acceptable for family app)
-- Survives browser data clearing
+- ✅ Works across devices/browsers (database source of truth)
+- ✅ Shows ALL in-progress jobs to ALL users
+- ✅ **No auth required** - perfect for family/household app
+- ✅ Parent 1 can check on Parent 2's generating story
+- ✅ Survives browser data clearing
+- ✅ Helpful transparency in multi-user household
 
 #### 4. Make Job URLs Bookmarkable
 
