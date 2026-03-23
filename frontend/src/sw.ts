@@ -34,10 +34,12 @@ self.addEventListener('activate', (event) => {
     Promise.all([
       self.clients.claim(),
       // Remove stale caches (old Workbox precache versions, etc.)
+      // Clean up old caches, but keep Workbox precache (starts with 'workbox-precache')
+      // and our expected runtime caches
       caches.keys().then((names) =>
         Promise.all(
           names
-            .filter((name) => !EXPECTED_CACHES.has(name))
+            .filter((name) => !EXPECTED_CACHES.has(name) && !name.startsWith('workbox-precache'))
             .map((name) => caches.delete(name))
         )
       ),

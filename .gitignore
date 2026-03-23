@@ -17,3 +17,5 @@ start.sh
 *.png
 .vite/
 once-env-backup.txt
+e2e/test-results/
+e2e/playwright-report/
