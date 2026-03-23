@@ -332,18 +332,20 @@ export default function IllustratedStoryPlayer({
               className={seekBarClass}
               style={seekBarStyle}
             />
-            {/* Scene markers */}
-            {scenes.map((scene, i) => (
-              <button
-                key={i}
-                onClick={() => jumpToScene(i)}
-                className="absolute top-0 w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
-                style={{
-                  left: `${(scene.timestamp_start / duration) * 100}%`,
-                  transform: "translate(-50%, -25%)",
-                }}
-              />
-            ))}
+            {/* Scene markers — px-2 matches the range thumb radius so dots align with the track */}
+            <div className="absolute inset-0 px-2 pointer-events-none">
+              {scenes.map((scene, i) => (
+                <button
+                  key={i}
+                  onClick={() => jumpToScene(i)}
+                  className="absolute top-0 w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer pointer-events-auto"
+                  style={{
+                    left: `${(scene.timestamp_start / duration) * 100}%`,
+                    transform: "translate(-50%, -25%)",
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
           <span className="text-[10px] text-starlight/50 font-mono shrink-0 w-[4.5rem] text-right">
@@ -394,18 +396,21 @@ export default function IllustratedStoryPlayer({
               className={seekBarClass}
               style={seekBarStyle}
             />
-            {scenes.map((scene, i) => (
-              <button
-                key={i}
-                onClick={() => jumpToScene(i)}
-                className="absolute top-0 w-2 h-2 bg-purple-300 rounded-full hover:scale-150 transition-transform cursor-pointer"
-                style={{
-                  left: `${(scene.timestamp_start / duration) * 100}%`,
-                  transform: "translate(-50%, -25%)",
-                }}
-                title={scene.beat_name}
-              />
-            ))}
+            {/* Scene markers — px-2 matches the range thumb radius */}
+            <div className="absolute inset-0 px-2 pointer-events-none">
+              {scenes.map((scene, i) => (
+                <button
+                  key={i}
+                  onClick={() => jumpToScene(i)}
+                  className="absolute top-0 w-2 h-2 bg-purple-300 rounded-full hover:scale-150 transition-transform cursor-pointer pointer-events-auto"
+                  style={{
+                    left: `${(scene.timestamp_start / duration) * 100}%`,
+                    transform: "translate(-50%, -25%)",
+                  }}
+                  title={scene.beat_name}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
