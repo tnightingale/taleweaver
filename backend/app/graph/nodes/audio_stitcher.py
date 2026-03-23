@@ -34,11 +34,12 @@ def _load_background_music(mood: Optional[str], target_duration_ms: int) -> Opti
     return trimmed + MUSIC_VOLUME_DB
 
 
-def _stitch_sync(audio_segments: List[bytes], mood: Optional[str]) -> dict:
+def _stitch_sync(audio_segments: List[bytes], mood: Optional[str], output_path: Optional[Path] = None) -> dict:
     """
     CPU-bound audio stitching — runs in a thread pool, never on the event loop.
 
-    Combines audio segments with pauses, overlays background music, and exports MP3.
+    Combines audio segments with pauses, overlays background music, and exports
+    directly to disk (if output_path given) to avoid holding the final MP3 in memory.
     """
     pause = AudioSegment.silent(duration=PAUSE_MS)
     combined = AudioSegment.empty()
@@ -55,17 +56,31 @@ def _stitch_sync(audio_segments: List[bytes], mood: Optional[str]) -> dict:
     if bg_music is not None:
         combined = combined.overlay(bg_music)
 
-    buf = io.BytesIO()
-    combined.export(buf, format="mp3")
-    final_bytes = buf.getvalue()
     duration_seconds = int(len(combined) / 1000)
 
-    logger.info(f"Final audio: duration={duration_seconds}s, size={len(final_bytes)} bytes")
-
-    return {"final_audio": final_bytes, "duration_seconds": duration_seconds}
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        combined.export(str(output_path), format="mp3")
+        file_size = output_path.stat().st_size
+        logger.info(f"Final audio written to disk: {output_path}, duration={duration_seconds}s, size={file_size} bytes")
+        return {"final_audio_path": str(output_path), "duration_seconds": duration_seconds}
+    else:
+        # Fallback: return bytes in memory (for tests without storage)
+        buf = io.BytesIO()
+        combined.export(buf, format="mp3")
+        final_bytes = buf.getvalue()
+        logger.info(f"Final audio: duration={duration_seconds}s, size={len(final_bytes)} bytes")
+        return {"final_audio": final_bytes, "duration_seconds": duration_seconds}
 
 
 async def audio_stitcher(state: StoryState) -> dict:
     audio_segments = state["audio_segments"]
     mood = state.get("mood")
-    return await asyncio.to_thread(_stitch_sync, audio_segments, mood)
+
+    # Write directly to disk when we have a job_id (production pipeline)
+    output_path = None
+    job_id = state.get("job_id")
+    if job_id:
+        output_path = settings.storage_path / "stories" / job_id / "audio.mp3"
+
+    return await asyncio.to_thread(_stitch_sync, audio_segments, mood, output_path)

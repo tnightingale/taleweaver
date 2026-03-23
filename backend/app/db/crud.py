@@ -34,7 +34,8 @@ def save_story(
     story_type: str,
     transcript: str,
     duration_seconds: int,
-    audio_bytes: bytes,
+    audio_bytes: bytes = None,
+    audio_path: str = None,
     genre: str = None,
     event_id: str = None,
     mood: str = None,
@@ -44,7 +45,10 @@ def save_story(
 ) -> Story:
     """
     Save story to database and write audio to filesystem.
-    
+
+    Audio can be provided either as bytes (written to disk here) or as a
+    path to an existing file on disk (avoids holding large MP3 in memory).
+
     Args:
         db: SQLAlchemy database session
         story_id: UUID for the story (same as job_id)
@@ -54,14 +58,15 @@ def save_story(
         story_type: 'custom' or 'historical'
         transcript: Full story text
         duration_seconds: Audio duration
-        audio_bytes: MP3 audio data
+        audio_bytes: MP3 audio data (legacy — prefer audio_path)
+        audio_path: Path to existing audio file on disk
         genre: Genre for custom stories
         event_id: Event ID for historical stories
         mood: Story mood (exciting, heartwarming, etc.)
         length: Story length (short, medium, long)
         art_style: Art style preset ID or "custom"
         scene_data: Scene metadata with illustration info (JSON)
-        
+
     Returns:
         Created Story database record
     """
@@ -69,12 +74,18 @@ def save_story(
     short_id = generate_short_id()
     while db.query(Story).filter(Story.short_id == short_id).first():
         short_id = generate_short_id()
-    
-    # Save audio file to /storage/stories/{story_id}/audio.mp3
-    story_dir = settings.storage_path / "stories" / story_id
-    story_dir.mkdir(parents=True, exist_ok=True)
-    audio_path = story_dir / "audio.mp3"
-    audio_path.write_bytes(audio_bytes)
+
+    if audio_path:
+        # Audio already on disk (written by audio_stitcher directly)
+        audio_path = Path(audio_path)
+    elif audio_bytes is not None:
+        # Legacy: write bytes to disk
+        story_dir = settings.storage_path / "stories" / story_id
+        story_dir.mkdir(parents=True, exist_ok=True)
+        audio_path = story_dir / "audio.mp3"
+        audio_path.write_bytes(audio_bytes)
+    else:
+        raise ValueError("Either audio_bytes or audio_path must be provided")
     
     # Create database record
     db_story = Story(

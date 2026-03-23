@@ -47,7 +47,8 @@ class StoryState(TypedDict):
     title: str
     segments: list[Segment]
     audio_segments: list[bytes]
-    final_audio: bytes
+    final_audio: bytes  # Legacy: in-memory MP3 (empty when final_audio_path is set)
+    final_audio_path: Optional[str]  # Preferred: path to MP3 on disk
     duration_seconds: int
     error: Optional[str]
     

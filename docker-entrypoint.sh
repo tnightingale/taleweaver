@@ -32,11 +32,14 @@ fi
 
 # Start FastAPI backend server with gunicorn for production
 echo "🚀 Starting FastAPI backend on port 8000..."
-# Use gunicorn with uvicorn workers for true concurrent request handling
-# 4 workers allows 4 concurrent story generations + regular API requests
-# Timeout set to 600s (10 min) for long-running story generation
+# Use gunicorn with uvicorn workers for concurrent request handling.
+# 2 workers: each story generation can peak at ~100-200MB, so 2 workers
+# keeps memory under control on small VPS/Once instances while still
+# allowing concurrent story generation. Background tasks (asyncio.create_task)
+# run on the worker's event loop — blocking work is offloaded to thread pools.
+# Timeout set to 600s (10 min) for long-running story generation.
 exec gunicorn app.main:app \
-  --workers 4 \
+  --workers ${GUNICORN_WORKERS:-2} \
   --worker-class uvicorn.workers.UvicornWorker \
   --bind 0.0.0.0:8000 \
   --timeout 600 \
