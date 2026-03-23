@@ -85,6 +85,7 @@ RUN printf ':80 {\n\
     \n\
     handle /storage/* {\n\
         root * /\n\
+        header Cache-Control "public, max-age=31536000, immutable"\n\
         file_server\n\
     }\n\
     \n\
