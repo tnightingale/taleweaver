@@ -86,11 +86,16 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
     event.waitUntil(
       caches.open('story-audio').then(async (cache) => {
         const existing = await cache.match(audioUrl);
-        if (existing) return;
+        if (existing) {
+          // Already cached — notify immediately
+          notifyClients('AUDIO_CACHED', audioUrl);
+          return;
+        }
         try {
           const response = await fetch(audioUrl);
           if (response.ok) {
             await cache.put(audioUrl, response);
+            notifyClients('AUDIO_CACHED', audioUrl);
           }
         } catch {
           // Best-effort prefetch
@@ -99,3 +104,10 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
     );
   }
 });
+
+async function notifyClients(type: string, url: string) {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  for (const client of clients) {
+    client.postMessage({ type, url });
+  }
+}

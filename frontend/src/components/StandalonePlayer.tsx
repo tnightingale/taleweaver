@@ -11,7 +11,22 @@ export default function StandalonePlayer() {
   const [story, setStory] = useState<StoryMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cachedOffline, setCachedOffline] = useState(false);
   const { isOffline } = useOfflineStatus();
+
+  // Listen for SW confirmation that audio is cached
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'AUDIO_CACHED') {
+        setCachedOffline(true);
+        // Auto-hide after 3 seconds
+        setTimeout(() => setCachedOffline(false), 3000);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, []);
 
   useEffect(() => {
     if (!shortId) return;
@@ -88,6 +103,18 @@ export default function StandalonePlayer() {
         <div className="fixed top-0 left-0 right-0 z-50 bg-purple-900/90 text-starlight text-center text-xs py-1.5 backdrop-blur-sm">
           Offline — playing cached version
         </div>
+      )}
+      {cachedOffline && !isOffline && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-50
+                     bg-green-900/90 text-green-100 text-xs px-4 py-2 rounded-full
+                     backdrop-blur-sm shadow-lg flex items-center gap-2"
+        >
+          <span>Available offline</span>
+        </motion.div>
       )}
       <StoryScreen
         isGenerating={false}
