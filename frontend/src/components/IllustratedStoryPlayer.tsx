@@ -159,7 +159,7 @@ export default function IllustratedStoryPlayer({
       className={`max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
-          : "sm:px-4 sm:py-8 sm:space-y-8 pb-16 sm:pb-0"
+          : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block min-h-[calc(100dvh-1rem)] sm:min-h-0"
       }`}
       onClick={isFullscreen ? resetHideTimer : undefined}
       onMouseMove={isFullscreen ? resetHideTimer : undefined}
@@ -188,9 +188,9 @@ export default function IllustratedStoryPlayer({
       {/* ── Image Area ── */}
       <div
         className={`relative cursor-pointer ${
-          isFullscreen ? "w-full h-full" : ""
+          isFullscreen ? "w-full h-full" : "flex-1 sm:flex-none"
         }`}
-        style={isFullscreen ? undefined : { perspective: "2000px", paddingTop: 'env(safe-area-inset-top)' }}
+        style={isFullscreen ? undefined : { perspective: "2000px" }}
         onClick={(e) => {
           // Don't toggle play if clicking on a control (button, input, etc.)
           if ((e.target as HTMLElement).closest("button, input")) return;
@@ -221,7 +221,7 @@ export default function IllustratedStoryPlayer({
               className={`w-full overflow-hidden ${
                 isFullscreen
                   ? "h-full"
-                  : "aspect-[3/4] sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
+                  : "h-full sm:h-auto sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
               }`}
               style={isFullscreen ? undefined : {
                 transformStyle: "preserve-3d",
@@ -258,10 +258,11 @@ export default function IllustratedStoryPlayer({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
-              className={`absolute top-0 left-0 right-0 z-10 px-4 pt-3 pb-6
+              className={`absolute top-0 left-0 right-0 z-10 px-4 pb-6
                 bg-gradient-to-b from-black/60 via-black/30 to-transparent
                 ${isFullscreen && !controlsVisible ? "opacity-0" : ""}
                 transition-opacity duration-300`}
+              style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
             >
               <p className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg">
                 Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
@@ -499,9 +500,9 @@ export default function IllustratedStoryPlayer({
         </div>
       </div>
 
-      {/* Transcript Toggle — hidden in fullscreen */}
+      {/* Transcript Toggle — desktop only (mobile has no room) */}
       {!isFullscreen && transcript && (
-        <div className="text-center px-4 sm:px-0">
+        <div className="hidden sm:block text-center">
           <button
             onClick={() => setShowTranscript(!showTranscript)}
             className="text-sm text-starlight/60 hover:text-starlight underline cursor-pointer"
