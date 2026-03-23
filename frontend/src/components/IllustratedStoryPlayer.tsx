@@ -159,7 +159,7 @@ export default function IllustratedStoryPlayer({
       className={`max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
-          : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block min-h-[calc(100dvh-1rem)] sm:min-h-0"
+          : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block h-[100dvh] sm:h-auto"
       }`}
       onClick={isFullscreen ? resetHideTimer : undefined}
       onMouseMove={isFullscreen ? resetHideTimer : undefined}
