@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { precacheAndRoute } from 'workbox-precaching';
+import { precache } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
@@ -9,20 +9,20 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any[] };
 
-// Version tied to the build — changes whenever SW content changes (new precache hashes).
-// Old app-shell caches are cleaned up on activate so stale HTML can't reference
-// JS/CSS bundles that no longer exist in the new precache.
 const APP_SHELL_CACHE = 'app-shell';
-const EXPECTED_CACHES = new Set([APP_SHELL_CACHE, 'google-fonts-stylesheets', 'google-fonts-webfonts', 'story-metadata', 'story-audio', 'story-illustrations']);
+const EXPECTED_CACHES = new Set([
+  APP_SHELL_CACHE,
+  'google-fonts-stylesheets', 'google-fonts-webfonts',
+  'story-metadata', 'story-audio', 'story-illustrations',
+]);
 
 // ============================================================================
-// Lifecycle: install + activate
+// Lifecycle
 // ============================================================================
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
-      // Cache fresh app shell HTML — references the current build's JS/CSS hashes
       cache.addAll(['/', '/index.html'])
     )
   );
@@ -33,8 +33,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
-      // Clean up old Workbox precache versions — they hold stale JS/CSS bundles.
-      // Our runtime caches (story-metadata, story-audio, etc.) are kept.
+      // Remove stale caches (old Workbox precache versions, etc.)
       caches.keys().then((names) =>
         Promise.all(
           names
@@ -46,54 +45,110 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Precache Vite build assets (JS, CSS, images) for instant loading
-precacheAndRoute(self.__WB_MANIFEST);
+// Precache Vite build assets (JS, CSS, images) — cache only, NO fetch routes.
+// Using precache() instead of precacheAndRoute() so Workbox does NOT add its own
+// fetch listener. We handle ALL fetches ourselves below to avoid conflicts on iOS.
+precache(self.__WB_MANIFEST);
 
 // ============================================================================
-// Navigation: raw fetch handler (runs BEFORE Workbox's router)
-// Serves the app shell for ALL navigation requests.
-// This is more reliable than Workbox's NavigationRoute on iOS Safari.
+// Single fetch handler — handles EVERYTHING (navigation + runtime caching)
+// This avoids conflicts between multiple fetch listeners that cause
+// double-respondWith errors crashing the SW on iOS Safari.
 // ============================================================================
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode !== 'navigate') return;
+  const { request } = event;
+  if (request.method !== 'GET') return;
 
-  event.respondWith(
-    (async () => {
-      try {
-        // Online: fetch from network and update the cached shell
-        const response = await fetch(event.request);
-        if (response.ok) {
-          const cache = await caches.open(APP_SHELL_CACHE);
-          cache.put(event.request, response.clone());
-        }
-        return response;
-      } catch {
-        // Offline: serve from our app-shell cache
-        const cached =
-          await caches.match(event.request) ||
-          await caches.match('/index.html') ||
-          await caches.match('/');
-        if (cached) return cached;
-        return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/html' } });
-      }
-    })()
-  );
+  const url = new URL(request.url);
+
+  // ── Navigation requests: serve app shell ──
+  // Check both request.mode and Accept header (iOS Safari sometimes
+  // reports mode as 'same-origin' instead of 'navigate')
+  const isNavigation =
+    request.mode === 'navigate' ||
+    (request.destination === 'document') ||
+    (request.headers.get('accept')?.includes('text/html') &&
+     !request.headers.get('accept')?.includes('application/json') &&
+     url.origin === self.location.origin &&
+     !url.pathname.startsWith('/api/'));
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(APP_SHELL_CACHE).then((c) => c.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request)
+            .then((r) => r || caches.match('/index.html'))
+            .then((r) => r || caches.match('/'))
+            .then((r) => r || new Response('<h1>Offline</h1>', {
+              status: 503,
+              headers: { 'Content-Type': 'text/html' },
+            }))
+        )
+    );
+    return;
+  }
+
+  // ── Precached assets (JS, CSS, SVGs): serve from precache ──
+  if (url.origin === self.location.origin &&
+      (url.pathname.startsWith('/assets/') ||
+       url.pathname.endsWith('.svg') ||
+       url.pathname.endsWith('.png') && !url.pathname.startsWith('/storage/'))) {
+    event.respondWith(
+      caches.match(request, { ignoreSearch: true })
+        .then((cached) => cached || fetch(request))
+    );
+    return;
+  }
+
+  // ── Runtime routes below (same logic as before, just inline) ──
+
+  // Google Fonts
+  if (url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com') {
+    // Let Workbox handle via registerRoute below
+    return;
+  }
+
+  // Story metadata
+  if (url.pathname.match(/^\/api\/permalink\/[^/]+$/)) {
+    // Let Workbox handle via registerRoute below
+    return;
+  }
+
+  // Story audio
+  if (url.pathname.match(/^\/api\/permalink\/[^/]+\/audio$/)) {
+    // Let Workbox handle via registerRoute below
+    return;
+  }
+
+  // Illustration images
+  if (url.pathname.startsWith('/storage/stories/') && url.pathname.endsWith('.png')) {
+    // Let Workbox handle via registerRoute below
+    return;
+  }
+
+  // Everything else: just fetch normally (don't call respondWith)
 });
 
 // ============================================================================
-// Runtime caching (Workbox handles non-navigation requests)
+// Workbox runtime routes (for non-navigation requests only)
+// These use Workbox's internal fetch listener, which fires AFTER ours.
+// Since we return early (no respondWith) for these URLs above,
+// Workbox's listener handles them cleanly.
 // ============================================================================
 
-// Google Fonts stylesheets
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',
-  new StaleWhileRevalidate({
-    cacheName: 'google-fonts-stylesheets',
-  })
+  new StaleWhileRevalidate({ cacheName: 'google-fonts-stylesheets' })
 );
 
-// Google Fonts webfont files
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.gstatic.com',
   new CacheFirst({
@@ -105,7 +160,6 @@ registerRoute(
   })
 );
 
-// Story metadata: StaleWhileRevalidate for instant offline + background refresh
 registerRoute(
   ({ url }: { url: URL }) => url.pathname.match(/^\/api\/permalink\/[^/]+$/) !== null,
   new StaleWhileRevalidate({
@@ -117,7 +171,6 @@ registerRoute(
   })
 );
 
-// Story audio: CacheFirst with range request support (critical for iOS Safari)
 registerRoute(
   ({ url }: { url: URL }) => url.pathname.match(/^\/api\/permalink\/[^/]+\/audio$/) !== null,
   new CacheFirst({
@@ -130,7 +183,6 @@ registerRoute(
   })
 );
 
-// Illustration images: CacheFirst (immutable once generated)
 registerRoute(
   ({ url }: { url: URL }) => url.pathname.startsWith('/storage/stories/') && url.pathname.endsWith('.png'),
   new CacheFirst({
@@ -163,7 +215,7 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
             notifyClients('AUDIO_CACHED', audioUrl);
           }
         } catch {
-          // Best-effort prefetch
+          // Best-effort
         }
       })
     );
