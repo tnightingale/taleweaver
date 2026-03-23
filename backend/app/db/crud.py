@@ -398,6 +398,43 @@ def mark_job_failed(db: Session, job_id: str, error: str):
         db.commit()
 
 
+def recover_orphaned_jobs(db: Session, stale_minutes: int = 5) -> int:
+    """
+    Mark orphaned "processing" jobs as failed.
+
+    Called on server startup. If a job has been in "processing" status with
+    no update for longer than stale_minutes, its asyncio task is presumed
+    dead (server crash, OOM kill, worker restart). Mark it as failed so
+    the frontend stops polling and the user sees an error.
+
+    Args:
+        db: SQLAlchemy database session
+        stale_minutes: How long a job can be idle before it's considered orphaned
+
+    Returns:
+        Number of jobs recovered
+    """
+    cutoff = datetime.utcnow() - timedelta(minutes=stale_minutes)
+
+    stale_jobs = db.query(JobState).filter(
+        JobState.status == "processing",
+        JobState.updated_at < cutoff,
+    ).all()
+
+    for job in stale_jobs:
+        job.status = "failed"
+        job.error_message = (
+            "Story generation was interrupted (server restart or crash). "
+            "Please try again."
+        )
+        job.updated_at = datetime.utcnow()
+
+    if stale_jobs:
+        db.commit()
+
+    return len(stale_jobs)
+
+
 def cleanup_old_jobs(db: Session, max_age_hours: int = 24) -> int:
     """
     Delete completed/failed jobs older than threshold.

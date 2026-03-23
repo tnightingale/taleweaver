@@ -85,10 +85,20 @@ async def startup_event():
         from app.db import models  # noqa: F401 - Ensure models are loaded
         init_db()
         logger.info("Database initialized successfully")
-        
+
         # Run migrations to add any missing columns/tables
         from app.db.migrate import run_migrations
         run_migrations()
+
+        # Recover any jobs orphaned by a previous crash/restart
+        from app.db.crud import recover_orphaned_jobs
+        db = SessionLocal()
+        try:
+            recovered = recover_orphaned_jobs(db, stale_minutes=5)
+            if recovered:
+                logger.warning(f"Recovered {recovered} orphaned job(s) from previous crash")
+        finally:
+            db.close()
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
     

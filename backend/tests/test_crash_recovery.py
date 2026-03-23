@@ -86,11 +86,11 @@ def test_startup_calls_recovery(test_db):
     The app startup event should call recover_orphaned_jobs so that
     stale jobs are cleaned up whenever the server restarts.
     """
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import patch
     from fastapi.testclient import TestClient
     from app.main import app
 
-    with patch("app.main.recover_orphaned_jobs") as mock_recover:
+    with patch("app.db.crud.recover_orphaned_jobs", return_value=0) as mock_recover:
         # Trigger startup by creating a test client
         # (TestClient triggers startup/shutdown events)
         with TestClient(app):
