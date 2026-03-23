@@ -12,6 +12,7 @@ vi.mock('../api/client', () => ({
   fetchHistoricalEvents: vi.fn(() => Promise.resolve([
     { id: 'moon-landing', title: 'Moon Landing', figure: 'Neil Armstrong', year: 1969, summary: 'First humans on Moon', key_facts: [], thumbnail: '' },
   ])),
+  fetchArtStyles: vi.fn(() => Promise.resolve([])),
 }));
 
 const defaultProps = {

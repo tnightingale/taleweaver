@@ -1,34 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
-
-// Mock framer-motion to skip animations
-vi.mock('framer-motion', async () => {
-  const actual = await vi.importActual('framer-motion');
-  return {
-    ...actual,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop) => {
-        if (typeof prop === 'string') {
-          return ({ children, ...props }: Record<string, unknown>) => {
-            // Filter out framer-motion specific props
-            const htmlProps: Record<string, unknown> = {};
-            for (const [key, value] of Object.entries(props)) {
-              if (!['variants', 'initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap'].includes(key)) {
-                htmlProps[key] = value;
-              }
-            }
-            const Element = prop as keyof JSX.IntrinsicElements;
-            return <Element {...htmlProps}>{children as React.ReactNode}</Element>;
-          };
-        }
-        return undefined;
-      },
-    }),
-  };
-});
 
 const mockCreateCustomStory = vi.fn();
 const mockCreateHistoricalStory = vi.fn();
@@ -41,10 +15,13 @@ vi.mock('./api/client', () => ({
   fetchHistoricalEvents: vi.fn(() => Promise.resolve([
     { id: 'moon', title: 'Moon Landing', figure: 'Neil Armstrong', year: 1969, summary: 'First on Moon', key_facts: [], thumbnail: '' },
   ])),
+  fetchArtStyles: vi.fn(() => Promise.resolve([])),
+  fetchRecentJobs: vi.fn(() => Promise.resolve({ jobs: [] })),
   createCustomStory: (...args: unknown[]) => mockCreateCustomStory(...args),
   createHistoricalStory: (...args: unknown[]) => mockCreateHistoricalStory(...args),
   pollJobStatus: (...args: unknown[]) => mockPollJobStatus(...args),
   getAudioUrl: vi.fn((id: string) => `/api/story/audio/${id}`),
+  retryJob: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -57,14 +34,14 @@ beforeEach(() => {
 
 describe('App', () => {
   it('renders hero screen by default', () => {
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
     expect(screen.getByText('Taleweaver')).toBeInTheDocument();
     expect(screen.getByText("Who's the hero?")).toBeInTheDocument();
   });
 
   it('navigates to craft screen after submitting hero', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -77,7 +54,7 @@ describe('App', () => {
 
   it('goes back from craft to hero', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -93,9 +70,10 @@ describe('App', () => {
 
   it('shows error when custom story creation fails', async () => {
     mockCreateCustomStory.mockRejectedValueOnce(new Error('Network error'));
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -107,13 +85,14 @@ describe('App', () => {
     await user.click(screen.getByText('Create Story'));
 
     await waitFor(() => {
-      expect(screen.getByText('Network error')).toBeInTheDocument();
+      expect(alertSpy).toHaveBeenCalledWith('Network error');
     });
+    alertSpy.mockRestore();
   });
 
   it('transitions to story screen on successful creation', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -131,7 +110,7 @@ describe('App', () => {
 
   it('navigates to historical and creates story', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -149,9 +128,10 @@ describe('App', () => {
 
   it('shows error when historical story creation fails', async () => {
     mockCreateHistoricalStory.mockRejectedValueOnce(new Error('Server error'));
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     const user = userEvent.setup();
-    render(<App />);
+    render(<MemoryRouter><App /></MemoryRouter>);
 
     await user.type(screen.getByPlaceholderText("Your child's name"), 'Arjun');
     await user.click(screen.getByRole('button', { name: '7' }));
@@ -161,7 +141,8 @@ describe('App', () => {
     await user.click(screen.getByText('Moon Landing'));
 
     await waitFor(() => {
-      expect(screen.getByText('Server error')).toBeInTheDocument();
+      expect(alertSpy).toHaveBeenCalledWith('Server error');
     });
+    alertSpy.mockRestore();
   });
 });

@@ -15,7 +15,7 @@ describe('StoryScreen - generating state', () => {
       />
     );
     expect(screen.getByText('Writing the story...')).toBeInTheDocument();
-    expect(screen.getByText('This usually takes about a minute')).toBeInTheDocument();
+    expect(screen.getByText('This usually takes a few minutes')).toBeInTheDocument();
   });
 
   it('shows splitting stage label', () => {
