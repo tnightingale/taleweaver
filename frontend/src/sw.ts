@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { precacheAndRoute, matchPrecache } from 'workbox-precaching';
+import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
@@ -17,23 +17,10 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 // Precache Vite build assets (auto-injected by vite-plugin-pwa)
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Navigation requests: try network, fall back to precached index.html (SPA shell).
-// This ensures ANY route (e.g. /s/abc123) works offline — React Router handles routing
-// client-side once the app shell loads.
-registerRoute(
-  new NavigationRoute(async () => {
-    try {
-      const response = await fetch(new Request(new URL('/', self.location.origin)));
-      if (response.ok) return response;
-    } catch {
-      // Network failed — expected when offline
-    }
-    // Fall back to precached index.html
-    const cached = await matchPrecache('/index.html');
-    if (cached) return cached;
-    return new Response('Offline', { status: 503 });
-  })
-);
+// Navigation requests: always serve precached index.html (SPA app shell).
+// This ensures ANY route (e.g. /s/abc123) works offline — React Router handles
+// routing client-side once the shell loads. API data comes from runtime caches.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
 // Google Fonts stylesheets
 registerRoute(
