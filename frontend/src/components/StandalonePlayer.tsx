@@ -24,6 +24,14 @@ export default function StandalonePlayer() {
       .then((data: StoryMetadata) => {
         setStory(data);
         setLoading(false);
+
+        // Prefetch audio for offline — tell SW to cache the full file
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller && data.audio_url) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'PREFETCH_AUDIO',
+            url: data.audio_url,
+          });
+        }
       })
       .catch((err) => {
         // If offline and fetch failed, the SW cache missed

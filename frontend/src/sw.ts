@@ -52,12 +52,13 @@ registerRoute(
 );
 
 // Story audio: CacheFirst with range request support (critical for iOS Safari)
+// Accept 200 AND 206 — Safari always sends range requests for <audio> elements
 registerRoute(
   ({ url }: { url: URL }) => url.pathname.match(/^\/api\/permalink\/[^/]+\/audio$/) !== null,
   new CacheFirst({
     cacheName: 'story-audio',
     plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [0, 200, 206] }),
       new RangeRequestsPlugin(),
       new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 30 * 24 * 60 * 60 }),
     ],
@@ -75,3 +76,26 @@ registerRoute(
     ],
   })
 );
+
+// Prefetch audio for offline: the app sends a message after loading a story page.
+// We fetch the full file (no Range header) so it's cached as a 200 response,
+// which the RangeRequestsPlugin can then slice for Safari's range requests offline.
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if (event.data?.type === 'PREFETCH_AUDIO' && event.data.url) {
+    const audioUrl = event.data.url;
+    event.waitUntil(
+      caches.open('story-audio').then(async (cache) => {
+        const existing = await cache.match(audioUrl);
+        if (existing) return;
+        try {
+          const response = await fetch(audioUrl);
+          if (response.ok) {
+            await cache.put(audioUrl, response);
+          }
+        } catch {
+          // Best-effort prefetch
+        }
+      })
+    );
+  }
+});
