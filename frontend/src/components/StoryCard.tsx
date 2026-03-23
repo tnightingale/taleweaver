@@ -119,10 +119,10 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
             <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm
-                            flex items-center justify-center text-white text-xl
+                            flex items-center justify-center text-white
                             opacity-70 group-hover:opacity-100 transition-opacity
                             shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-              ▶
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5"><path d="M6 4l10 6-10 6z" /></svg>
             </div>
           </div>
         </div>
@@ -137,9 +137,9 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
           </span>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm
-                            flex items-center justify-center text-white text-xl
+                            flex items-center justify-center text-white
                             shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-              ▶
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5"><path d="M6 4l10 6-10 6z" /></svg>
             </div>
           </div>
         </div>

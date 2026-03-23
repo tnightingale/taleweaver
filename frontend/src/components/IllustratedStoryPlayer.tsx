@@ -232,9 +232,11 @@ export default function IllustratedStoryPlayer({
               {!isPlaying && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
-                                  flex items-center justify-center text-white text-3xl sm:text-4xl
+                                  flex items-center justify-center text-white
                                   shadow-[0_0_30px_rgba(0,0,0,0.3)]">
-                    ▶
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7 sm:w-9 sm:h-9 ml-1">
+                      <path d="M6 4l10 6-10 6z" />
+                    </svg>
                   </div>
                 </div>
               )}
