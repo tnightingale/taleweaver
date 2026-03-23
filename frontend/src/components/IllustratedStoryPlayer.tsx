@@ -156,7 +156,7 @@ export default function IllustratedStoryPlayer({
   return (
     <div
       ref={containerRef}
-      className={`max-w-lg sm:max-w-5xl mx-auto ${
+      className={`max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
           : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block h-[100dvh] sm:h-auto"
@@ -220,7 +220,7 @@ export default function IllustratedStoryPlayer({
             className={`w-full overflow-hidden ${
               isFullscreen
                 ? "h-full"
-                : "h-full sm:h-auto sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
+                : "h-full max-h-[75dvh] sm:max-h-none sm:h-auto sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
             }`}
             style={isFullscreen ? undefined : {
               transformStyle: "preserve-3d",
