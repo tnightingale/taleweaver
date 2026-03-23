@@ -7,6 +7,21 @@ afterEach(() => {
   cleanup();
 });
 
+// Mock window.matchMedia (not available in jsdom)
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Global framer-motion mock — renders elements without animation
 vi.mock('framer-motion', () => {
   const MOTION_PROPS = new Set([

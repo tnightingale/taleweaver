@@ -15,6 +15,7 @@ backend/app/logs/
 Caddyfile
 start.sh
 *.png
+!frontend/public/icons/*.png
 .vite/
 once-env-backup.txt
 e2e/test-results/

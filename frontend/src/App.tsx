@@ -5,6 +5,7 @@ import CraftRoute from "./routes/CraftRoute";
 import StoryRoute from "./routes/StoryRoute";
 import LibraryRoute from "./routes/LibraryRoute";
 import StandalonePlayer from "./components/StandalonePlayer";
+import InstallPrompt from "./components/InstallPrompt";
 
 export default function App() {
   const location = useLocation();
@@ -42,6 +43,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
+      <InstallPrompt />
     </div>
   );
 }
