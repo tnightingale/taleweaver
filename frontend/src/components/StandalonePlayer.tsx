@@ -139,20 +139,22 @@ export default function StandalonePlayer() {
   return (
     <>
       {isOffline && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-purple-900/90 text-starlight text-center text-xs py-1.5 backdrop-blur-sm">
-          Offline — playing cached version
+        <div className="fixed top-2 right-2 z-50 px-3 py-1.5 rounded-full
+                        bg-purple-900/80 text-purple-200 text-[10px] backdrop-blur-sm
+                        border border-purple-500/20 shadow-lg">
+          Offline
         </div>
       )}
       {cachedOffline && !isOffline && (
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="fixed top-3 left-1/2 -translate-x-1/2 z-50
-                     bg-green-900/90 text-green-100 text-xs px-4 py-2 rounded-full
-                     backdrop-blur-sm shadow-lg flex items-center gap-2"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="fixed top-2 right-2 z-50 px-3 py-1.5 rounded-full
+                     bg-purple-900/80 text-ethereal text-[10px] backdrop-blur-sm
+                     border border-purple-500/20 shadow-lg"
         >
-          <span>Available offline</span>
+          <span>Saved for offline</span>
         </motion.div>
       )}
       <StoryScreen
