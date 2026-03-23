@@ -37,6 +37,8 @@ export default function IllustratedStoryPlayer({
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [showTranscript, setShowTranscript] = useState(false);
   const [pageDirection, setPageDirection] = useState<"forward" | "backward">("forward");
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
 
   // Update current scene based on audio time
@@ -61,6 +63,26 @@ export default function IllustratedStoryPlayer({
       img.src = nextScene.image_url;
     }
   }, [currentSceneIndex, scenes]);
+
+  // Auto-hide controls in fullscreen after 3s of inactivity
+  const resetHideTimer = () => {
+    setControlsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (isFullscreen) {
+      hideTimerRef.current = setTimeout(() => setControlsVisible(false), 3000);
+    }
+  };
+
+  useEffect(() => {
+    if (isFullscreen) {
+      setControlsVisible(true);
+      hideTimerRef.current = setTimeout(() => setControlsVisible(false), 3000);
+    } else {
+      setControlsVisible(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    }
+    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
+  }, [isFullscreen]);
 
   const handleLoadedMetadata = () => {
     if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
@@ -104,19 +126,51 @@ export default function IllustratedStoryPlayer({
 
   const currentScene = scenes[currentSceneIndex];
 
+  // Shared seek bar classes
+  const seekBarClass = `w-full h-1.5 sm:h-2 bg-starlight/10 rounded-lg appearance-none cursor-pointer
+    [&::-webkit-slider-thumb]:appearance-none
+    [&::-webkit-slider-thumb]:w-4
+    [&::-webkit-slider-thumb]:h-4
+    [&::-webkit-slider-thumb]:rounded-full
+    [&::-webkit-slider-thumb]:bg-purple-500
+    [&::-webkit-slider-thumb]:cursor-pointer
+    [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.6)]
+    [&::-moz-range-thumb]:w-4
+    [&::-moz-range-thumb]:h-4
+    [&::-moz-range-thumb]:rounded-full
+    [&::-moz-range-thumb]:bg-purple-500
+    [&::-moz-range-thumb]:cursor-pointer
+    [&::-moz-range-thumb]:border-0`;
+
+  const seekBarStyle = {
+    background: `linear-gradient(to right, rgb(168 85 247) 0%, rgb(168 85 247) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
+  };
+
   return (
     <div
       ref={containerRef}
-      className={`max-w-5xl mx-auto space-y-4 sm:space-y-8 ${
+      className={`max-w-5xl mx-auto ${
         isFullscreen
-          ? "flex flex-col h-screen bg-void p-2"
-          : "px-2 py-2 sm:px-4 sm:py-8"
+          ? "relative h-screen bg-void overflow-hidden"
+          : "sm:px-4 sm:py-8 sm:space-y-8 pb-20 sm:pb-0"
       }`}
+      onClick={isFullscreen ? resetHideTimer : undefined}
+      onMouseMove={isFullscreen ? resetHideTimer : undefined}
     >
-      {/* Title */}
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+      />
+
+      {/* Title — hidden on mobile, visible on sm+ (desktop) */}
       {!isFullscreen && (
         <motion.h1
-          className="text-2xl sm:text-3xl md:text-4xl font-display text-glow text-center"
+          className="hidden sm:block text-3xl md:text-4xl font-display text-glow text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -124,48 +178,39 @@ export default function IllustratedStoryPlayer({
         </motion.h1>
       )}
 
-      {/* Scene indicator */}
-      {currentScene && (
-        <motion.div
-          className="text-center text-xs sm:text-sm text-starlight/60"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
-        </motion.div>
-      )}
-
-      {/* Illustration with page turn animation */}
+      {/* ── Image Area ── */}
       <div
-        className={`relative ${isFullscreen ? "flex-1 min-h-0" : ""}`}
-        style={{ perspective: "2000px" }}
+        className={`relative ${
+          isFullscreen ? "w-full h-full" : ""
+        }`}
+        style={isFullscreen ? undefined : { perspective: "2000px" }}
       >
         <AnimatePresence mode="wait">
           {currentScene?.image_url && (
             <motion.div
               key={currentSceneIndex}
-              initial={{
+              initial={isFullscreen ? { opacity: 0 } : {
                 rotateY: pageDirection === "forward" ? -90 : 90,
                 opacity: 0,
               }}
-              animate={{
+              animate={isFullscreen ? { opacity: 1 } : {
                 rotateY: 0,
                 opacity: 1,
               }}
-              exit={{
+              exit={isFullscreen ? { opacity: 0 } : {
                 rotateY: pageDirection === "forward" ? 90 : -90,
                 opacity: 0,
               }}
               transition={{
-                duration: 0.6,
+                duration: isFullscreen ? 0.3 : 0.6,
                 ease: "easeInOut",
               }}
-              className={`w-full rounded-lg overflow-hidden shadow-2xl ${
+              className={`w-full overflow-hidden ${
                 isFullscreen
                   ? "h-full"
-                  : "aspect-[3/4] sm:aspect-[4/3]"
+                  : "aspect-[3/4] sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
               }`}
-              style={{
+              style={isFullscreen ? undefined : {
                 transformStyle: "preserve-3d",
                 backfaceVisibility: "hidden",
               }}
@@ -178,101 +223,162 @@ export default function IllustratedStoryPlayer({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Floating chapter indicator — overlays top of image */}
+        {currentScene && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSceneIndex}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className={`absolute top-0 left-0 right-0 z-10 px-4 pt-3 pb-6
+                bg-gradient-to-b from-black/60 via-black/30 to-transparent
+                ${isFullscreen && !controlsVisible ? "opacity-0" : ""}
+                transition-opacity duration-300`}
+            >
+              <p className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg">
+                Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
-      {/* Audio Controls */}
-      <div className={`glass-card p-3 sm:p-6 space-y-3 sm:space-y-4 ${
-        isFullscreen ? "" : "sm:relative"
-      }`}>
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          onLoadedMetadata={handleLoadedMetadata}
-          onTimeUpdate={handleTimeUpdate}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onEnded={() => setIsPlaying(false)}
-        />
-
-        {/* Seek bar with scene markers */}
-        <div className="relative">
-          <input
-            type="range"
-            min={0}
-            max={duration}
-            value={currentTime}
-            onChange={handleSeek}
-            onMouseDown={handleSeekStart}
-            onMouseUp={handleSeekEnd}
-            onTouchStart={handleSeekStart}
-            onTouchEnd={handleSeekEnd}
-            className="w-full h-2 bg-starlight/10 rounded-lg appearance-none cursor-pointer
-                     [&::-webkit-slider-thumb]:appearance-none
-                     [&::-webkit-slider-thumb]:w-5
-                     [&::-webkit-slider-thumb]:h-5
-                     [&::-webkit-slider-thumb]:rounded-full
-                     [&::-webkit-slider-thumb]:bg-purple-500
-                     [&::-webkit-slider-thumb]:cursor-pointer
-                     [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.6)]
-                     [&::-moz-range-thumb]:w-5
-                     [&::-moz-range-thumb]:h-5
-                     [&::-moz-range-thumb]:rounded-full
-                     [&::-moz-range-thumb]:bg-purple-500
-                     [&::-moz-range-thumb]:cursor-pointer
-                     [&::-moz-range-thumb]:border-0"
-            style={{
-              background: `linear-gradient(to right, rgb(168 85 247) 0%, rgb(168 85 247) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
-            }}
-          />
-
-          {/* Scene markers */}
-          {scenes.map((scene, i) => (
-            <button
-              key={i}
-              onClick={() => jumpToScene(i)}
-              className="absolute top-0 w-2 h-2 bg-purple-300 rounded-full hover:scale-150 transition-transform cursor-pointer"
-              style={{
-                left: `${(scene.timestamp_start / duration) * 100}%`,
-                transform: "translate(-50%, -25%)",
-              }}
-              title={scene.beat_name}
-            />
-          ))}
-        </div>
-
-        {/* Play/pause, time, and fullscreen */}
-        <div className="flex items-center justify-between">
+      {/* ── Pinned Audio Controls (mobile) / Normal card (desktop) ── */}
+      <div
+        className={`z-20 ${
+          isFullscreen
+            ? `absolute bottom-0 left-0 right-0 transition-opacity duration-300
+               ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}
+               bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-4 px-4`
+            : `fixed bottom-0 left-0 right-0 sm:relative sm:static
+               glass-card sm:rounded-2xl rounded-none
+               border-t border-white/10 sm:border
+               backdrop-blur-xl
+               px-4 py-2.5 sm:p-6
+               pb-[calc(0.625rem+env(safe-area-inset-bottom))] sm:pb-6`
+        }`}
+        style={!isFullscreen ? { WebkitBackdropFilter: "blur(20px)" } : undefined}
+      >
+        {/* Mobile: compact single row. Desktop: stacked layout */}
+        <div className="sm:hidden flex items-center gap-3">
           <button
             onClick={togglePlay}
-            className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
-                     flex items-center justify-center text-white text-xl
-                     shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]
+            className="w-10 h-10 shrink-0 rounded-full bg-purple-500
+                     flex items-center justify-center text-white text-base
+                     shadow-[0_0_12px_rgba(168,85,247,0.4)]
                      transition-all cursor-pointer"
           >
             {isPlaying ? "⏸" : "▶"}
           </button>
 
-          <div className="text-sm text-starlight/60 font-mono">
-            {formatTime(currentTime)} / {formatTime(duration)}
+          <div className="flex-1 relative">
+            <input
+              type="range"
+              min={0}
+              max={duration}
+              value={currentTime}
+              onChange={handleSeek}
+              onTouchStart={handleSeekStart}
+              onTouchEnd={handleSeekEnd}
+              className={seekBarClass}
+              style={seekBarStyle}
+            />
+            {/* Scene markers */}
+            {scenes.map((scene, i) => (
+              <button
+                key={i}
+                onClick={() => jumpToScene(i)}
+                className="absolute top-0 w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
+                style={{
+                  left: `${(scene.timestamp_start / duration) * 100}%`,
+                  transform: "translate(-50%, -25%)",
+                }}
+              />
+            ))}
           </div>
+
+          <span className="text-[10px] text-starlight/50 font-mono shrink-0 w-[4.5rem] text-right">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
 
           {fullscreenSupported && (
             <button
               onClick={toggleFullscreen}
-              className="w-10 h-10 rounded-full flex items-center justify-center
-                       text-starlight/60 hover:text-starlight hover:bg-white/10
-                       transition-all cursor-pointer text-lg"
-              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+                       text-starlight/50 hover:text-starlight
+                       transition-all cursor-pointer text-sm"
             >
               {isFullscreen ? "⤓" : "⤢"}
             </button>
           )}
         </div>
+
+        {/* Desktop: full layout (hidden on mobile) */}
+        <div className="hidden sm:block space-y-4">
+          <div className="relative">
+            <input
+              type="range"
+              min={0}
+              max={duration}
+              value={currentTime}
+              onChange={handleSeek}
+              onMouseDown={handleSeekStart}
+              onMouseUp={handleSeekEnd}
+              onTouchStart={handleSeekStart}
+              onTouchEnd={handleSeekEnd}
+              className={seekBarClass}
+              style={seekBarStyle}
+            />
+            {scenes.map((scene, i) => (
+              <button
+                key={i}
+                onClick={() => jumpToScene(i)}
+                className="absolute top-0 w-2 h-2 bg-purple-300 rounded-full hover:scale-150 transition-transform cursor-pointer"
+                style={{
+                  left: `${(scene.timestamp_start / duration) * 100}%`,
+                  transform: "translate(-50%, -25%)",
+                }}
+                title={scene.beat_name}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <button
+              onClick={togglePlay}
+              className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
+                       flex items-center justify-center text-white text-xl
+                       shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]
+                       transition-all cursor-pointer"
+            >
+              {isPlaying ? "⏸" : "▶"}
+            </button>
+
+            <div className="text-sm text-starlight/60 font-mono">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
+
+            {fullscreenSupported && (
+              <button
+                onClick={toggleFullscreen}
+                className="w-10 h-10 rounded-full flex items-center justify-center
+                         text-starlight/60 hover:text-starlight hover:bg-white/10
+                         transition-all cursor-pointer text-lg"
+                title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              >
+                {isFullscreen ? "⤓" : "⤢"}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Transcript Toggle — hidden in fullscreen */}
       {!isFullscreen && transcript && (
-        <div className="text-center">
+        <div className="text-center px-4 sm:px-0">
           <button
             onClick={() => setShowTranscript(!showTranscript)}
             className="text-sm text-starlight/60 hover:text-starlight underline cursor-pointer"
@@ -290,7 +396,7 @@ export default function IllustratedStoryPlayer({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="glass-card p-4 sm:p-6 space-y-8 overflow-hidden"
+              className="glass-card p-4 sm:p-6 space-y-8 overflow-hidden mx-4 sm:mx-0"
             >
               {scenes.map((scene, i) => (
                 <div key={i} className="space-y-3">
@@ -317,7 +423,7 @@ export default function IllustratedStoryPlayer({
 
       {/* Actions — hidden in fullscreen */}
       {!isFullscreen && (
-        <div className="flex gap-4 justify-center pt-2 sm:pt-4">
+        <div className="flex gap-4 justify-center pt-2 sm:pt-4 px-4 sm:px-0">
           {onBackToLibrary && (
             <button
               onClick={onBackToLibrary}

@@ -32,7 +32,7 @@ export default function App() {
           </header>
         )}
 
-        <main className={`flex-1 px-4 ${isStoryPermalink ? "pb-4 pt-2" : "pb-16"}`}>
+        <main className={`flex-1 ${isStoryPermalink ? "px-0 sm:px-4 pb-4 pt-0 sm:pt-2" : "px-4 pb-16"}`}>
           <Routes>
             <Route path="/" element={<HeroRoute />} />
             <Route path="/craft" element={<CraftRoute />} />
