@@ -82,6 +82,33 @@ Given the active production bug and highest-value improvements:
 
 ---
 
+## Post-Implementation: Critical Server Fix
+
+### Database Connection Churn - FIXED (2026-03-23)
+
+**Issue Discovered:**
+- Server completely deadlocking during generation
+- All 4 gunicorn workers becoming unresponsive
+- Required container restart to recover
+- "taleweaver.lan took too long to respond"
+
+**Root Cause:**
+- Nodes creating 20+ new database connections per job
+- Voice: 12 connections (1 per segment in loop)
+- Illustrations: 8 connections (1 per image in loop)
+- Connection exhaustion causing deadlock
+
+**Fix Applied (Commit 40a5f91):**
+- Pass db session through `state["_db"]` in run_pipeline
+- Nodes reuse single session instead of creating new ones
+- **1 connection per job instead of 20+**
+- Eliminates connection create/close overhead
+
+**Status:** ✅ Merged and deployed  
+**Impact:** Server should handle concurrent requests without deadlocking
+
+---
+
 ## Phase 1: Fix Illustration Generator Bug (IMMEDIATE)
 
 ### Estimated Time: 2-3 hours
