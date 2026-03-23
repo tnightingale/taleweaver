@@ -36,6 +36,8 @@ from app.db.models import JobState
 @app.get("/api/jobs/recent")
 async def get_recent_jobs():
     """Get jobs from last 24 hours for navigation persistence"""
+    from sqlalchemy.exc import OperationalError
+    
     db = SessionLocal()
     try:
         cutoff = datetime.utcnow() - timedelta(hours=24)
@@ -59,6 +61,9 @@ async def get_recent_jobs():
                 for job in jobs
             ]
         }
+    except OperationalError:
+        # Table doesn't exist yet (during tests or fresh deployment)
+        return {"jobs": []}
     finally:
         db.close()
 

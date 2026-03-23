@@ -44,11 +44,14 @@ def test_db():
     )
     db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_module.engine)
     
+    # Import models FIRST to register them with Base.metadata
+    from app.db import models  # noqa: F401 - Ensures Story and JobState are registered
+    
     # Initialize tables with the NEW test engine
     from app.db.database import Base
     Base.metadata.create_all(bind=db_module.engine)  # Use test engine explicitly
     
-    # Run migrations (adds any missing columns)
+    # Run migrations (adds any missing columns, though create_all should have made them)
     from app.db.migrate import run_migrations
     run_migrations()
     
