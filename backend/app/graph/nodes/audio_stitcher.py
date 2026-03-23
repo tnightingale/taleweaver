@@ -1,7 +1,8 @@
+import asyncio
 import io
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from pydub import AudioSegment
 
@@ -33,19 +34,23 @@ def _load_background_music(mood: Optional[str], target_duration_ms: int) -> Opti
     return trimmed + MUSIC_VOLUME_DB
 
 
-async def audio_stitcher(state: StoryState) -> dict:
+def _stitch_sync(audio_segments: List[bytes], mood: Optional[str]) -> dict:
+    """
+    CPU-bound audio stitching — runs in a thread pool, never on the event loop.
+
+    Combines audio segments with pauses, overlays background music, and exports MP3.
+    """
     pause = AudioSegment.silent(duration=PAUSE_MS)
     combined = AudioSegment.empty()
 
-    for i, audio_bytes in enumerate(state["audio_segments"]):
+    for i, audio_bytes in enumerate(audio_segments):
         segment = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
         combined += segment
-        if i < len(state["audio_segments"]) - 1:
+        if i < len(audio_segments) - 1:
             combined += pause
 
-    logger.info(f"Stitched {len(state['audio_segments'])} segments, narration duration={len(combined)}ms")
+    logger.info(f"Stitched {len(audio_segments)} segments, narration duration={len(combined)}ms")
 
-    mood = state.get("mood")
     bg_music = _load_background_music(mood, len(combined))
     if bg_music is not None:
         combined = combined.overlay(bg_music)
@@ -58,3 +63,9 @@ async def audio_stitcher(state: StoryState) -> dict:
     logger.info(f"Final audio: duration={duration_seconds}s, size={len(final_bytes)} bytes")
 
     return {"final_audio": final_bytes, "duration_seconds": duration_seconds}
+
+
+async def audio_stitcher(state: StoryState) -> dict:
+    audio_segments = state["audio_segments"]
+    mood = state.get("mood")
+    return await asyncio.to_thread(_stitch_sync, audio_segments, mood)
