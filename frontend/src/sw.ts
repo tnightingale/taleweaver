@@ -9,17 +9,20 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any[] };
 
-const APP_SHELL_CACHE = 'app-shell-v1';
+// Version tied to the build — changes whenever SW content changes (new precache hashes).
+// Old app-shell caches are cleaned up on activate so stale HTML can't reference
+// JS/CSS bundles that no longer exist in the new precache.
+const APP_SHELL_CACHE = 'app-shell';
+const EXPECTED_CACHES = new Set([APP_SHELL_CACHE, 'google-fonts-stylesheets', 'google-fonts-webfonts', 'story-metadata', 'story-audio', 'story-illustrations']);
 
 // ============================================================================
 // Lifecycle: install + activate
 // ============================================================================
 
 self.addEventListener('install', (event) => {
-  // Cache the app shell directly (not through Workbox precache) so we have
-  // a reliable offline fallback that doesn't depend on Workbox's cache keys.
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
+      // Cache fresh app shell HTML — references the current build's JS/CSS hashes
       cache.addAll(['/', '/index.html'])
     )
   );
@@ -27,7 +30,20 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      // Clean up old Workbox precache versions — they hold stale JS/CSS bundles.
+      // Our runtime caches (story-metadata, story-audio, etc.) are kept.
+      caches.keys().then((names) =>
+        Promise.all(
+          names
+            .filter((name) => !EXPECTED_CACHES.has(name))
+            .map((name) => caches.delete(name))
+        )
+      ),
+    ])
+  );
 });
 
 // Precache Vite build assets (JS, CSS, images) for instant loading
