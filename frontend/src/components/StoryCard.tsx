@@ -33,6 +33,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [isSaving, setIsSaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cachedOffline, setCachedOffline] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -46,6 +47,16 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
+
+  // Check if this story's audio is cached for offline
+  useEffect(() => {
+    if (!('caches' in window) || !story.audio_url) return;
+    caches.open('story-audio').then((cache) =>
+      cache.match(story.audio_url).then((r) => {
+        if (r) setCachedOffline(true);
+      })
+    ).catch(() => {});
+  }, [story.audio_url]);
 
   const handleSaveTitle = async () => {
     if (editedTitle.trim() && editedTitle !== story.title) {
@@ -75,7 +86,6 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for non-secure contexts
       const input = document.createElement("input");
       input.value = url;
       document.body.appendChild(input);
@@ -106,11 +116,11 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -4 }}
-      className="glass-card overflow-hidden flex flex-col relative"
+      className="glass-card flex flex-col relative"
     >
-      {/* Cover Image */}
+      {/* Cover Image — overflow-hidden scoped to just the image, not the whole card */}
       {story.cover_image_url ? (
-        <div className="aspect-[3/2] w-full overflow-hidden cursor-pointer relative group" onClick={onPlay}>
+        <div className="aspect-[3/2] w-full overflow-hidden cursor-pointer relative group rounded-t-[1rem]" onClick={onPlay}>
           <img
             src={story.cover_image_url}
             alt={story.title}
@@ -125,11 +135,19 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5"><path d="M6 4l10 6-10 6z" /></svg>
             </div>
           </div>
+          {/* Offline badge */}
+          {cachedOffline && (
+            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
+                            bg-purple-900/80 text-purple-200 text-[9px] backdrop-blur-sm
+                            border border-purple-500/20">
+              Offline
+            </div>
+          )}
         </div>
       ) : (
         <div
           className="aspect-[3/2] w-full flex items-center justify-center cursor-pointer relative group
-                     bg-gradient-to-br from-purple-900/40 to-abyss/60"
+                     bg-gradient-to-br from-purple-900/40 to-abyss/60 rounded-t-[1rem]"
           onClick={onPlay}
         >
           <span className="text-4xl opacity-40">
@@ -142,6 +160,13 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5"><path d="M6 4l10 6-10 6z" /></svg>
             </div>
           </div>
+          {cachedOffline && (
+            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
+                            bg-purple-900/80 text-purple-200 text-[9px] backdrop-blur-sm
+                            border border-purple-500/20">
+              Offline
+            </div>
+          )}
         </div>
       )}
 
@@ -190,7 +215,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-9 z-20 w-44 py-1
+                    className="absolute right-0 bottom-10 z-50 w-44 py-1
                              bg-abyss/95 border border-white/10 rounded-lg shadow-xl backdrop-blur-xl"
                   >
                     <button
