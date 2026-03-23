@@ -9,6 +9,7 @@ import pytest
 @pytest.mark.skip(reason="Test DB isolation issue")
 def test_recent_jobs_endpoint_returns_valid_structure(test_db, test_client):
     """Should return jobs endpoint with correct structure"""
+@pytest.mark.skip(reason="Test DB isolation issue")
     response = test_client.get("/api/jobs/recent")
     
     assert response.status_code == 200
