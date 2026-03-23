@@ -12,7 +12,7 @@ Stories are age-adaptive (3-12 years), use multi-voice narration (narrator + cha
 
 ## Tech Stack
 
-- **Backend**: Python 3.9+, FastAPI, LangGraph, ElevenLabs TTS
+- **Backend**: Python 3.9+, FastAPI, LangGraph, huey (SQLite-backed background jobs), ElevenLabs TTS
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS 4, framer-motion
 - **LLM**: Claude Haiku (default), also supports Groq and OpenAI (configurable via `LLM_PROVIDER` env var)
 - **TTS**: ElevenLabs with 4 pre-configured voices (narrator [Rachel/female], male, female, child)
@@ -28,11 +28,12 @@ taleweaver/
 │   │   ├── main.py          # FastAPI app, permalink routes, library routes
 │   │   ├── db/              # SQLAlchemy models, CRUD operations
 │   │   ├── graph/           # LangGraph pipeline (story generation)
+│   │   ├── jobs/            # huey background tasks (story generation worker)
 │   │   ├── routes/          # API routes (config, story)
 │   │   ├── models/          # Pydantic models (requests, responses)
 │   │   ├── data/            # Genres, historical events, music
 │   │   └── prompts/         # Story generation prompts
-│   └── tests/               # 137 pytest tests
+│   └── tests/               # 197 pytest tests
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx          # Router setup
@@ -87,11 +88,13 @@ docker compose run --rm backend-test
 [Input] → [Story Writer] → [Script Splitter] → [Voice Synthesizer] → [Audio Stitcher] → [Output]
 ```
 
-- Jobs are async — POST returns a `job_id`, frontend polls `/status/{job_id}` every 2 seconds
-- Jobs stored in-memory during generation, then persisted to SQLite database
+- Jobs run in a **huey background worker process** (not in gunicorn) — POST returns `job_id`, frontend polls `/status/{job_id}` every 2 seconds
+- Job queue is persisted to SQLite (`/storage/huey.db`) — survives server crashes and restarts
+- Job progress is tracked in `job_state` table — shared between huey worker and gunicorn API
 - Stories are permanent with compact permalinks (e.g., `/s/a7x9k2mn`)
 - Typical generation time: 20-90 seconds depending on story length
 - Audio stitcher mixes mood-based background music under narration
+- Failed jobs can be retried via `/api/story/retry/{job_id}` — re-enqueues in huey
 
 ## Storage Structure
 

@@ -10,8 +10,12 @@ from app.db.crud import create_job_state, get_job_state
 
 def test_retry_endpoint_resumes_failed_job(test_db, test_client):
     """Should resume a failed resumable job"""
-    # Create a failed job with resumable flag
-    job = create_job_state(test_db, "retry-test-1", ["writing", "synthesizing"])
+    from unittest.mock import patch
+
+    # Create a failed job with resumable flag and stored params
+    job = create_job_state(test_db, "retry-test-1", ["writing", "synthesizing"],
+                           story_params={"kid_name": "Test", "kid_age": 5,
+                                         "story_type": "custom", "genre": "adventure"})
     job.status = "failed"
     job.resumable = True
     job.partial_data_json = json.dumps({
@@ -21,9 +25,10 @@ def test_retry_endpoint_resumes_failed_job(test_db, test_client):
     })
     job.error_message = "Voice synthesis quota exceeded"
     test_db.commit()
-    
-    # Retry the job
-    response = test_client.post(f"/api/story/retry/retry-test-1")
+
+    # Retry the job (mock huey task to prevent actual execution)
+    with patch("app.jobs.tasks.generate_story_task"):
+        response = test_client.post(f"/api/story/retry/retry-test-1")
     
     assert response.status_code == 200
     data = response.json()

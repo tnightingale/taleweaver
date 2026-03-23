@@ -179,7 +179,7 @@ COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-
   python -m pytest tests/test_story_library.py -v
 ```
 
-**Current test count:** 184 tests (must all pass before pushing)
+**Current test count:** 197 tests (must all pass before pushing)
 
 **Test Isolation:**
 - All tests use isolated database fixtures from `conftest.py`
