@@ -290,20 +290,32 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={restartFromBeginning}
             className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
-                     text-starlight/50 hover:text-starlight hover:bg-white/10
-                     transition-all cursor-pointer text-sm"
+                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     transition-all cursor-pointer"
             title="Start from beginning"
           >
-            ⏮
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <rect x="2" y="4" width="2.5" height="12" rx="0.5" />
+              <path d="M7 10l8-6v12z" />
+            </svg>
           </button>
           <button
             onClick={togglePlay}
-            className="w-10 h-10 shrink-0 rounded-full bg-purple-500
-                     flex items-center justify-center text-white text-base
-                     shadow-[0_0_12px_rgba(168,85,247,0.4)]
+            className="w-10 h-10 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
+                     flex items-center justify-center text-white
+                     shadow-[0_0_12px_rgba(168,85,247,0.3)]
                      transition-all cursor-pointer"
           >
-            {isPlaying ? "⏸" : "▶"}
+            {isPlaying ? (
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <rect x="5" y="4" width="3" height="12" rx="0.5" />
+                <rect x="12" y="4" width="3" height="12" rx="0.5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-0.5">
+                <path d="M6 4l10 6-10 6z" />
+              </svg>
+            )}
           </button>
 
           <div className="flex-1 relative">
@@ -340,10 +352,26 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={toggleFullscreen}
               className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
-                       text-starlight/50 hover:text-starlight
-                       transition-all cursor-pointer text-sm"
+                       text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                       transition-all cursor-pointer"
             >
-              {isFullscreen ? "⤓" : "⤢"}
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+                {isFullscreen ? (
+                  <>
+                    <polyline points="7,3 7,7 3,7" />
+                    <polyline points="13,17 13,13 17,13" />
+                    <polyline points="17,7 13,7 13,3" />
+                    <polyline points="3,13 7,13 7,17" />
+                  </>
+                ) : (
+                  <>
+                    <polyline points="3,7 3,3 7,3" />
+                    <polyline points="17,13 17,17 13,17" />
+                    <polyline points="13,3 17,3 17,7" />
+                    <polyline points="7,17 3,17 3,13" />
+                  </>
+                )}
+              </svg>
             </button>
           )}
         </div>
@@ -379,25 +407,37 @@ export default function IllustratedStoryPlayer({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={restartFromBeginning}
                 className="w-10 h-10 rounded-full flex items-center justify-center
-                         text-starlight/60 hover:text-starlight hover:bg-white/10
-                         transition-all cursor-pointer text-lg"
+                         text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                         transition-all cursor-pointer"
                 title="Start from beginning"
               >
-                ⏮
+                <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <rect x="2" y="4" width="2.5" height="12" rx="0.5" />
+                  <path d="M7 10l8-6v12z" />
+                </svg>
               </button>
               <button
                 onClick={togglePlay}
-                className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
-                         flex items-center justify-center text-white text-xl
-                         shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]
+                className="w-12 h-12 rounded-full bg-purple-500/90 hover:bg-purple-500
+                         flex items-center justify-center text-white
+                         shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.5)]
                          transition-all cursor-pointer"
               >
-              {isPlaying ? "⏸" : "▶"}
-            </button>
+                {isPlaying ? (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <rect x="5" y="4" width="3" height="12" rx="0.5" />
+                    <rect x="12" y="4" width="3" height="12" rx="0.5" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5">
+                    <path d="M6 4l10 6-10 6z" />
+                  </svg>
+                )}
+              </button>
             </div>
 
             <div className="text-sm text-starlight/60 font-mono">
@@ -408,11 +448,27 @@ export default function IllustratedStoryPlayer({
               <button
                 onClick={toggleFullscreen}
                 className="w-10 h-10 rounded-full flex items-center justify-center
-                         text-starlight/60 hover:text-starlight hover:bg-white/10
-                         transition-all cursor-pointer text-lg"
+                         text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                         transition-all cursor-pointer"
                 title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
               >
-                {isFullscreen ? "⤓" : "⤢"}
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                  {isFullscreen ? (
+                    <>
+                      <polyline points="7,3 7,7 3,7" />
+                      <polyline points="13,17 13,13 17,13" />
+                      <polyline points="17,7 13,7 13,3" />
+                      <polyline points="3,13 7,13 7,17" />
+                    </>
+                  ) : (
+                    <>
+                      <polyline points="3,7 3,3 7,3" />
+                      <polyline points="17,13 17,17 13,17" />
+                      <polyline points="13,3 17,3 17,7" />
+                      <polyline points="7,17 3,17 3,13" />
+                    </>
+                  )}
+                </svg>
               </button>
             )}
           </div>

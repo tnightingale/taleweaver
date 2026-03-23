@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata } from "../types";
 
 interface Props {
@@ -19,7 +19,7 @@ const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
@@ -31,14 +31,28 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [editedTitle, setEditedTitle] = useState(story.title);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const handleSaveTitle = async () => {
     if (editedTitle.trim() && editedTitle !== story.title) {
       setIsSaving(true);
       try {
         await onUpdateTitle(editedTitle.trim());
-      } catch (err) {
-        // Reset on error
+      } catch {
         setEditedTitle(story.title);
       }
       setIsSaving(false);
@@ -47,16 +61,37 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSaveTitle();
-    } else if (e.key === "Escape") {
+    if (e.key === "Enter") handleSaveTitle();
+    else if (e.key === "Escape") {
       setEditedTitle(story.title);
       setIsEditing(false);
     }
   };
 
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}${story.permalink}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for non-secure contexts
+      const input = document.createElement("input");
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+    setMenuOpen(false);
+  };
+
   const handleDelete = () => {
+    if (!confirm("Delete this story? This cannot be undone.")) return;
     setIsDeleting(true);
+    setMenuOpen(false);
     onDelete();
   };
 
@@ -110,97 +145,99 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
         </div>
       )}
 
-      <div className="p-4 flex flex-col gap-3">
-      {/* Title */}
-      {isEditing ? (
-        <div className="relative">
-          <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            onBlur={handleSaveTitle}
-            onKeyDown={handleKeyDown}
-            autoFocus
-            disabled={isSaving}
-            className="text-lg font-display text-glow bg-black/50 border border-purple-500/50 
-                       rounded px-2 py-1 text-white focus:outline-none focus:border-purple-400 w-full
-                       disabled:opacity-50"
-            placeholder="Story title"
-          />
-          <div className="text-xs text-starlight/40 mt-1">
-            Press Enter to save, Esc to cancel
-          </div>
+      <div className="p-4 flex flex-col gap-2">
+        {/* Title + overflow menu */}
+        <div className="flex items-start gap-2">
+          {isEditing ? (
+            <div className="flex-1">
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleSaveTitle}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                disabled={isSaving}
+                className="text-base font-display text-glow bg-black/50 border border-purple-500/50
+                           rounded px-2 py-1 text-white focus:outline-none focus:border-purple-400 w-full
+                           disabled:opacity-50"
+                placeholder="Story title"
+              />
+              <div className="text-[10px] text-starlight/40 mt-1">Enter to save, Esc to cancel</div>
+            </div>
+          ) : (
+            <h3 className="flex-1 text-base font-display text-glow line-clamp-2 leading-snug">
+              {story.title}
+            </h3>
+          )}
+
+          {/* Overflow menu */}
+          {!isEditing && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+                         text-starlight/40 hover:text-starlight hover:bg-white/10
+                         transition-all cursor-pointer text-sm"
+              >
+                ···
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-9 z-20 w-44 py-1
+                             bg-abyss/95 border border-white/10 rounded-lg shadow-xl backdrop-blur-xl"
+                  >
+                    <button
+                      onClick={handleCopyLink}
+                      className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors"
+                    >
+                      {copied ? "Copied!" : "Copy link"}
+                    </button>
+                    <a
+                      href={story.audio_url}
+                      download={`${story.title}.mp3`}
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-starlight/80 hover:bg-white/10 transition-colors"
+                    >
+                      Download MP3
+                    </a>
+                    <button
+                      onClick={() => { setIsEditing(true); setMenuOpen(false); }}
+                      className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors"
+                    >
+                      Edit title
+                    </button>
+                    <div className="border-t border-white/10 my-1" />
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete story"}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
-      ) : (
-        <h3 className="text-lg font-display text-glow line-clamp-2 min-h-[3.5rem]">
-          {story.title}
-        </h3>
-      )}
 
-      {/* Metadata */}
-      <div className="flex items-center gap-2 text-sm text-starlight/60">
-        <span>{story.kid_name}, {story.kid_age}</span>
-        <span>•</span>
-        <span>{getTypeLabel()}</span>
-        <span>•</span>
-        <span>{formatDuration(story.duration_seconds)}</span>
-      </div>
-
-      {/* Date */}
-      <div className="text-xs text-starlight/40">
-        {formatDate(story.created_at)}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2 mt-2">
-        <button
-          onClick={onPlay}
-          className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded 
-                     text-white text-sm font-semibold transition-all
-                     hover:shadow-lg hover:shadow-purple-500/50"
-          disabled={isDeleting}
-        >
-          ▶ Play
-        </button>
-        <button
-          onClick={() => navigator.clipboard.writeText(`${window.location.origin}${story.permalink}`)}
-          className="px-3 py-2 bg-black/50 hover:bg-black/70 border border-purple-500/30 
-                     rounded text-purple-300 text-sm transition-all"
-          title="Copy permalink"
-          disabled={isDeleting}
-        >
-          🔗
-        </button>
-        <a
-          href={story.audio_url}
-          download={`${story.title}.mp3`}
-          className="px-3 py-2 bg-black/50 hover:bg-black/70 border border-purple-500/30 
-                     rounded text-purple-300 text-sm transition-all"
-          title="Download MP3"
-        >
-          📥
-        </a>
-      </div>
-
-      {/* Edit & Delete Row */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setIsEditing(true)}
-          className="flex-1 px-3 py-1 bg-black/30 hover:bg-black/50 border border-purple-500/20 
-                     rounded text-purple-400 text-xs transition-all"
-          disabled={isEditing || isDeleting}
-        >
-          ✏️ Edit Title
-        </button>
-        <button
-          onClick={handleDelete}
-          className="flex-1 px-3 py-1 bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 
-                     rounded text-red-400 text-xs transition-all"
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Deleting..." : "🗑️ Delete"}
-        </button>
-      </div>
+        {/* Metadata */}
+        <div className="flex items-center gap-1.5 text-xs text-starlight/50">
+          <span>{story.kid_name}, {story.kid_age}</span>
+          <span>·</span>
+          <span>{getTypeLabel()}</span>
+          <span>·</span>
+          <span>{formatDuration(story.duration_seconds)}</span>
+          <span>·</span>
+          <span>{formatDate(story.created_at)}</span>
+        </div>
       </div>
     </motion.div>
   );
