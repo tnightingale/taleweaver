@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 def test_custom_story_enqueues_huey_task(test_db, test_client):
     """POST /api/story/custom should enqueue a huey task, not asyncio.create_task."""
-    with patch("app.routes.story.generate_story_task") as mock_task:
+    with patch("app.jobs.tasks.generate_story_task") as mock_task:
         response = test_client.post("/api/story/custom", json={
             "kid": {"name": "Arjun", "age": 7},
             "genre": "adventure",
@@ -37,10 +37,10 @@ def test_custom_story_enqueues_huey_task(test_db, test_client):
 
 def test_historical_story_enqueues_huey_task(test_db, test_client):
     """POST /api/story/historical should enqueue a huey task."""
-    with patch("app.routes.story.generate_story_task") as mock_task:
+    with patch("app.jobs.tasks.generate_story_task") as mock_task:
         response = test_client.post("/api/story/historical", json={
             "kid": {"name": "Maya", "age": 9},
-            "event_id": "moon-landing",
+            "event_id": "shivaji-agra-escape",
             "mood": "exciting",
             "length": "long",
         })
@@ -53,7 +53,7 @@ def test_historical_story_enqueues_huey_task(test_db, test_client):
         story_params = mock_task.call_args[0][1]
         assert story_params["kid_name"] == "Maya"
         assert story_params["story_type"] == "historical"
-        assert story_params["event_id"] == "moon-landing"
+        assert story_params["event_id"] == "shivaji-agra-escape"
 
 
 def test_no_asyncio_create_task_in_routes():

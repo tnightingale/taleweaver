@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 import uuid
@@ -211,8 +210,10 @@ async def create_custom_story(request: CustomStoryRequest):
     finally:
         db.close()
 
-    state = {
-        "job_id": job_id,
+    # Enqueue via huey — only serializable params, no bytes or db sessions
+    from app.jobs.tasks import generate_story_task
+
+    story_params = {
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
         "kid_details": _format_kid_details(request.kid),
@@ -225,19 +226,9 @@ async def create_custom_story(request: CustomStoryRequest):
         "length": request.length,
         "art_style": request.art_style,
         "custom_art_style_prompt": request.custom_art_style_prompt,
-        "story_text": "",
-        "title": "",
-        "segments": [],
-        "audio_segments": [],
-        "final_audio": b"",
-        "final_audio_path": None,
-        "duration_seconds": 0,
-        "error": None,
-        "scenes": None,
-        "character_description": None,
     }
 
-    task = asyncio.create_task(run_pipeline(job_id, state))
+    generate_story_task(job_id, story_params)
 
     return JobCreatedResponse(
         job_id=job_id,
@@ -278,8 +269,10 @@ async def create_historical_story(request: HistoricalStoryRequest):
     finally:
         db.close()
 
-    state = {
-        "job_id": job_id,
+    # Enqueue via huey — only serializable params
+    from app.jobs.tasks import generate_story_task
+
+    story_params = {
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
         "kid_details": _format_kid_details(request.kid),
@@ -292,20 +285,9 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "length": request.length,
         "art_style": request.art_style,
         "custom_art_style_prompt": request.custom_art_style_prompt,
-        "story_text": "",
-        "title": "",
-        "segments": [],
-        "audio_segments": [],
-        "final_audio": b"",
-        "final_audio_path": None,
-        "duration_seconds": 0,
-        "error": None,
-        "scenes": None,
-        "character_description": None,
     }
 
-    # Start pipeline in background
-    asyncio.create_task(run_pipeline(job_id, state))
+    generate_story_task(job_id, story_params)
 
     return JobCreatedResponse(
         job_id=job_id,
