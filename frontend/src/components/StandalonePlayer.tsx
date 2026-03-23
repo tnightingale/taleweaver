@@ -101,6 +101,7 @@ export default function StandalonePlayer() {
           scenes: story.scenes,
         }}
         onCreateAnother={() => navigate("/")}
+        onBackToLibrary={() => navigate("/library")}
       />
     </>
   );
