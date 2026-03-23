@@ -101,6 +101,21 @@ export async function retryJob(jobId: string): Promise<{job_id: string; status: 
   return handleResponse(res);
 }
 
+export interface RecentJob {
+  job_id: string;
+  status: string;
+  current_stage: string;
+  progress: number;
+  title: string | null;
+  created_at: string;
+  error: string | null;
+}
+
+export async function fetchRecentJobs(): Promise<{jobs: RecentJob[]}> {
+  const res = await fetch(`${BASE}/jobs/recent`);
+  return handleResponse(res);
+}
+
 // Library API
 export async function listStories(
   kidName?: string,

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import HeroScreen from "../components/HeroScreen";
+import InProgressJobs from "../components/InProgressJobs";
 import type { KidProfile, StoryType } from "../types";
 
 export default function HeroRoute() {
@@ -18,5 +19,10 @@ export default function HeroRoute() {
     navigate("/library");
   };
 
-  return <HeroScreen onSubmit={handleSubmit} onViewLibrary={handleViewLibrary} />;
+  return (
+    <>
+      <InProgressJobs />
+      <HeroScreen onSubmit={handleSubmit} onViewLibrary={handleViewLibrary} />
+    </>
+  );
 }
