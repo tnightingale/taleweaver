@@ -70,62 +70,63 @@ class NanoBanana2Provider(IllustrationProvider):
         if reference_image_url:
             logger.debug(f"   Reference image: {reference_image_url}")
         
+        import asyncio
+
+        IMAGE_TIMEOUT = 60  # seconds per API call
+        MAX_ATTEMPTS = 2    # retry once on "no image" response
+
         try:
-            # Prepare generation config
             generation_config = {}
-            
-            # Note: Not all parameters supported by all Gemini image models
-            # Gemini 3.1 Flash Image may have limited config options
-            
+
             if reference_image_url:
-                # Image-to-image mode: include reference image
                 logger.warning("Reference image support not yet implemented, using text-to-image")
-                # TODO: Download reference image and include in request
-            
-            # Generate image (synchronous - google-generativeai doesn't have async yet)
-            # We'll run in executor to avoid blocking
-            import asyncio
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.model.generate_content(
-                    full_prompt,
-                    generation_config=generation_config
+
+            for attempt in range(MAX_ATTEMPTS):
+                # Timeout prevents hanging indefinitely on slow/unresponsive API
+                response = await asyncio.wait_for(
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        lambda: self.model.generate_content(
+                            full_prompt,
+                            generation_config=generation_config
+                        )
+                    ),
+                    timeout=IMAGE_TIMEOUT,
                 )
-            )
-            
-            # Extract image from response
-            # Response may have image data in different formats
-            if hasattr(response, 'parts'):
-                for part in response.parts:
-                    # Check for inline data (image)
-                    if hasattr(part, 'inline_data') and part.inline_data:
-                        # Get image data as base64
-                        image_data = part.inline_data.data
-                        
-                        # Decode if needed
-                        if isinstance(image_data, str):
-                            image_bytes = base64.b64decode(image_data)
-                        else:
-                            image_bytes = image_data
-                        
-                        # Convert to PNG if not already
-                        try:
-                            img = Image.open(BytesIO(image_bytes))
-                            img_byte_arr = BytesIO()
-                            img.save(img_byte_arr, format='PNG')
-                            png_bytes = img_byte_arr.getvalue()
-                            
-                            logger.info(f"Image generated successfully ({len(png_bytes)} bytes)")
-                            return png_bytes
-                        except Exception as img_err:
-                            # Already PNG, return as-is
-                            logger.info(f"Image generated successfully ({len(image_bytes)} bytes)")
-                            return image_bytes
-            
-            # No image found in response
-            raise Exception("No image found in Gemini response")
-            
+
+                # Extract image from response
+                if hasattr(response, 'parts'):
+                    for part in response.parts:
+                        if hasattr(part, 'inline_data') and part.inline_data:
+                            image_data = part.inline_data.data
+
+                            if isinstance(image_data, str):
+                                image_bytes = base64.b64decode(image_data)
+                            else:
+                                image_bytes = image_data
+
+                            try:
+                                img = Image.open(BytesIO(image_bytes))
+                                img_byte_arr = BytesIO()
+                                img.save(img_byte_arr, format='PNG')
+                                png_bytes = img_byte_arr.getvalue()
+                                logger.info(f"Image generated successfully ({len(png_bytes)} bytes)")
+                                return png_bytes
+                            except Exception:
+                                logger.info(f"Image generated successfully ({len(image_bytes)} bytes)")
+                                return image_bytes
+
+                # No image in response — retry if we have attempts left
+                if attempt < MAX_ATTEMPTS - 1:
+                    logger.warning(f"No image in Gemini response (attempt {attempt + 1}/{MAX_ATTEMPTS}), retrying...")
+                    continue
+
+            raise Exception(f"No image found in Gemini response after {MAX_ATTEMPTS} attempts")
+
+        except asyncio.TimeoutError:
+            logger.error(f"Gemini API call timed out after {IMAGE_TIMEOUT}s")
+            raise
+
         except Exception as e:
             # Enhanced error logging for debugging
             logger.exception(f"❌ NanoBanana 2 image generation failed")
