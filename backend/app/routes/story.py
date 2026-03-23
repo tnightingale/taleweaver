@@ -99,6 +99,10 @@ async def run_pipeline(job_id: str, state: dict):
     db = SessionLocal()
     
     try:
+        # Pass db session through state so nodes can reuse it
+        # This prevents creating 20+ new connections during generation
+        state["_db"] = db
+        
         pipeline = create_story_pipeline()
 
         logger.info(f"[{job_id}] Starting pipeline: type={state['story_type']}")
