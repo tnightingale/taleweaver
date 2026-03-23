@@ -281,12 +281,12 @@ export default function IllustratedStoryPlayer({
             ? `absolute bottom-0 left-0 right-0 transition-opacity duration-300
                ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}
                bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-4 px-4`
-            : `fixed bottom-0 left-0 right-0 sm:relative sm:static
+            : `fixed left-0 right-0 sm:relative sm:static
+               bottom-[calc(2.5rem+env(safe-area-inset-bottom))] sm:bottom-auto
                glass-card sm:rounded-2xl rounded-none
                border-t border-white/10 sm:border
                backdrop-blur-xl
-               px-4 py-2.5 sm:p-6
-               pb-[calc(0.625rem+env(safe-area-inset-bottom))] sm:pb-6`
+               px-4 py-2.5 sm:p-6 sm:pb-6`
         }`}
         style={!isFullscreen ? { WebkitBackdropFilter: "blur(20px)" } : undefined}
       >
@@ -380,28 +380,6 @@ export default function IllustratedStoryPlayer({
               </svg>
             </button>
           )}
-        </div>
-
-        {/* Mobile: nav buttons row (below transport controls) */}
-        <div className="sm:hidden flex items-center justify-center gap-2 mt-2">
-          {onBackToLibrary && (
-            <button
-              onClick={onBackToLibrary}
-              className="px-4 py-1.5 rounded-full text-[11px] font-medium
-                       bg-white/5 border border-purple-500/20 text-purple-200
-                       hover:bg-purple-500/20 transition-all cursor-pointer"
-            >
-              Library
-            </button>
-          )}
-          <button
-            onClick={onCreateAnother}
-            className="px-4 py-1.5 rounded-full text-[11px] font-medium
-                     bg-purple-500/20 border border-purple-500/30 text-purple-200
-                     hover:bg-purple-500/30 transition-all cursor-pointer"
-          >
-            New Story
-          </button>
         </div>
 
         {/* Desktop: full layout (hidden on mobile) */}
@@ -503,6 +481,33 @@ export default function IllustratedStoryPlayer({
           </div>
         </div>
       </div>
+
+      {/* Mobile: nav buttons pinned below the player */}
+      {!isFullscreen && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-10
+                        flex items-center justify-center gap-2
+                        py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]
+                        bg-void/90 backdrop-blur-sm border-t border-white/5">
+          {onBackToLibrary && (
+            <button
+              onClick={onBackToLibrary}
+              className="px-4 py-1.5 rounded-full text-[11px] font-medium
+                       bg-white/5 border border-purple-500/20 text-purple-200
+                       hover:bg-purple-500/20 transition-all cursor-pointer"
+            >
+              Library
+            </button>
+          )}
+          <button
+            onClick={onCreateAnother}
+            className="px-4 py-1.5 rounded-full text-[11px] font-medium
+                     bg-purple-500/20 border border-purple-500/30 text-purple-200
+                     hover:bg-purple-500/30 transition-all cursor-pointer"
+          >
+            New Story
+          </button>
+        </div>
+      )}
 
       {/* Transcript Toggle — desktop only (mobile has no room) */}
       {!isFullscreen && transcript && (

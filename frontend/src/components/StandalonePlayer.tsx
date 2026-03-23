@@ -139,7 +139,7 @@ export default function StandalonePlayer() {
   return (
     <>
       {isOffline && (
-        <div className="fixed bottom-[3.5rem] sm:bottom-auto sm:top-2 left-2 z-30 px-3 py-1.5 rounded-full
+        <div className="fixed bottom-[6.5rem] sm:bottom-auto sm:top-2 left-2 z-30 px-3 py-1.5 rounded-full
                         bg-purple-900/80 text-purple-200 text-[10px] backdrop-blur-sm
                         border border-purple-500/20 shadow-lg">
           Offline
@@ -150,7 +150,7 @@ export default function StandalonePlayer() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="fixed bottom-[3.5rem] sm:bottom-auto sm:top-2 left-2 z-30 px-3 py-1.5 rounded-full
+          className="fixed bottom-[6.5rem] sm:bottom-auto sm:top-2 left-2 z-30 px-3 py-1.5 rounded-full
                      bg-purple-900/80 text-ethereal text-[10px] backdrop-blur-sm
                      border border-purple-500/20 shadow-lg"
         >
