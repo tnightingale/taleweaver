@@ -159,7 +159,7 @@ export default function IllustratedStoryPlayer({
       className={`max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
-          : "sm:px-4 sm:py-8 sm:space-y-8 pb-20 sm:pb-0"
+          : "sm:px-4 sm:py-8 sm:space-y-8 pb-16 sm:pb-0"
       }`}
       onClick={isFullscreen ? resetHideTimer : undefined}
       onMouseMove={isFullscreen ? resetHideTimer : undefined}
@@ -190,7 +190,7 @@ export default function IllustratedStoryPlayer({
         className={`relative cursor-pointer ${
           isFullscreen ? "w-full h-full" : ""
         }`}
-        style={isFullscreen ? undefined : { perspective: "2000px" }}
+        style={isFullscreen ? undefined : { perspective: "2000px", paddingTop: 'env(safe-area-inset-top)' }}
         onClick={(e) => {
           // Don't toggle play if clicking on a control (button, input, etc.)
           if ((e.target as HTMLElement).closest("button, input")) return;
@@ -378,6 +378,27 @@ export default function IllustratedStoryPlayer({
           )}
         </div>
 
+        {/* Mobile: nav buttons row (below transport controls) */}
+        <div className="sm:hidden flex items-center justify-center gap-3 mt-1.5">
+          {onBackToLibrary && (
+            <button
+              onClick={onBackToLibrary}
+              className="text-[11px] text-purple-300/70 hover:text-purple-200 transition-colors cursor-pointer"
+            >
+              Library
+            </button>
+          )}
+          {onBackToLibrary && (
+            <span className="text-purple-500/30 text-[10px]">|</span>
+          )}
+          <button
+            onClick={onCreateAnother}
+            className="text-[11px] text-purple-300/70 hover:text-purple-200 transition-colors cursor-pointer"
+          >
+            New Story
+          </button>
+        </div>
+
         {/* Desktop: full layout (hidden on mobile) */}
         <div className="hidden sm:block space-y-4">
           <div className="relative">
@@ -523,22 +544,22 @@ export default function IllustratedStoryPlayer({
         </AnimatePresence>
       )}
 
-      {/* Actions — hidden in fullscreen */}
+      {/* Actions — desktop only (mobile has these in the player bar) */}
       {!isFullscreen && (
-        <div className="flex gap-4 justify-center pt-2 sm:pt-4 px-4 sm:px-0">
+        <div className="hidden sm:flex gap-4 justify-center pt-4">
           {onBackToLibrary && (
             <button
               onClick={onBackToLibrary}
               className="px-6 py-3 rounded-xl glass-card text-ethereal hover:text-white text-sm font-medium transition-all cursor-pointer"
             >
-              📚 Library
+              Library
             </button>
           )}
           <button
             onClick={onCreateAnother}
             className="btn-glow text-sm cursor-pointer"
           >
-            ✨ Create Another Story
+            Create Another Story
           </button>
         </div>
       )}
