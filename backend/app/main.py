@@ -33,20 +33,35 @@ from datetime import datetime, timedelta
 from app.db.database import SessionLocal
 from app.db.models import JobState
 
+_last_orphan_check: Optional[datetime] = None
+
 @app.get("/api/jobs/recent")
 async def get_recent_jobs():
     """Get jobs from last 24 hours for navigation persistence"""
+    global _last_orphan_check
     from sqlalchemy.exc import OperationalError
-    
+
     db = SessionLocal()
     try:
-        cutoff = datetime.utcnow() - timedelta(hours=24)
+        # Periodically recover orphaned jobs (at most once per minute).
+        # This catches jobs left in "processing" after a deploy or crash,
+        # even if the startup check ran too early to detect them.
+        now = datetime.utcnow()
+        if _last_orphan_check is None or (now - _last_orphan_check).total_seconds() >= 60:
+            from app.db.crud import recover_orphaned_jobs
+            recovered = recover_orphaned_jobs(db, stale_minutes=5)
+            if recovered:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Recovered {recovered} orphaned job(s) during periodic check")
+            _last_orphan_check = now
+
+        cutoff = now - timedelta(hours=24)
         jobs = db.query(JobState).filter(
             JobState.created_at > cutoff
         ).order_by(
             JobState.created_at.desc()
         ).limit(20).all()
-        
+
         return {
             "jobs": [
                 {
