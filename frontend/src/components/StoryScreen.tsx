@@ -106,7 +106,7 @@ export default function StoryScreen({
   const downloadUrl = audioUrl ? `${audioUrl}?download=true` : "";
 
   return (
-    <div ref={playerRef} className={`flex flex-col items-center justify-center min-h-[60vh] px-4 ${isFullscreen ? "bg-void h-screen" : ""}`}>
+    <div ref={playerRef} className={`flex flex-col items-center justify-center min-h-[60vh] ${isFullscreen ? "bg-void h-screen" : ""} ${storyData?.has_illustrations && storyData?.scenes ? "sm:px-4" : "px-4"}`}>
       <AnimatePresence mode="wait">
         {isGenerating ? (
           /* ─── Phase 1: Generation Animation ─── */

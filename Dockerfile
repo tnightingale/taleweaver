@@ -3,9 +3,10 @@
 # Serves frontend + backend on port 80 via Caddy reverse proxy
 
 # ============================================================================
-# Stage 1: Build frontend static assets
+# Stage 1a: Frontend base (Node + npm deps installed)
+# Shared by both tests and production build to avoid reinstalling every run.
 # ============================================================================
-FROM node:20-slim AS frontend-build
+FROM node:20-slim AS frontend-base
 
 WORKDIR /app/frontend
 
@@ -13,8 +14,14 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 
-# Build production bundle
+# Copy source (needed by both test and build)
 COPY frontend/ ./
+
+# ============================================================================
+# Stage 1b: Build frontend static assets (production bundle)
+# ============================================================================
+FROM frontend-base AS frontend-build
+
 RUN npm run build
 
 # ============================================================================

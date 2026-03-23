@@ -180,10 +180,16 @@ export default function IllustratedStoryPlayer({
 
       {/* ── Image Area ── */}
       <div
-        className={`relative ${
+        className={`relative cursor-pointer ${
           isFullscreen ? "w-full h-full" : ""
         }`}
         style={isFullscreen ? undefined : { perspective: "2000px" }}
+        onClick={(e) => {
+          // Don't toggle play if clicking on a control (button, input, etc.)
+          if ((e.target as HTMLElement).closest("button, input")) return;
+          togglePlay();
+          if (isFullscreen) resetHideTimer();
+        }}
       >
         <AnimatePresence mode="wait">
           {currentScene?.image_url && (

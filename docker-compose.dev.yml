@@ -68,6 +68,21 @@ services:
     profiles:
       - test
 
+  # Test runner for frontend (on-demand)
+  # Uses frontend-base stage: node_modules are pre-installed, no setup delay.
+  frontend-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-base
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/vitest.config.ts:/app/frontend/vitest.config.ts
+    command: npx vitest run
+    profiles:
+      - test
+
   # Frontend development server with hot reload (for development only)
   frontend-dev:
     profiles:
