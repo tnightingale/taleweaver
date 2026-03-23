@@ -55,3 +55,4 @@ class StoryState(TypedDict):
     # Illustration outputs
     scenes: Optional[list[Scene]]  # Scene metadata with illustration data
     character_description: Optional[str]  # Extracted character description for consistency
+    cover_image_path: Optional[str]  # Path to generated cover image

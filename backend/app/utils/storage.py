@@ -86,6 +86,23 @@ def illustration_exists(story_id: str, scene_index: int) -> bool:
     return image_path.exists()
 
 
+def save_cover_image(story_id: str, image_bytes: bytes) -> str:
+    """Save cover image to filesystem. Returns filesystem path."""
+    story_dir = settings.storage_path / "stories" / story_id
+    story_dir.mkdir(parents=True, exist_ok=True)
+
+    image_path = story_dir / "cover.png"
+    image_path.write_bytes(image_bytes)
+
+    logger.info(f"Saved cover image: {image_path} ({len(image_bytes)} bytes)")
+    return str(image_path)
+
+
+def get_cover_image_url(story_id: str) -> str:
+    """Get public URL for cover image."""
+    return f"/storage/stories/{story_id}/cover.png"
+
+
 # ============================================================================
 # Temp Audio Segment Storage (for resume capability)
 # ============================================================================

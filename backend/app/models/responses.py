@@ -72,6 +72,7 @@ class StoryResponse(BaseModel):
     has_illustrations: bool = False
     art_style: Optional[str] = None
     scenes: Optional[List[SceneResponse]] = None
+    cover_image_url: Optional[str] = None
 
 
 class StoriesListResponse(BaseModel):

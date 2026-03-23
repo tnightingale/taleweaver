@@ -71,8 +71,31 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -4 }}
-      className="glass-card p-4 flex flex-col gap-3 relative"
+      className="glass-card overflow-hidden flex flex-col relative"
     >
+      {/* Cover Image */}
+      {story.cover_image_url ? (
+        <div className="aspect-[3/2] w-full overflow-hidden cursor-pointer" onClick={onPlay}>
+          <img
+            src={story.cover_image_url}
+            alt={story.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div
+          className="aspect-[3/2] w-full flex items-center justify-center cursor-pointer
+                     bg-gradient-to-br from-purple-900/40 to-abyss/60"
+          onClick={onPlay}
+        >
+          <span className="text-4xl opacity-40">
+            {story.story_type === "historical" ? "🏛️" : "✨"}
+          </span>
+        </div>
+      )}
+
+      <div className="p-4 flex flex-col gap-3">
       {/* Title */}
       {isEditing ? (
         <div className="relative">
@@ -162,6 +185,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
         >
           {isDeleting ? "Deleting..." : "🗑️ Delete"}
         </button>
+      </div>
       </div>
     </motion.div>
   );

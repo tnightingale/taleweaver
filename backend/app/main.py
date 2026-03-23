@@ -178,6 +178,17 @@ async def status():
     }
 
 
+def _get_cover_image_url(story) -> Optional[str]:
+    """Get cover image URL: prefer dedicated cover, fall back to first scene image."""
+    if getattr(story, "cover_image_path", None):
+        return f"/storage/stories/{story.id}/cover.png"
+    if story.has_illustrations and story.scene_data:
+        scenes = story.scene_data.get("scenes", [])
+        if scenes and scenes[0].get("image_url"):
+            return scenes[0]["image_url"]
+    return None
+
+
 # Permalink API routes (under /api for clarity)
 @app.get("/api/permalink/{short_id}", response_model=StoryResponse)
 async def get_story_permalink(short_id: str):
@@ -224,6 +235,7 @@ async def get_story_permalink(short_id: str):
             has_illustrations=story.has_illustrations,
             art_style=story.art_style,
             scenes=scenes,
+            cover_image_url=_get_cover_image_url(story),
         )
         return Response(
             content=response.model_dump_json(),
@@ -299,10 +311,12 @@ async def list_all_stories(
                 genre=story.genre,
                 event_id=story.event_id,
                 transcript=story.transcript,
-            duration_seconds=story.duration_seconds,
-            created_at=story.created_at.isoformat() + 'Z',  # Append Z to indicate UTC
-            permalink=f"/s/{story.short_id}",
-            audio_url=f"/api/permalink/{story.short_id}/audio",
+                duration_seconds=story.duration_seconds,
+                created_at=story.created_at.isoformat() + 'Z',
+                permalink=f"/s/{story.short_id}",
+                audio_url=f"/api/permalink/{story.short_id}/audio",
+                has_illustrations=story.has_illustrations,
+                cover_image_url=_get_cover_image_url(story),
             )
             for story in stories
         ]

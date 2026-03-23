@@ -113,6 +113,7 @@ export interface StoryMetadata {
   has_illustrations: boolean;
   art_style?: string;
   scenes?: Scene[];
+  cover_image_url?: string;
 }
 
 export interface ArtStyle {

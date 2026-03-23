@@ -33,6 +33,7 @@ class Story(Base):
     art_style = Column(String, nullable=True)  # Art style preset ID or "custom"
     has_illustrations = Column(Boolean, default=False, nullable=False)
     scene_data = Column(JSON, nullable=True)  # Scene metadata with illustration info
+    cover_image_path = Column(String, nullable=True)  # Path to dedicated cover image
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

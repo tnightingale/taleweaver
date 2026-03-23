@@ -115,6 +115,12 @@ def run_migrations():
             migrations_applied.append("job_state.story_params_json")
             logger.info("✅ Added column: job_state.story_params_json")
 
+        # Migration 5: Add cover_image_path to stories (2026-03-23)
+        if stories_exists and "cover_image_path" not in existing_columns:
+            cursor.execute("ALTER TABLE stories ADD COLUMN cover_image_path TEXT")
+            migrations_applied.append("stories.cover_image_path")
+            logger.info("✅ Added column: stories.cover_image_path")
+
         conn.commit()
         
         if migrations_applied:

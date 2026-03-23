@@ -42,6 +42,7 @@ def save_story(
     length: str = None,
     art_style: str = None,
     scene_data: dict = None,
+    cover_image_path: str = None,
 ) -> Story:
     """
     Save story to database and write audio to filesystem.
@@ -105,6 +106,7 @@ def save_story(
         art_style=art_style,
         has_illustrations=bool(scene_data),
         scene_data=scene_data,
+        cover_image_path=cover_image_path,
     )
     db.add(db_story)
     db.commit()

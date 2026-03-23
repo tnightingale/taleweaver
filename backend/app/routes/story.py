@@ -153,6 +153,7 @@ async def run_pipeline(job_id: str, state: dict):
                 audio_bytes=final_state.get("final_audio"),
                 art_style=state.get("art_style"),
                 scene_data=scene_data,
+                cover_image_path=final_state.get("cover_image_path"),
             )
             short_id = db_story.short_id
             logger.info(f"[{job_id}] Story persisted with short_id={short_id}")
