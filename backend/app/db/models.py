@@ -75,6 +75,7 @@ class JobState(Base):
     partial_data_json = Column(Text)  # JSON checkpoint state
     checkpoint_node = Column(String)  # Last successful node
     retry_count = Column(Integer, default=0, nullable=False)  # Retry attempts
+    story_params_json = Column(Text)  # JSON: original story params for retry re-enqueue
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

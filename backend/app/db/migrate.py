@@ -108,7 +108,13 @@ def run_migrations():
             cursor.execute("ALTER TABLE job_state ADD COLUMN retry_count INTEGER DEFAULT 0 NOT NULL")
             migrations_applied.append("job_state.retry_count")
             logger.info("✅ Added column: job_state.retry_count")
-        
+
+        # Migration 4: Add story_params_json to job_state (for huey retry re-enqueue)
+        if "story_params_json" not in job_state_columns:
+            cursor.execute("ALTER TABLE job_state ADD COLUMN story_params_json TEXT")
+            migrations_applied.append("job_state.story_params_json")
+            logger.info("✅ Added column: job_state.story_params_json")
+
         conn.commit()
         
         if migrations_applied:

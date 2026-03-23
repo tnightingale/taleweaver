@@ -203,16 +203,7 @@ async def create_custom_story(request: CustomStoryRequest):
     else:
         stages = ["writing", "splitting", "synthesizing", "stitching"]
     
-    # Create job state in database (shared across workers)
-    db = SessionLocal()
-    try:
-        create_job_state(db, job_id, stages)
-    finally:
-        db.close()
-
-    # Enqueue via huey — only serializable params, no bytes or db sessions
-    from app.jobs.tasks import generate_story_task
-
+    # Only serializable params — no bytes, no db sessions
     story_params = {
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
@@ -228,6 +219,15 @@ async def create_custom_story(request: CustomStoryRequest):
         "custom_art_style_prompt": request.custom_art_style_prompt,
     }
 
+    # Create job state in database (stores params for retry)
+    db = SessionLocal()
+    try:
+        create_job_state(db, job_id, stages, story_params=story_params)
+    finally:
+        db.close()
+
+    # Enqueue via huey background worker
+    from app.jobs.tasks import generate_story_task
     generate_story_task(job_id, story_params)
 
     return JobCreatedResponse(
@@ -262,16 +262,6 @@ async def create_historical_story(request: HistoricalStoryRequest):
     else:
         stages = ["writing", "splitting", "synthesizing", "stitching"]
     
-    # Create job state in database (shared across workers)
-    db = SessionLocal()
-    try:
-        create_job_state(db, job_id, stages)
-    finally:
-        db.close()
-
-    # Enqueue via huey — only serializable params
-    from app.jobs.tasks import generate_story_task
-
     story_params = {
         "kid_name": request.kid.name,
         "kid_age": request.kid.age,
@@ -287,6 +277,15 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "custom_art_style_prompt": request.custom_art_style_prompt,
     }
 
+    # Create job state in database (stores params for retry)
+    db = SessionLocal()
+    try:
+        create_job_state(db, job_id, stages, story_params=story_params)
+    finally:
+        db.close()
+
+    # Enqueue via huey background worker
+    from app.jobs.tasks import generate_story_task
     generate_story_task(job_id, story_params)
 
     return JobCreatedResponse(
@@ -420,18 +419,29 @@ async def retry_job(job_id: str):
         
         if not job.resumable:
             raise HTTPException(status_code=400, detail="Job cannot be resumed (permanent error)")
-        
+
         if job.retry_count >= 3:
             raise HTTPException(status_code=400, detail="Maximum retry limit reached (3 attempts)")
-        
+
+        if not job.story_params_json:
+            raise HTTPException(
+                status_code=400,
+                detail="Job cannot be retried (no stored parameters — legacy job)"
+            )
+
         # Update retry count and status
         job.retry_count += 1
         job.status = "processing"
         job.error_message = None
         db.commit()
-        
-        logger.info(f"Job {job_id} resuming (retry {job.retry_count}/3)")
-        
+
+        # Re-enqueue via huey with stored params
+        from app.jobs.tasks import generate_story_task
+        story_params = json.loads(job.story_params_json)
+        generate_story_task(job_id, story_params)
+
+        logger.info(f"Job {job_id} re-enqueued via huey (retry {job.retry_count}/3)")
+
         return {"job_id": job_id, "status": "resuming", "retry_count": job.retry_count}
         
     finally:

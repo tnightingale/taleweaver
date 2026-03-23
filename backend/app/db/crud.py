@@ -264,15 +264,18 @@ def update_story_title(db: Session, short_id: str, new_title: str) -> Optional[S
 # Job State CRUD (for multi-worker job tracking)
 # ============================================================================
 
-def create_job_state(db: Session, job_id: str, stages: List[str]) -> JobState:
+def create_job_state(
+    db: Session, job_id: str, stages: List[str], story_params: dict = None
+) -> JobState:
     """
     Create new job state entry.
-    
+
     Args:
         db: SQLAlchemy database session
         job_id: UUID for the job
         stages: List of stage names for this job
-        
+        story_params: Original story parameters (stored for retry re-enqueue)
+
     Returns:
         Created JobState record
     """
@@ -282,6 +285,7 @@ def create_job_state(db: Session, job_id: str, stages: List[str]) -> JobState:
         current_stage=stages[0] if stages else "writing",
         stages=json.dumps(stages),
         progress=0.0,
+        story_params_json=json.dumps(story_params) if story_params else None,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
