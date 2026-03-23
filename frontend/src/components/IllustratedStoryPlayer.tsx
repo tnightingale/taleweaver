@@ -117,6 +117,13 @@ export default function IllustratedStoryPlayer({
     }
   };
 
+  const restartFromBeginning = () => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    setCurrentTime(0);
+    audioRef.current.play().catch(() => {});
+  };
+
   const jumpToScene = (sceneIndex: number) => {
     if (audioRef.current && scenes[sceneIndex]) {
       audioRef.current.currentTime = scenes[sceneIndex].timestamp_start;
@@ -279,7 +286,16 @@ export default function IllustratedStoryPlayer({
         style={!isFullscreen ? { WebkitBackdropFilter: "blur(20px)" } : undefined}
       >
         {/* Mobile: compact single row. Desktop: stacked layout */}
-        <div className="sm:hidden flex items-center gap-3">
+        <div className="sm:hidden flex items-center gap-2">
+          <button
+            onClick={restartFromBeginning}
+            className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+                     text-starlight/50 hover:text-starlight hover:bg-white/10
+                     transition-all cursor-pointer text-sm"
+            title="Start from beginning"
+          >
+            ⏮
+          </button>
           <button
             onClick={togglePlay}
             className="w-10 h-10 shrink-0 rounded-full bg-purple-500
@@ -363,15 +379,26 @@ export default function IllustratedStoryPlayer({
           </div>
 
           <div className="flex items-center justify-between">
-            <button
-              onClick={togglePlay}
-              className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
-                       flex items-center justify-center text-white text-xl
-                       shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]
-                       transition-all cursor-pointer"
-            >
+            <div className="flex items-center gap-2">
+              <button
+                onClick={restartFromBeginning}
+                className="w-10 h-10 rounded-full flex items-center justify-center
+                         text-starlight/60 hover:text-starlight hover:bg-white/10
+                         transition-all cursor-pointer text-lg"
+                title="Start from beginning"
+              >
+                ⏮
+              </button>
+              <button
+                onClick={togglePlay}
+                className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-600
+                         flex items-center justify-center text-white text-xl
+                         shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]
+                         transition-all cursor-pointer"
+              >
               {isPlaying ? "⏸" : "▶"}
             </button>
+            </div>
 
             <div className="text-sm text-starlight/60 font-mono">
               {formatTime(currentTime)} / {formatTime(duration)}
