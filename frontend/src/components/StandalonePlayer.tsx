@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { StoryMetadata } from "../types";
+import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import StoryScreen from "./StoryScreen";
 
 export default function StandalonePlayer() {
@@ -10,6 +11,7 @@ export default function StandalonePlayer() {
   const [story, setStory] = useState<StoryMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { isOffline } = useOfflineStatus();
 
   useEffect(() => {
     if (!shortId) return;
@@ -24,7 +26,12 @@ export default function StandalonePlayer() {
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message || "Failed to load story");
+        // If offline and fetch failed, the SW cache missed
+        if (!navigator.onLine) {
+          setError("This story isn't available offline yet. Visit it once while online to save it for offline listening.");
+        } else {
+          setError(err.message || "Failed to load story");
+        }
         setLoading(false);
       });
   }, [shortId]);
@@ -52,8 +59,10 @@ export default function StandalonePlayer() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center glass-card p-8 max-w-md"
         >
-          <div className="text-6xl mb-4">😔</div>
-          <h2 className="text-2xl font-display text-glow mb-2">Story Not Found</h2>
+          <div className="text-6xl mb-4">{isOffline ? "📡" : "😔"}</div>
+          <h2 className="text-2xl font-display text-glow mb-2">
+            {isOffline ? "Offline" : "Story Not Found"}
+          </h2>
           <p className="text-starlight/60 mb-6">
             {error || "This story doesn't exist or may have been deleted."}
           </p>
@@ -65,28 +74,34 @@ export default function StandalonePlayer() {
     );
   }
 
-  // Render the story using StoryScreen component
   return (
-    <StoryScreen
-      isGenerating={false}
-      title={story.title}
-      audioUrl={story.audio_url}
-      durationSeconds={story.duration_seconds}
-      transcript={story.transcript}
-      storyData={{
-        job_id: story.id,
-        status: "complete",
-        title: story.title,
-        duration_seconds: story.duration_seconds,
-        audio_url: story.audio_url,
-        transcript: story.transcript,
-        short_id: story.short_id,
-        permalink: story.permalink,
-        has_illustrations: story.has_illustrations || false,
-        art_style: story.art_style,
-        scenes: story.scenes,
-      }}
-      onCreateAnother={() => navigate("/")}
-    />
+    <>
+      {isOffline && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-purple-900/90 text-starlight text-center text-xs py-1.5 backdrop-blur-sm">
+          Offline — playing cached version
+        </div>
+      )}
+      <StoryScreen
+        isGenerating={false}
+        title={story.title}
+        audioUrl={story.audio_url}
+        durationSeconds={story.duration_seconds}
+        transcript={story.transcript}
+        storyData={{
+          job_id: story.id,
+          status: "complete",
+          title: story.title,
+          duration_seconds: story.duration_seconds,
+          audio_url: story.audio_url,
+          transcript: story.transcript,
+          short_id: story.short_id,
+          permalink: story.permalink,
+          has_illustrations: story.has_illustrations || false,
+          art_style: story.art_style,
+          scenes: story.scenes,
+        }}
+        onCreateAnother={() => navigate("/")}
+      />
+    </>
   );
 }

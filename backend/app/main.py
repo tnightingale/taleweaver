@@ -192,7 +192,7 @@ async def get_story_permalink(short_id: str):
                 for s in story.scene_data.get("scenes", [])
             ]
         
-        return StoryResponse(
+        response = StoryResponse(
             id=story.id,
             short_id=story.short_id,
             title=story.title,
@@ -209,6 +209,11 @@ async def get_story_permalink(short_id: str):
             has_illustrations=story.has_illustrations,
             art_style=story.art_style,
             scenes=scenes,
+        )
+        return Response(
+            content=response.model_dump_json(),
+            media_type="application/json",
+            headers={"Cache-Control": "public, max-age=3600"},
         )
     finally:
         db.close()
@@ -240,6 +245,7 @@ async def get_story_audio_permalink(short_id: str):
         path=audio_path,
         media_type="audio/mpeg",
         filename=f"{safe_filename}.mp3",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
 
 

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { JobCompleteResponse } from "../types";
 import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
 import ProgressRing from "./ProgressRing";
+import { useFullscreen } from "../hooks/useFullscreen";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -48,6 +49,8 @@ export default function StoryScreen({
   onBackToLibrary,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(playerRef);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds);
@@ -103,7 +106,7 @@ export default function StoryScreen({
   const downloadUrl = audioUrl ? `${audioUrl}?download=true` : "";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+    <div ref={playerRef} className={`flex flex-col items-center justify-center min-h-[60vh] px-4 ${isFullscreen ? "bg-void h-screen" : ""}`}>
       <AnimatePresence mode="wait">
         {isGenerating ? (
           /* ─── Phase 1: Generation Animation ─── */
@@ -252,8 +255,8 @@ export default function StoryScreen({
                       <span>{formatTime(duration)}</span>
                     </div>
 
-                    {/* Play/Pause Button */}
-                    <div className="flex justify-center">
+                    {/* Play/Pause Button + Fullscreen */}
+                    <div className="flex items-center justify-center gap-4">
                       <motion.button
                         onClick={togglePlay}
                         whileTap={{ scale: 0.9 }}
@@ -261,7 +264,7 @@ export default function StoryScreen({
                           boxShadow:
                             "0 0 30px rgba(124, 58, 237, 0.6), 0 0 60px rgba(124, 58, 237, 0.3)",
                         }}
-                        className="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer"
+                        className="w-20 h-20 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer"
                         style={{
                           background:
                             "linear-gradient(135deg, #7c3aed, #6d28d9)",
@@ -271,6 +274,17 @@ export default function StoryScreen({
                       >
                         {isPlaying ? "⏸" : "▶"}
                       </motion.button>
+                      {fullscreenSupported && (
+                        <button
+                          onClick={toggleFullscreen}
+                          className="w-10 h-10 rounded-full flex items-center justify-center
+                                   text-starlight/60 hover:text-starlight hover:bg-white/10
+                                   transition-all cursor-pointer text-lg"
+                          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                        >
+                          {isFullscreen ? "⤓" : "⤢"}
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
