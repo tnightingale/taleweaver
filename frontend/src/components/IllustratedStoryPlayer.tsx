@@ -282,7 +282,7 @@ export default function IllustratedStoryPlayer({
                ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}
                bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-4 px-4`
             : `fixed left-0 right-0 sm:relative sm:static
-               bottom-[calc(2.5rem+env(safe-area-inset-bottom))] sm:bottom-auto
+               bottom-[calc(3rem+env(safe-area-inset-bottom))] sm:bottom-auto
                glass-card sm:rounded-2xl rounded-none
                border-t border-white/10 sm:border
                backdrop-blur-xl
