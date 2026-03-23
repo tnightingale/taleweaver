@@ -44,10 +44,11 @@ def test_db():
     )
     db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_module.engine)
     
-    # Initialize tables
-    init_db()
+    # Initialize tables with the NEW test engine
+    from app.db.database import Base
+    Base.metadata.create_all(bind=db_module.engine)  # Use test engine explicitly
     
-    # Run migrations (creates job_state table and adds any missing columns)
+    # Run migrations (adds any missing columns)
     from app.db.migrate import run_migrations
     run_migrations()
     
