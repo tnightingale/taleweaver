@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { StoryMetadata } from "../types";
@@ -12,6 +12,7 @@ export default function StandalonePlayer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cachedOffline, setCachedOffline] = useState(false);
+  const cachedOfflineRef = useRef(false);
   const { isOffline } = useOfflineStatus();
 
   // Listen for SW confirmation that audio is cached
@@ -19,8 +20,8 @@ export default function StandalonePlayer() {
     if (!('serviceWorker' in navigator)) return;
     const handler = (event: MessageEvent) => {
       if (event.data?.type === 'AUDIO_CACHED') {
+        cachedOfflineRef.current = true;
         setCachedOffline(true);
-        // Auto-hide after 3 seconds
         setTimeout(() => setCachedOffline(false), 3000);
       }
     };
@@ -40,16 +41,37 @@ export default function StandalonePlayer() {
         setStory(data);
         setLoading(false);
 
-        // Prefetch audio for offline — tell SW to cache the full file
-        // Use .ready to wait for SW activation (critical on iOS Safari where
-        // .controller is null on first load until skipWaiting+claim completes)
-        if ('serviceWorker' in navigator && data.audio_url) {
-          navigator.serviceWorker.ready.then((reg) => {
-            reg.active?.postMessage({
-              type: 'PREFETCH_AUDIO',
-              url: data.audio_url,
+        // Prefetch audio for offline using two approaches:
+        // 1. postMessage to SW (preferred — SW caches + sends AUDIO_CACHED confirmation)
+        // 2. Direct fetch fallback (ensures audio goes through SW fetch handler which caches it)
+        // Both are needed because iOS Safari has timing issues with postMessage on first load.
+        if (data.audio_url) {
+          const audioUrl = data.audio_url;
+
+          // Approach 1: Ask SW directly
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.active?.postMessage({ type: 'PREFETCH_AUDIO', url: audioUrl });
             });
-          });
+          }
+
+          // Approach 2: Direct fetch (goes through SW fetch handler → CacheFirst caches it)
+          // Small delay to let the SW activate and register its routes first
+          setTimeout(() => {
+            fetch(audioUrl).then(() => {
+              // If the SW postMessage path didn't fire the toast, check cache directly
+              if ('caches' in window) {
+                caches.open('story-audio').then((cache) =>
+                  cache.match(audioUrl).then((cached) => {
+                    if (cached && !cachedOfflineRef.current) {
+                      setCachedOffline(true);
+                      setTimeout(() => setCachedOffline(false), 3000);
+                    }
+                  })
+                );
+              }
+            }).catch(() => {});
+          }, 1000);
         }
       })
       .catch((err) => {
