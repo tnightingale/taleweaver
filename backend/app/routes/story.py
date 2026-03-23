@@ -116,8 +116,9 @@ async def run_pipeline(job_id: str, state: dict):
                 idx = STAGE_ORDER.index(node_name) if node_name in STAGE_ORDER else -1
                 if idx + 1 < len(STAGE_ORDER):
                     next_stage = NODE_TO_STAGE[STAGE_ORDER[idx + 1]]
-                    update_job_stage(db, job_id, next_stage)
-                    logger.info(f"[{job_id}] Stage: {next_stage}")
+                    stage_progress = ((idx + 1) / len(STAGE_ORDER)) * 100
+                    update_job_stage(db, job_id, next_stage, progress=stage_progress)
+                    logger.info(f"[{job_id}] Stage: {next_stage} ({stage_progress:.0f}%)")
                 # Merge node output into our tracked state
                 if final_state is None:
                     final_state = {**state, **event[node_name]}
