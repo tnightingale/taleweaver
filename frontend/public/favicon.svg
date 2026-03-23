@@ -1,26 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa" />
+      <stop offset="100%" style="stop-color:#7c3aed" />
     </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4b5fd" />
+      <stop offset="100%" style="stop-color:#a78bfa" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#1a0b2e;stop-opacity:0" />
+    </radialGradient>
   </defs>
-  
-  <!-- Background circle with glow -->
-  <circle cx="50" cy="50" r="48" fill="#1a0b2e" stroke="url(#gradient)" stroke-width="2"/>
-  
-  <!-- Book icon -->
-  <g transform="translate(30, 25)">
-    <!-- Book pages -->
-    <rect x="0" y="5" width="35" height="45" rx="2" fill="url(#gradient)" opacity="0.9"/>
-    <rect x="5" y="0" width="35" height="45" rx="2" fill="url(#gradient)"/>
-    
-    <!-- Book spine line -->
-    <line x1="22" y1="0" x2="22" y2="45" stroke="#1a0b2e" stroke-width="1.5"/>
-    
-    <!-- Magic sparkles -->
-    <circle cx="38" cy="10" r="2" fill="#fde047"/>
-    <circle cx="42" cy="6" r="1.5" fill="#fde047"/>
-    <circle cx="35" cy="15" r="1" fill="#fde047"/>
+
+  <!-- Background -->
+  <circle cx="50" cy="50" r="48" fill="#1a0b2e" stroke="url(#g1)" stroke-width="2"/>
+  <circle cx="50" cy="42" r="30" fill="url(#glow)"/>
+
+  <!-- Open book -->
+  <g transform="translate(50, 52)">
+    <!-- Left page -->
+    <path d="M-2,18 L-2,-16 Q-2,-20 -6,-20 L-24,-16 Q-26,-15 -26,-12 L-26,16 Q-26,19 -23,19 L-2,18 Z" fill="url(#g2)" opacity="0.85"/>
+    <!-- Right page -->
+    <path d="M2,18 L2,-16 Q2,-20 6,-20 L24,-16 Q26,-15 26,-12 L26,16 Q26,19 23,19 L2,18 Z" fill="url(#g1)" opacity="0.95"/>
+    <!-- Spine shadow -->
+    <line x1="0" y1="-18" x2="0" y2="19" stroke="#1a0b2e" stroke-width="2" opacity="0.5"/>
+    <!-- Page lines (left) -->
+    <line x1="-8" y1="-10" x2="-22" y2="-8" stroke="#1a0b2e" stroke-width="0.8" opacity="0.2"/>
+    <line x1="-8" y1="-5" x2="-22" y2="-3" stroke="#1a0b2e" stroke-width="0.8" opacity="0.2"/>
+    <line x1="-8" y1="0" x2="-22" y2="2" stroke="#1a0b2e" stroke-width="0.8" opacity="0.2"/>
+    <line x1="-8" y1="5" x2="-22" y2="7" stroke="#1a0b2e" stroke-width="0.8" opacity="0.2"/>
+  </g>
+
+  <!-- Magic trail rising from book -->
+  <path d="M50,34 Q44,24 48,16 Q52,8 46,2" fill="none" stroke="url(#g2)" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M50,34 Q56,22 52,14 Q48,6 54,0" fill="none" stroke="#fde047" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Sparkles -->
+  <circle cx="46" cy="14" r="2.5" fill="#fde047" opacity="0.9"/>
+  <circle cx="54" cy="8" r="2" fill="#fde047" opacity="0.7"/>
+  <circle cx="42" cy="6" r="1.5" fill="#c4b5fd" opacity="0.8"/>
+  <circle cx="58" cy="16" r="1.5" fill="#fde047" opacity="0.6"/>
+  <circle cx="48" cy="3" r="1" fill="#c4b5fd" opacity="0.9"/>
+  <circle cx="38" cy="20" r="1" fill="#fde047" opacity="0.5"/>
+
+  <!-- Star bursts -->
+  <g transform="translate(46,14)" fill="#fde047" opacity="0.9">
+    <rect x="-0.5" y="-4" width="1" height="8" rx="0.5"/>
+    <rect x="-4" y="-0.5" width="8" height="1" rx="0.5"/>
+  </g>
+  <g transform="translate(54,8) rotate(45)" fill="#fde047" opacity="0.6">
+    <rect x="-0.4" y="-3" width="0.8" height="6" rx="0.4"/>
+    <rect x="-3" y="-0.4" width="6" height="0.8" rx="0.4"/>
   </g>
 </svg>
