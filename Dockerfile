@@ -18,16 +18,28 @@ COPY frontend/ ./
 RUN npm run build
 
 # ============================================================================
-# Stage 2: Final production image
+# Stage 2: Backend base (Python + ffmpeg + pip deps)
+# Shared by both tests and production to avoid reinstalling every run.
 # ============================================================================
-FROM python:3.9-slim
+FROM python:3.9-slim AS backend-base
 
 WORKDIR /app
 
-# Install system dependencies (ffmpeg for pydub, curl for Caddy install + healthcheck, gnupg for Caddy GPG key)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ============================================================================
+# Stage 3: Final production image
+# ============================================================================
+FROM backend-base AS production
+
+# Install Caddy dependencies + Caddy (not needed for tests)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        ffmpeg \
         curl \
         ca-certificates \
         debian-keyring \
@@ -42,10 +54,6 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --de
     apt-get update && \
     apt-get install -y caddy && \
     rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend application
 COPY backend/ ./

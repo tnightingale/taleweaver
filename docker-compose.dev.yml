@@ -29,11 +29,13 @@ services:
   backend-dev:
     profiles:
       - dev
-    image: python:3.9-slim
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-base
     working_dir: /app
     volumes:
       - ./backend:/app
-      - backend-dev-venv:/app/venv
     environment:
       - PYTHONPATH=/app
       - LLM_PROVIDER=${LLM_PROVIDER:-groq}
@@ -43,39 +45,24 @@ services:
       - STORAGE_PATH=/app/storage
     ports:
       - "8000:8000"
-    command: >
-      bash -c "
-        if [ ! -d venv ]; then
-          python -m venv venv &&
-          . venv/bin/activate &&
-          pip install -q --upgrade pip &&
-          pip install -q -r requirements.txt
-        fi &&
-        . venv/bin/activate &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-      "
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - taleweaver-dev
 
   # Test runner for backend (on-demand)
+  # Uses backend-base stage: ffmpeg + pip deps are pre-installed, no setup delay.
   backend-test:
-    image: python:3.9-slim
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-base
     working_dir: /app
     volumes:
       - ./backend:/app
-      - backend-test-venv:/app/test-venv
     environment:
       - PYTHONPATH=/app
       - STORAGE_PATH=/tmp/test-storage
-    command: >
-      bash -c "
-        apt-get update -qq && apt-get install -qq -y ffmpeg > /dev/null 2>&1 &&
-        python -m venv /tmp/venv &&
-        . /tmp/venv/bin/activate &&
-        pip install -q --upgrade pip &&
-        pip install -q -r requirements.txt &&
-        python -m pytest tests/ -v
-      "
+    command: python -m pytest tests/ -v
     networks:
       - taleweaver-dev
     profiles:
@@ -112,6 +99,4 @@ networks:
 
 volumes:
   taleweaver-storage:
-  backend-dev-venv:
-  backend-test-venv:
   frontend-node-modules:

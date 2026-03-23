@@ -34,7 +34,7 @@ cd /path/to/taleweaver && git merge feature/feature-name && git push
 
 **4. Testing - ALWAYS before push**
 ```bash
-COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test  # All 146 tests must pass
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test  # All tests must pass
 docker build -t taleweaver:test .                                                      # Build must succeed
 docker run -d -p 8080:80 taleweaver:test                                              # Container must run
 curl http://localhost:8080/up                                                          # Endpoints must work
@@ -105,12 +105,15 @@ docker compose up app  # Access at http://localhost
 ### Run Tests
 
 ```bash
-# All tests
-docker compose run --rm backend-test
+# All tests (backend-test uses pre-built image with deps cached — fast startup)
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 
 # Specific tests
-docker compose run --rm backend-test sh -c \
-  ". /tmp/venv/bin/activate && pytest tests/test_specific.py -v"
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test \
+  python -m pytest tests/test_specific.py -v
+
+# Rebuild test image after changing requirements.txt
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml build backend-test
 ```
 
 ### Add Feature (Example)
@@ -172,11 +175,8 @@ git push origin main
 COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 
 # Specific file
-COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test sh -c \
-  "python -m venv /tmp/venv && . /tmp/venv/bin/activate && \
-   pip install -q -r requirements.txt && \
-   apt-get update -qq && apt-get install -qq -y ffmpeg > /dev/null 2>&1 && \
-   python -m pytest tests/test_story_library.py -v"
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test \
+  python -m pytest tests/test_story_library.py -v
 ```
 
 **Current test count:** 146 tests (must all pass before pushing)
@@ -262,13 +262,20 @@ docker compose up app
 docker compose --profile dev up backend-dev frontend-dev
 
 # Run tests
-docker compose run --rm backend-test
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 ```
+
+The Dockerfile uses a multi-stage build:
+- `frontend-build` — builds React frontend static assets
+- `backend-base` — Python 3.9 + ffmpeg + pip dependencies (shared by dev/test/prod)
+- `production` — adds Caddy, frontend assets, entrypoint
+
+Dev and test services build from the `backend-base` stage so ffmpeg and Python
+dependencies are pre-installed. No pip/apt install on each run.
 
 ### Volumes
 
 - `taleweaver-storage` - Persistent data (database + audio)
-- `backend-dev-venv`, `backend-test-venv` - Python environments
 - `frontend-node-modules` - NPM dependencies
 
 ---
