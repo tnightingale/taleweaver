@@ -33,7 +33,9 @@ taleweaver/
 │   │   ├── models/          # Pydantic models (requests, responses)
 │   │   ├── data/            # Genres, historical events, music
 │   │   └── prompts/         # Story generation prompts
-│   └── tests/               # 197 pytest tests
+│   │   ├── services/        # External providers (illustration/Gemini)
+│   │   ├── utils/           # Storage helpers (illustrations, temp audio)
+│   └── tests/               # 203 pytest tests
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx          # Router setup
@@ -62,7 +64,7 @@ docker compose up app  # http://localhost
 
 **Run tests:**
 ```bash
-docker compose run --rm backend-test
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 ```
 
 ## API Endpoints
@@ -85,7 +87,8 @@ docker compose run --rm backend-test
 ## LangGraph Pipeline
 
 ```
-[Input] → [Story Writer] → [Script Splitter] → [Voice Synthesizer] → [Audio Stitcher] → [Output]
+[Input] → [Story Writer] → [Scene Analyzer] → [Script Splitter] → ┬─[Voice Synthesizer]──────┬→ [Audio Stitcher] → [Timestamp Calculator] → [Output]
+                                                                    └─[Illustration Generator]─┘
 ```
 
 - Jobs run in a **huey background worker process** (not in gunicorn) — POST returns `job_id`, frontend polls `/status/{job_id}` every 2 seconds
@@ -95,6 +98,8 @@ docker compose run --rm backend-test
 - Typical generation time: 20-90 seconds depending on story length
 - Audio stitcher mixes mood-based background music under narration
 - Failed jobs can be retried via `/api/story/retry/{job_id}` — re-enqueues in huey
+- Voice synthesis and illustration generation run **in parallel** (LangGraph fan-out)
+- Illustration generator uses Google Gemini with 60s timeout per image and auto-retry
 
 ## Storage Structure
 
@@ -102,14 +107,16 @@ Stories are permanently stored:
 
 ```
 /storage/
-├── taleweaver.db              # SQLite database with story metadata
+├── taleweaver.db              # SQLite database (WAL mode for multi-process access)
+├── huey.db                    # huey job queue (SQLite-backed, separate from app DB)
 ├── stories/
 │   ├── {uuid-1}/
-│   │   └── audio.mp3          # Generated MP3 file
-│   ├── {uuid-2}/
-│   │   └── audio.mp3
+│   │   ├── audio.mp3          # Generated MP3 file
+│   │   ├── scene_0.png        # Illustration images (if art_style selected)
+│   │   ├── scene_1.png
+│   │   └── ...
 │   └── ...
-├── jobs/                       # Temporary (unused, legacy)
+├── temp/                       # Temporary audio segments (for resume capability)
 └── music/                      # Background music files
 ```
 
@@ -118,6 +125,7 @@ Stories are permanently stored:
 - Compact short_id (8 chars, a-z0-9) for permalinks
 - Transcript and duration
 - File path reference to audio MP3
+- Art style, illustration data (scene_data JSON with image URLs)
 - Creation timestamp
 
 **Permalinks:**
@@ -135,6 +143,9 @@ Stories are permanently stored:
 - **Background music mixing**: audio stitcher layers mood-matched music under the narrated story
 - **Storytelling-science prompts**: Story Spine structure, age-calibrated directives, audio-specific storytelling rules
 - **Job-based polling** instead of streaming — generation takes too long for a single request
+- **huey background workers** — story generation runs in a separate process from the API, surviving crashes and restarts
+- **SQLite WAL mode** — enables concurrent access from gunicorn (reads) + huey worker (writes)
+- **Audio writes directly to disk** — audio_stitcher writes MP3 to filesystem, not through memory
 - **3-screen immersive UI**: dark fantasy theme with glassmorphism, particle effects, and glow effects (replaces v1 6-step wizard)
 - **CORS allows all origins** for LAN access
 
@@ -150,6 +161,9 @@ NARRATOR_VOICE_ID=               # ElevenLabs voice IDs (Rachel/female for narra
 CHARACTER_MALE_VOICE_ID=
 CHARACTER_FEMALE_VOICE_ID=
 CHARACTER_CHILD_VOICE_ID=
+GOOGLE_API_KEY=                  # Required for illustration generation (Gemini)
+GUNICORN_WORKERS=4               # API workers (default 4, API-only since huey handles generation)
+HUEY_WORKERS=1                   # Background story generation workers (default 1)
 ```
 
 ## Future Ideas
@@ -157,6 +171,6 @@ CHARACTER_CHILD_VOICE_ID=
 - User accounts / authentication
 - Edge TTS (free alternative to ElevenLabs)
 - QR code sharing
-- AI-generated story illustrations
 - Content moderation
 - Rate limiting
+- PostgreSQL migration (enables oban-py for enterprise job orchestration)

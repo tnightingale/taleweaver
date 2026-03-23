@@ -179,7 +179,7 @@ COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-
   python -m pytest tests/test_story_library.py -v
 ```
 
-**Current test count:** 197 tests (must all pass before pushing)
+**Current test count:** 203 tests (must all pass before pushing)
 
 **Test Isolation:**
 - All tests use isolated database fixtures from `conftest.py`
@@ -247,6 +247,8 @@ once logs taleweaver | grep migration
 **Current migrations:**
 1. Illustration fields (art_style, has_illustrations, scene_data)
 2. Job state table (job_state with indexes)
+3. Resume fields (resumable, partial_data_json, checkpoint_node, retry_count)
+4. Story params for retry (story_params_json)
 
 ---
 
@@ -452,11 +454,13 @@ curl http://localhost/api/permalink/abc123  # Story metadata
 taleweaver/
 ├── backend/
 │   ├── app/
-│   │   ├── db/              # SQLAlchemy models, CRUD
-│   │   ├── graph/           # LangGraph pipeline
+│   │   ├── db/              # SQLAlchemy models, CRUD, migrations
+│   │   ├── graph/           # LangGraph pipeline (7 nodes)
+│   │   ├── jobs/            # huey background tasks
 │   │   ├── routes/          # FastAPI routes
+│   │   ├── services/        # External service providers (illustration)
 │   │   └── main.py          # App entry, permalink routes
-│   └── tests/               # 137 pytest tests
+│   └── tests/               # 203 pytest tests
 ├── frontend/
 │   ├── src/
 │   │   ├── components/      # React components
@@ -474,10 +478,14 @@ taleweaver/
 ## Key Files
 
 **Backend:**
-- `app/main.py` - FastAPI app, permalink routes, library routes
-- `app/routes/story.py` - Story generation endpoints
-- `app/db/` - Database layer (models, CRUD)
-- `app/graph/` - LangGraph story pipeline
+- `app/main.py` - FastAPI app, permalink routes, library routes, startup recovery
+- `app/routes/story.py` - Story creation endpoints, `run_pipeline()`, status polling
+- `app/jobs/huey_app.py` - huey SqliteHuey instance configuration
+- `app/jobs/tasks.py` - `generate_story_task` background task
+- `app/db/` - Database layer (models, CRUD, migrations)
+- `app/db/database.py` - SQLAlchemy engine with WAL mode + busy_timeout
+- `app/graph/` - LangGraph story pipeline (7 nodes)
+- `app/services/illustration/` - Google Gemini image generation provider
 
 **Frontend:**
 - `src/App.tsx` - Router setup
@@ -486,9 +494,9 @@ taleweaver/
 - `src/api/client.ts` - API client
 
 **Infrastructure:**
-- `Dockerfile` - Production build (Caddy + FastAPI + Frontend)
-- `docker-compose.dev.yml` - Dev/test environments
-- `docker-entrypoint.sh` - Container startup
+- `Dockerfile` - Multi-stage build (backend-base → production)
+- `docker-compose.dev.yml` - Dev/test environments (uses backend-base stage)
+- `docker-entrypoint.sh` - Container startup (Caddy + huey_consumer + gunicorn)
 - `hooks/` - Once backup/restore
 
 ---
