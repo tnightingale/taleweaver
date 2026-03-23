@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fetchRecentJobs, type RecentJob } from "../api/client";
 
+const STAGE_LABELS: Record<string, string> = {
+  writing: "Writing the story...",
+  analyzing_scenes: "Analyzing story structure...",
+  splitting: "Preparing character voices...",
+  synthesizing: "Generating audio...",
+  generating_illustrations: "Creating illustrations...",
+  stitching: "Mixing the final track...",
+  finalizing: "Adding final touches...",
+};
+
 export default function InProgressJobs() {
   const [jobs, setJobs] = useState<RecentJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,10 +70,10 @@ export default function InProgressJobs() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="font-semibold text-starlight">
-                    {job.title || "Writing your story..."}
+                    {job.title || STAGE_LABELS[job.current_stage] || "Generating..."}
                   </p>
                   <p className="text-sm text-starlight/60 mt-1">
-                    {job.current_stage} • {Math.round(job.progress)}%
+                    {Math.round(job.progress)}% complete
                   </p>
                 </div>
                 <div className="text-2xl ml-4 animate-pulse">⏳</div>

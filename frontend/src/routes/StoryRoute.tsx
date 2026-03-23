@@ -10,6 +10,8 @@ export default function StoryRoute() {
   
   const [isGenerating, setIsGenerating] = useState(true);
   const [currentStage, setCurrentStage] = useState("writing");
+  const [progress, setProgress] = useState(0);
+  const [progressDetail, setProgressDetail] = useState("");
   const [storyTitle, setStoryTitle] = useState("");
   const [storyDuration, setStoryDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState("");
@@ -42,6 +44,8 @@ export default function StoryRoute() {
         } else {
           const stage = "current_stage" in status ? status.current_stage : "writing";
           setCurrentStage(stage || "writing");
+          setProgress(status.progress || 0);
+          setProgressDetail(status.progress_detail || "");
         }
       } catch (err) {
         clearInterval(pollingRef.current);
@@ -170,6 +174,8 @@ export default function StoryRoute() {
     <StoryScreen
       isGenerating={isGenerating}
       currentStage={currentStage}
+      progress={progress}
+      progressDetail={progressDetail}
       title={storyTitle}
       audioUrl={audioUrl}
       durationSeconds={storyDuration}

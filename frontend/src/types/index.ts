@@ -46,6 +46,7 @@ export interface JobStatusResponse {
   status: string;
   current_stage: string;
   progress: number;
+  progress_detail?: string;
   total_segments: number;
   error: string;
   resumable: boolean;
@@ -74,6 +75,9 @@ export interface JobCompleteResponse {
   has_illustrations: boolean;
   art_style?: string;
   scenes?: Scene[];
+  // Progress fields (may be present during generation)
+  progress?: number;
+  progress_detail?: string;
   // Error/resume fields (when status is "failed")
   resumable?: boolean;
   partial_progress?: PartialProgress;

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JobCompleteResponse } from "../types";
 import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
+import ProgressRing from "./ProgressRing";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -16,6 +17,8 @@ const STAGE_LABELS: Record<string, string> = {
 interface Props {
   isGenerating: boolean;
   currentStage?: string;
+  progress?: number;
+  progressDetail?: string;
   title: string;
   audioUrl: string;
   durationSeconds: number;
@@ -34,6 +37,8 @@ const formatTime = (seconds: number) => {
 export default function StoryScreen({
   isGenerating,
   currentStage,
+  progress = 0,
+  progressDetail = "",
   title,
   audioUrl,
   durationSeconds,
@@ -109,21 +114,35 @@ export default function StoryScreen({
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center space-y-8"
-          >
-            {/* Color-Cycling Pulsing Orb */}
-            <motion.div
-              className="w-32 h-32 rounded-full orb-color-cycle"
-              animate={{
-                scale: [1, 1.15, 1],
-                opacity: [0.8, 1, 0.8],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <style>{`
+            >
+              {/* Progress ring with pulsing orb */}
+              <ProgressRing progress={progress}>
+                <motion.div
+                  className="w-32 h-32 rounded-full orb-color-cycle"
+                  animate={{
+                    scale: [1, 1.15, 1],
+                    opacity: [0.8, 1, 0.8],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+              </ProgressRing>
+              
+              {/* Progress percentage */}
+              <motion.p
+                className="text-2xl font-mono text-glow"
+                key={Math.round(progress)}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {Math.round(progress)}%
+              </motion.p>
+              
+              <style>{`
               @keyframes orbColorCycle {
                 0%   { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
                        box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
@@ -141,15 +160,26 @@ export default function StoryScreen({
               }
             `}</style>
 
-            {/* Stage Label */}
-            <p className="text-xl font-display text-glow text-ethereal">
-              {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
-            </p>
+              {/* Stage Label */}
+              <p className="text-xl font-display text-glow text-ethereal">
+                {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
+              </p>
 
-            {/* Subtitle */}
-            <p className="text-sm text-starlight/40">
-              This usually takes about a minute
-            </p>
+              {/* Detailed progress message or subtitle */}
+              {progressDetail ? (
+                <motion.p
+                  className="text-sm text-starlight/60 max-w-md text-center"
+                  key={progressDetail}
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {progressDetail}
+                </motion.p>
+              ) : (
+                <p className="text-sm text-starlight/40">
+                  This usually takes a few minutes
+                </p>
+              )}
           </motion.div>
         ) : (
           audioUrl && (
