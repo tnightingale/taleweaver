@@ -99,6 +99,24 @@ async def illustration_generator(state: StoryState) -> dict:
             successful_count += 1
             previous_image_url = image_url
             
+            # Update job progress in database
+            if story_id and story_id != "temp":
+                try:
+                    from app.db.crud import update_job_progress
+                    from app.db.database import SessionLocal
+                    db = SessionLocal()
+                    try:
+                        progress_pct = ((i + 1) / len(scenes)) * 100
+                        update_job_progress(
+                            db, story_id,
+                            progress=progress_pct,
+                            detail=f"Generated illustration {i+1} of {len(scenes)}"
+                        )
+                    finally:
+                        db.close()
+                except Exception as db_err:
+                    logger.debug(f"Could not update illustration progress: {db_err}")
+            
             logger.info(f"✅ Illustration {i+1}/{len(scenes)} completed: {image_path}")
             
         except Exception as img_error:

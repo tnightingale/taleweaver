@@ -28,6 +28,40 @@ app.add_middleware(
 app.include_router(config_router)
 app.include_router(story_router)
 
+# Jobs endpoint (at /api/jobs/recent, not under /api/story)
+from datetime import datetime, timedelta
+from app.db.database import SessionLocal
+from app.db.models import JobState
+
+@app.get("/api/jobs/recent")
+async def get_recent_jobs():
+    """Get jobs from last 24 hours for navigation persistence"""
+    db = SessionLocal()
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        jobs = db.query(JobState).filter(
+            JobState.created_at > cutoff
+        ).order_by(
+            JobState.created_at.desc()
+        ).limit(20).all()
+        
+        return {
+            "jobs": [
+                {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "current_stage": job.current_stage,
+                    "progress": job.progress or 0,
+                    "title": job.title,
+                    "created_at": job.created_at.isoformat() + 'Z',
+                    "error": job.error_message if job.status == "failed" else None
+                }
+                for job in jobs
+            ]
+        }
+    finally:
+        db.close()
+
 
 @app.on_event("startup")
 async def startup_event():
