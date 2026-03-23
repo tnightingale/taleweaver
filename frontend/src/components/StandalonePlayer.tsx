@@ -32,9 +32,22 @@ export default function StandalonePlayer() {
   useEffect(() => {
     if (!shortId) return;
 
-    fetch(`/api/permalink/${shortId}`)
-      .then((res) => {
+    const metadataUrl = `/api/permalink/${shortId}`;
+    fetch(metadataUrl)
+      .then(async (res) => {
         if (!res.ok) throw new Error("Story not found");
+
+        // Cache the metadata response directly from the page.
+        // This is critical because on first visit, the SW may not be active yet
+        // so it won't intercept this fetch. Without this, the story-metadata
+        // cache is empty and offline refresh fails.
+        if ('caches' in window) {
+          try {
+            const cache = await caches.open('story-metadata');
+            await cache.put(metadataUrl, res.clone());
+          } catch { /* best effort */ }
+        }
+
         return res.json();
       })
       .then((data: StoryMetadata) => {
