@@ -221,6 +221,16 @@ export default function IllustratedStoryPlayer({
                 backfaceVisibility: "hidden",
               }}
             >
+              {/* Play overlay — visible when paused */}
+              {!isPlaying && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
+                                  flex items-center justify-center text-white text-3xl sm:text-4xl
+                                  shadow-[0_0_30px_rgba(0,0,0,0.3)]">
+                    ▶
+                  </div>
+                </div>
+              )}
               <img
                 src={currentScene.image_url}
                 alt={currentScene.beat_name}

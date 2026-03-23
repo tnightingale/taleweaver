@@ -75,23 +75,38 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
     >
       {/* Cover Image */}
       {story.cover_image_url ? (
-        <div className="aspect-[3/2] w-full overflow-hidden cursor-pointer" onClick={onPlay}>
+        <div className="aspect-[3/2] w-full overflow-hidden cursor-pointer relative group" onClick={onPlay}>
           <img
             src={story.cover_image_url}
             alt={story.title}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm
+                            flex items-center justify-center text-white text-xl
+                            opacity-70 group-hover:opacity-100 transition-opacity
+                            shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+              ▶
+            </div>
+          </div>
         </div>
       ) : (
         <div
-          className="aspect-[3/2] w-full flex items-center justify-center cursor-pointer
+          className="aspect-[3/2] w-full flex items-center justify-center cursor-pointer relative group
                      bg-gradient-to-br from-purple-900/40 to-abyss/60"
           onClick={onPlay}
         >
           <span className="text-4xl opacity-40">
             {story.story_type === "historical" ? "🏛️" : "✨"}
           </span>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm
+                            flex items-center justify-center text-white text-xl
+                            shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+              ▶
+            </div>
+          </div>
         </div>
       )}
 
