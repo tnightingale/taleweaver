@@ -156,7 +156,7 @@ export default function IllustratedStoryPlayer({
   return (
     <div
       ref={containerRef}
-      className={`max-w-5xl mx-auto ${
+      className={`max-w-lg sm:max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
           : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block h-[100dvh] sm:h-auto"
@@ -199,54 +199,56 @@ export default function IllustratedStoryPlayer({
         }}
       >
         <AnimatePresence mode="wait">
-          {currentScene?.image_url && (
-            <motion.div
-              key={currentSceneIndex}
-              initial={isFullscreen ? { opacity: 0 } : {
-                rotateY: pageDirection === "forward" ? -90 : 90,
-                opacity: 0,
-              }}
-              animate={isFullscreen ? { opacity: 1 } : {
-                rotateY: 0,
-                opacity: 1,
-              }}
-              exit={isFullscreen ? { opacity: 0 } : {
-                rotateY: pageDirection === "forward" ? 90 : -90,
-                opacity: 0,
-              }}
-              transition={{
-                duration: isFullscreen ? 0.3 : 0.6,
-                ease: "easeInOut",
-              }}
-              className={`w-full overflow-hidden ${
-                isFullscreen
-                  ? "h-full"
-                  : "h-full sm:h-auto sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
-              }`}
-              style={isFullscreen ? undefined : {
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              {/* Play overlay — visible when paused */}
-              {!isPlaying && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
-                                  flex items-center justify-center text-white
-                                  shadow-[0_0_30px_rgba(0,0,0,0.3)]">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7 sm:w-9 sm:h-9 ml-1">
-                      <path d="M6 4l10 6-10 6z" />
-                    </svg>
-                  </div>
+          <motion.div
+            key={currentSceneIndex}
+            initial={isFullscreen ? { opacity: 0 } : {
+              rotateY: pageDirection === "forward" ? -90 : 90,
+              opacity: 0,
+            }}
+            animate={isFullscreen ? { opacity: 1 } : {
+              rotateY: 0,
+              opacity: 1,
+            }}
+            exit={isFullscreen ? { opacity: 0 } : {
+              rotateY: pageDirection === "forward" ? 90 : -90,
+              opacity: 0,
+            }}
+            transition={{
+              duration: isFullscreen ? 0.3 : 0.6,
+              ease: "easeInOut",
+            }}
+            className={`w-full overflow-hidden ${
+              isFullscreen
+                ? "h-full"
+                : "h-full sm:h-auto sm:aspect-[4/3] rounded-none sm:rounded-lg shadow-2xl"
+            }`}
+            style={isFullscreen ? undefined : {
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "hidden",
+            }}
+          >
+            {/* Play overlay — visible when paused */}
+            {!isPlaying && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
+                                flex items-center justify-center text-white
+                                shadow-[0_0_30px_rgba(0,0,0,0.3)]">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="w-7 h-7 sm:w-9 sm:h-9 ml-1">
+                    <path d="M6 4l10 6-10 6z" />
+                  </svg>
                 </div>
-              )}
+              </div>
+            )}
+            {currentScene?.image_url ? (
               <img
                 src={currentScene.image_url}
                 alt={currentScene.beat_name}
                 className="w-full h-full object-cover"
               />
-            </motion.div>
-          )}
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-900/40 to-abyss/80" />
+            )}
+          </motion.div>
         </AnimatePresence>
 
         {/* Floating chapter indicator — overlays top of image */}
@@ -338,10 +340,11 @@ export default function IllustratedStoryPlayer({
               <button
                 key={i}
                 onClick={() => jumpToScene(i)}
-                className="absolute top-0 w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
+                className="absolute w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
                 style={{
                   left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
-                  transform: "translate(-50%, -25%)",
+                  top: 'calc(100% + 4px)',
+                  transform: "translate(-50%, 0)",
                 }}
               />
             ))}
@@ -380,21 +383,22 @@ export default function IllustratedStoryPlayer({
         </div>
 
         {/* Mobile: nav buttons row (below transport controls) */}
-        <div className="sm:hidden flex items-center justify-center gap-3 mt-1.5">
+        <div className="sm:hidden flex items-center justify-center gap-2 mt-2">
           {onBackToLibrary && (
             <button
               onClick={onBackToLibrary}
-              className="text-[11px] text-purple-300/70 hover:text-purple-200 transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-full text-[11px] font-medium
+                       bg-white/5 border border-purple-500/20 text-purple-200
+                       hover:bg-purple-500/20 transition-all cursor-pointer"
             >
               Library
             </button>
           )}
-          {onBackToLibrary && (
-            <span className="text-purple-500/30 text-[10px]">|</span>
-          )}
           <button
             onClick={onCreateAnother}
-            className="text-[11px] text-purple-300/70 hover:text-purple-200 transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-full text-[11px] font-medium
+                     bg-purple-500/20 border border-purple-500/30 text-purple-200
+                     hover:bg-purple-500/30 transition-all cursor-pointer"
           >
             New Story
           </button>
