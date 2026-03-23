@@ -41,10 +41,14 @@ export default function StandalonePlayer() {
         setLoading(false);
 
         // Prefetch audio for offline — tell SW to cache the full file
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller && data.audio_url) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'PREFETCH_AUDIO',
-            url: data.audio_url,
+        // Use .ready to wait for SW activation (critical on iOS Safari where
+        // .controller is null on first load until skipWaiting+claim completes)
+        if ('serviceWorker' in navigator && data.audio_url) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.active?.postMessage({
+              type: 'PREFETCH_AUDIO',
+              url: data.audio_url,
+            });
           });
         }
       })

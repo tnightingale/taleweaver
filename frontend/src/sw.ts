@@ -9,6 +9,11 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any[] };
 
+// Take control immediately (critical for iOS Safari — without this,
+// the SW isn't the controller until the next navigation)
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
 // Precache Vite build assets (auto-injected by vite-plugin-pwa)
 precacheAndRoute(self.__WB_MANIFEST);
 
