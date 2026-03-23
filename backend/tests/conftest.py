@@ -35,13 +35,21 @@ def test_db():
     
     db_module.SQLALCHEMY_DATABASE_URL = f"sqlite:///{test_db_path}"
     
-    # Recreate engine and session
-    from sqlalchemy import create_engine
+    # Recreate engine and session with same pragmas as production
+    from sqlalchemy import create_engine, event
     from sqlalchemy.orm import sessionmaker
     db_module.engine = create_engine(
         db_module.SQLALCHEMY_DATABASE_URL,
         connect_args={"check_same_thread": False}
     )
+
+    @event.listens_for(db_module.engine, "connect")
+    def _set_test_pragmas(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
     db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_module.engine)
     
     # Import models FIRST to register them with Base.metadata
