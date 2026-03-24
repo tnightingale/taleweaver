@@ -19,10 +19,12 @@ export default function StoryRoute() {
   const [storyData, setStoryData] = useState<JobCompleteResponse | undefined>(undefined);
   const [error, setError] = useState("");
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const progressHighWater = useRef(0);
 
   const startPolling = useCallback((id: string) => {
     setIsGenerating(true);
     setCurrentStage("writing");
+    progressHighWater.current = 0;
 
     pollingRef.current = setInterval(async () => {
       try {
@@ -44,7 +46,11 @@ export default function StoryRoute() {
         } else {
           const stage = "current_stage" in status ? status.current_stage : "writing";
           setCurrentStage(stage || "writing");
-          setProgress(status.progress || 0);
+          const newProgress = status.progress || 0;
+          if (newProgress >= progressHighWater.current) {
+            progressHighWater.current = newProgress;
+            setProgress(newProgress);
+          }
           setProgressDetail(status.progress_detail || "");
         }
       } catch (err) {

@@ -325,7 +325,9 @@ def update_job_stage(db: Session, job_id: str, stage: str, progress: Optional[fl
     if job:
         job.current_stage = stage
         if progress is not None:
-            job.progress = progress
+            current = job.progress or 0
+            if progress >= current:
+                job.progress = progress
         job.updated_at = datetime.utcnow()
         db.commit()
 
@@ -333,7 +335,11 @@ def update_job_stage(db: Session, job_id: str, stage: str, progress: Optional[fl
 def update_job_progress(db: Session, job_id: str, progress: float, detail: str):
     """
     Update job progress and detail message.
-    
+
+    Progress is monotonically increasing — writes are skipped if the new value
+    is lower than the current value. This prevents race conditions when parallel
+    nodes (voice_synthesizer + illustration_generator) both update progress.
+
     Args:
         db: SQLAlchemy database session
         job_id: Job UUID
@@ -342,10 +348,12 @@ def update_job_progress(db: Session, job_id: str, progress: float, detail: str):
     """
     job = get_job_state(db, job_id)
     if job:
-        job.progress = progress
-        job.progress_detail = detail
-        job.updated_at = datetime.utcnow()
-        db.commit()
+        current = job.progress or 0
+        if progress >= current:
+            job.progress = progress
+            job.progress_detail = detail
+            job.updated_at = datetime.utcnow()
+            db.commit()
 
 
 def mark_job_complete(

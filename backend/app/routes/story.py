@@ -431,10 +431,12 @@ async def retry_job(job_id: str):
                 detail="Job cannot be retried (no stored parameters — legacy job)"
             )
 
-        # Update retry count and status
+        # Update retry count and status, reset progress
         job.retry_count += 1
         job.status = "processing"
         job.error_message = None
+        job.progress = 0
+        job.progress_detail = ""
         db.commit()
 
         # Re-enqueue via huey with stored params
