@@ -116,6 +116,15 @@ export async function fetchRecentJobs(): Promise<{jobs: RecentJob[]}> {
   return handleResponse(res);
 }
 
+export async function regenerateIllustrations(
+  shortId: string
+): Promise<{ job_id: string; status: string; failed_count: number; total_scenes: number; message?: string }> {
+  const res = await fetch(`${BASE}/stories/${shortId}/regenerate-illustrations`, {
+    method: "POST",
+  });
+  return handleResponse(res);
+}
+
 // Library API
 export async function listStories(
   kidName?: string,
