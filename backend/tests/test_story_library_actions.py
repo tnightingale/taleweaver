@@ -62,7 +62,7 @@ def test_delete_story_not_found_returns_false(test_db):
     assert result == False, "Should return False for non-existent story"
 
 
-def test_delete_story_api_endpoint(test_db, test_client):
+def test_delete_story_api_endpoint(test_db, test_client, test_user):
     """DELETE /api/stories/{short_id} deletes story"""
     # Create story in isolated database
     story = save_story(
@@ -75,6 +75,7 @@ def test_delete_story_api_endpoint(test_db, test_client):
         transcript="...",
         duration_seconds=100,
         audio_bytes=b"audio",
+        user_id=test_user.id,
     )
     short_id = story.short_id
     
@@ -124,7 +125,7 @@ def test_update_story_title_not_found(test_db):
     assert result is None
 
 
-def test_update_story_title_api_endpoint(test_db, test_client):
+def test_update_story_title_api_endpoint(test_db, test_client, test_user):
     """PATCH /api/stories/{short_id} updates title"""
     # Create story in isolated database
     story = save_story(
@@ -137,6 +138,7 @@ def test_update_story_title_api_endpoint(test_db, test_client):
         transcript="...",
         duration_seconds=100,
         audio_bytes=b"audio",
+        user_id=test_user.id,
     )
     short_id = story.short_id
     
@@ -160,7 +162,7 @@ def test_update_story_title_api_not_found(test_client):
     assert response.status_code == 404
 
 
-def test_update_story_title_api_empty_title(test_db, test_client):
+def test_update_story_title_api_empty_title(test_db, test_client, test_user):
     """PATCH /api/stories/{short_id} rejects empty title"""
     # Create story in isolated database
     story = save_story(
@@ -173,6 +175,7 @@ def test_update_story_title_api_empty_title(test_db, test_client):
         transcript="...",
         duration_seconds=100,
         audio_bytes=b"audio",
+        user_id=test_user.id,
     )
     short_id = story.short_id
     

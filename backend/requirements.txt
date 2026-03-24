@@ -22,5 +22,7 @@ google-generativeai==0.8.3
 pillow==11.0.0
 authlib==1.4.1
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 pyjwt==2.9.0
 python-multipart==0.0.20
+email-validator==2.2.0

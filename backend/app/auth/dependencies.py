@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import HTTPException, Request
 
-from app.db.database import SessionLocal
+import app.db.database as _db_module
 from app.db.models import Story, User
 
 from .tokens import verify_token
@@ -20,7 +20,7 @@ def get_current_user(request: Request) -> User:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user_id = payload.get("sub")
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -43,7 +43,7 @@ def get_optional_user(request: Request) -> Optional[User]:
         return None
 
     user_id = payload.get("sub")
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if user:

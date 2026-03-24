@@ -18,7 +18,7 @@ def test_list_stories_returns_empty_when_no_stories(test_client):
     assert data["has_more"] == False
 
 
-def test_list_stories_returns_all_stories(test_db, test_client):
+def test_list_stories_returns_all_stories(test_db, test_client, test_user):
     """GET /api/stories returns list of stories"""
     # Create test stories in isolated database
     save_story(
@@ -32,6 +32,7 @@ def test_list_stories_returns_all_stories(test_db, test_client):
         transcript="Story 1 text",
         duration_seconds=180,
         audio_bytes=b"audio1",
+        user_id=test_user.id,
     )
     save_story(
         db=test_db,
@@ -44,15 +45,16 @@ def test_list_stories_returns_all_stories(test_db, test_client):
         transcript="Story 2 text",
         duration_seconds=120,
         audio_bytes=b"audio2",
+        user_id=test_user.id,
     )
-    
+
     response = test_client.get("/api/stories")
     assert response.status_code == 200
     data = response.json()
-    
+
     assert len(data["stories"]) >= 2
     assert data["total"] >= 2
-    
+
     # Verify structure
     story = data["stories"][0]
     assert "id" in story
@@ -67,9 +69,8 @@ def test_list_stories_returns_all_stories(test_db, test_client):
     assert "audio_url" in story
 
 
-def test_list_stories_filters_by_kid_name(test_db, test_client):
+def test_list_stories_filters_by_kid_name(test_db, test_client, test_user):
     """Can filter stories by kid name"""
-    # Create test stories in isolated database
     save_story(
         db=test_db,
         story_id="filter-test-arjun",
@@ -80,6 +81,7 @@ def test_list_stories_filters_by_kid_name(test_db, test_client):
         transcript="...",
         duration_seconds=100,
         audio_bytes=b"audio",
+        user_id=test_user.id,
     )
     save_story(
         db=test_db,
@@ -91,20 +93,20 @@ def test_list_stories_filters_by_kid_name(test_db, test_client):
         transcript="...",
         duration_seconds=100,
         audio_bytes=b"audio",
+        user_id=test_user.id,
     )
-    
+
     response = test_client.get("/api/stories?kid_name=Arjun")
     assert response.status_code == 200
     data = response.json()
-    
+
     # Should only return Arjun's stories
     for story in data["stories"]:
         assert story["kid_name"] == "Arjun"
 
 
-def test_list_stories_pagination(test_db, test_client):
+def test_list_stories_pagination(test_db, test_client, test_user):
     """Supports limit and offset for pagination"""
-    # Create multiple stories in isolated database
     for i in range(5):
         save_story(
             db=test_db,
@@ -116,8 +118,9 @@ def test_list_stories_pagination(test_db, test_client):
             transcript="...",
             duration_seconds=100,
             audio_bytes=b"audio",
+            user_id=test_user.id,
         )
-    
+
     # Get first 2
     response = test_client.get("/api/stories?limit=2&offset=0")
     assert response.status_code == 200
@@ -125,20 +128,19 @@ def test_list_stories_pagination(test_db, test_client):
     assert len(data["stories"]) == 2
     assert data["total"] >= 5
     assert data["has_more"] == True
-    
+
     # Get next 2
     response2 = test_client.get("/api/stories?limit=2&offset=2")
     assert response2.status_code == 200
     data2 = response2.json()
     assert len(data2["stories"]) == 2
-    
+
     # Verify different stories
     assert data["stories"][0]["id"] != data2["stories"][0]["id"]
 
 
-def test_list_stories_sorts_newest_first(test_db, test_client):
+def test_list_stories_sorts_newest_first(test_db, test_client, test_user):
     """Stories sorted by created_at desc by default"""
-    # Create stories in isolated database (sequential timestamps)
     for i in range(3):
         save_story(
             db=test_db,
@@ -150,23 +152,22 @@ def test_list_stories_sorts_newest_first(test_db, test_client):
             transcript="...",
             duration_seconds=100,
             audio_bytes=b"audio",
+            user_id=test_user.id,
         )
-    
+
     response = test_client.get("/api/stories?limit=10")
     assert response.status_code == 200
     data = response.json()
-    
-    # Newest should be first (highest ID if sequential)
+
     stories = data["stories"]
     if len(stories) >= 2:
-        # Verify descending order by checking created_at
         for i in range(len(stories) - 1):
             curr_date = stories[i]["created_at"]
             next_date = stories[i + 1]["created_at"]
             assert curr_date >= next_date, "Should be sorted newest first"
 
 
-def test_list_stories_includes_art_style_and_scenes(test_db, test_client):
+def test_list_stories_includes_art_style_and_scenes(test_db, test_client, test_user):
     """GET /api/stories returns art_style and scenes for illustrated stories"""
     scene_data = {
         "scenes": [
@@ -200,6 +201,7 @@ def test_list_stories_includes_art_style_and_scenes(test_db, test_client):
         audio_bytes=b"audio",
         art_style="watercolor_dream",
         scene_data=scene_data,
+        user_id=test_user.id,
     )
 
     response = test_client.get("/api/stories")
@@ -216,11 +218,10 @@ def test_list_stories_includes_art_style_and_scenes(test_db, test_client):
 
 def test_get_unique_kid_names(test_db):
     """Can get list of unique kid names for filter dropdown"""
-    # Create stories with duplicate names
     save_story(test_db, "kid-test-1", "T1", "Arjun", 7, "custom", "...", 100, b"a")
     save_story(test_db, "kid-test-2", "T2", "Arjun", 7, "custom", "...", 100, b"a")
     save_story(test_db, "kid-test-3", "T3", "Maya", 5, "custom", "...", 100, b"a")
-    
+
     names = get_unique_kid_names(test_db)
     assert isinstance(names, list)
     assert "Arjun" in names

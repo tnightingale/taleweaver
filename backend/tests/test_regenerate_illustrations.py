@@ -7,11 +7,12 @@ from unittest.mock import patch, MagicMock
 from app.db.crud import save_story, get_story_by_short_id
 
 
-def test_regenerate_endpoint_returns_job(test_db, test_client):
+def test_regenerate_endpoint_returns_job(test_db, test_client, test_user):
     """POST /api/stories/{short_id}/regenerate-illustrations creates a regen job"""
     story = save_story(
         db=test_db,
         story_id="regen-test-1",
+        user_id=test_user.id,
         title="Test Story",
         kid_name="Test",
         kid_age=7,
@@ -43,11 +44,12 @@ def test_regenerate_endpoint_returns_job(test_db, test_client):
     mock_task.assert_called_once()
 
 
-def test_regenerate_endpoint_all_present(test_db, test_client):
+def test_regenerate_endpoint_all_present(test_db, test_client, test_user):
     """Should return ok message when all illustrations already present"""
     story = save_story(
         db=test_db,
         story_id="regen-all-ok",
+        user_id=test_user.id,
         title="All Good",
         kid_name="Test",
         kid_age=7,
@@ -73,11 +75,12 @@ def test_regenerate_endpoint_all_present(test_db, test_client):
     assert "already present" in data["message"]
 
 
-def test_regenerate_endpoint_no_art_style(test_db, test_client):
+def test_regenerate_endpoint_no_art_style(test_db, test_client, test_user):
     """Should return 400 when story has no art style"""
     story = save_story(
         db=test_db,
         story_id="regen-no-style",
+        user_id=test_user.id,
         title="No Style",
         kid_name="Test",
         kid_age=7,
@@ -92,17 +95,18 @@ def test_regenerate_endpoint_no_art_style(test_db, test_client):
     assert "art style" in response.json()["detail"].lower()
 
 
-def test_regenerate_endpoint_not_found(test_client):
+def test_regenerate_endpoint_not_found(test_client, test_user):
     """Should return 404 for non-existent story"""
     response = test_client.post("/api/stories/notfound/regenerate-illustrations")
     assert response.status_code == 404
 
 
-def test_regenerate_endpoint_no_scene_data(test_db, test_client):
+def test_regenerate_endpoint_no_scene_data(test_db, test_client, test_user):
     """Should return 400 when story has no scene data"""
     story = save_story(
         db=test_db,
         story_id="regen-no-scenes",
+        user_id=test_user.id,
         title="No Scenes",
         kid_name="Test",
         kid_age=7,
@@ -120,11 +124,12 @@ def test_regenerate_endpoint_no_scene_data(test_db, test_client):
 
 # ── mode="missing" backward compatibility ──
 
-def test_regenerate_missing_with_explicit_mode(test_db, test_client):
+def test_regenerate_missing_with_explicit_mode(test_db, test_client, test_user):
     """mode=missing with explicit body works same as no body"""
     story = save_story(
         db=test_db,
         story_id="regen-missing-explicit",
+        user_id=test_user.id,
         title="Missing Explicit",
         kid_name="Test",
         kid_age=7,
@@ -159,11 +164,12 @@ def test_regenerate_missing_with_explicit_mode(test_db, test_client):
 
 # ── mode="single" ──
 
-def test_regenerate_single_scene(test_db, test_client):
+def test_regenerate_single_scene(test_db, test_client, test_user):
     """mode=single regenerates a specific scene by index"""
     story = save_story(
         db=test_db,
         story_id="regen-single",
+        user_id=test_user.id,
         title="Single Scene",
         kid_name="Test",
         kid_age=7,
@@ -198,11 +204,12 @@ def test_regenerate_single_scene(test_db, test_client):
     assert call_args[0][5] == [1]  # failed_indices positional arg
 
 
-def test_regenerate_single_requires_scene_index(test_db, test_client):
+def test_regenerate_single_requires_scene_index(test_db, test_client, test_user):
     """mode=single without scene_index returns 400"""
     story = save_story(
         db=test_db,
         story_id="regen-single-noidx",
+        user_id=test_user.id,
         title="Single No Idx",
         kid_name="Test",
         kid_age=7,
@@ -228,11 +235,12 @@ def test_regenerate_single_requires_scene_index(test_db, test_client):
     assert "scene_index" in response.json()["detail"].lower()
 
 
-def test_regenerate_single_out_of_range(test_db, test_client):
+def test_regenerate_single_out_of_range(test_db, test_client, test_user):
     """mode=single with out-of-range scene_index returns 400"""
     story = save_story(
         db=test_db,
         story_id="regen-single-oor",
+        user_id=test_user.id,
         title="Single OOR",
         kid_name="Test",
         kid_age=7,
@@ -260,11 +268,12 @@ def test_regenerate_single_out_of_range(test_db, test_client):
 
 # ── mode="all" ──
 
-def test_regenerate_all_scenes(test_db, test_client):
+def test_regenerate_all_scenes(test_db, test_client, test_user):
     """mode=all regenerates every scene regardless of status"""
     story = save_story(
         db=test_db,
         story_id="regen-all",
+        user_id=test_user.id,
         title="Regen All",
         kid_name="Test",
         kid_age=7,
@@ -300,11 +309,12 @@ def test_regenerate_all_scenes(test_db, test_client):
     assert call_args[0][5] == [0, 1, 2]  # all indices
 
 
-def test_regenerate_all_with_new_art_style(test_db, test_client):
+def test_regenerate_all_with_new_art_style(test_db, test_client, test_user):
     """mode=all with art_style updates the story's art_style"""
     story = save_story(
         db=test_db,
         story_id="regen-all-newstyle",
+        user_id=test_user.id,
         title="New Style",
         kid_name="Test",
         kid_age=7,
@@ -336,11 +346,12 @@ def test_regenerate_all_with_new_art_style(test_db, test_client):
 
 # ── mode="add" ──
 
-def test_add_illustrations_to_story_without_any(test_db, test_client):
+def test_add_illustrations_to_story_without_any(test_db, test_client, test_user):
     """mode=add works for stories with no illustrations"""
     story = save_story(
         db=test_db,
         story_id="regen-add",
+        user_id=test_user.id,
         title="No Illustrations",
         kid_name="Test",
         kid_age=7,
@@ -363,11 +374,12 @@ def test_add_illustrations_to_story_without_any(test_db, test_client):
     mock_task.assert_called_once()
 
 
-def test_add_illustrations_rejected_when_already_has_illustrations(test_db, test_client):
+def test_add_illustrations_rejected_when_already_has_illustrations(test_db, test_client, test_user):
     """mode=add returns 400 when story already has scene_data"""
     story = save_story(
         db=test_db,
         story_id="regen-add-exists",
+        user_id=test_user.id,
         title="Has Illustrations",
         kid_name="Test",
         kid_age=7,
@@ -392,11 +404,12 @@ def test_add_illustrations_rejected_when_already_has_illustrations(test_db, test
     assert "already has" in response.json()["detail"].lower()
 
 
-def test_add_illustrations_requires_art_style(test_db, test_client):
+def test_add_illustrations_requires_art_style(test_db, test_client, test_user):
     """mode=add without art_style returns 400"""
     story = save_story(
         db=test_db,
         story_id="regen-add-nostyle",
+        user_id=test_user.id,
         title="Add No Style",
         kid_name="Test",
         kid_age=7,
@@ -414,11 +427,12 @@ def test_add_illustrations_requires_art_style(test_db, test_client):
     assert "art_style" in response.json()["detail"].lower()
 
 
-def test_invalid_mode_returns_400(test_db, test_client):
+def test_invalid_mode_returns_400(test_db, test_client, test_user):
     """Invalid mode returns 400"""
     story = save_story(
         db=test_db,
         story_id="regen-invalid-mode",
+        user_id=test_user.id,
         title="Invalid Mode",
         kid_name="Test",
         kid_age=7,
