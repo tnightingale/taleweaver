@@ -41,9 +41,12 @@ export function useChromecast(): ChromecastAPI {
       if (!available) return;
 
       const context = cast.framework.CastContext.getInstance();
+      // Use custom receiver if configured, otherwise default media receiver
+      const appId =
+        import.meta.env.VITE_CAST_APP_ID ||
+        chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
       context.setOptions({
-        receiverApplicationId:
-          chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        receiverApplicationId: appId,
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
       });
 

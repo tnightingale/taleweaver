@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Taleweaver — Cast Receiver</title>
+    <link rel="stylesheet" href="./receiver.css" />
+    <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  </head>
+  <body>
+    <div id="receiver">
+      <!-- Scene illustration — fullscreen background -->
+      <div id="illustration">
+        <img id="scene-image" alt="" />
+      </div>
+
+      <!-- Chapter title overlay -->
+      <div id="title-bar">
+        <span id="story-title"></span>
+        <span id="chapter-title"></span>
+      </div>
+
+      <!-- Progress bar at the bottom -->
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+
+      <!-- Idle state — shown when no media is loaded -->
+      <div id="idle-screen">
+        <div id="idle-logo">Taleweaver</div>
+        <div id="idle-subtitle">Waiting for a story...</div>
+      </div>
+    </div>
+
+    <script type="module" src="./receiver.ts"></script>
+  </body>
+</html>

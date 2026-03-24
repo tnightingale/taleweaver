@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -22,6 +23,14 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        'cast-receiver': resolve(__dirname, 'cast-receiver/index.html'),
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8000',
