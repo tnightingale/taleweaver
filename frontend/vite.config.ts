@@ -16,6 +16,7 @@ export default defineConfig({
       manifest: false,
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globIgnores: ['cast-receiver/**'],
       },
       devOptions: {
         enabled: true,
