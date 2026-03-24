@@ -307,7 +307,7 @@ async def _run_add_illustrations(
                 )
 
                 image_path = save_illustration(story_id, i, image_bytes)
-                image_url = get_illustration_url(story_id, i)
+                image_url = get_illustration_url(story_id, i) + f"?v={int(time.time())}"
 
                 scene["image_path"] = image_path
                 scene["image_url"] = image_url

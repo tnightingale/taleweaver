@@ -130,6 +130,21 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
   const hasIllustrations = story.art_style && story.scenes && story.scenes.length > 0;
   const hasNoIllustrations = !story.art_style || !story.scenes;
 
+  const evictIllustrationCache = (sid?: string) => {
+    navigator.serviceWorker?.controller?.postMessage({
+      type: 'EVICT_ILLUSTRATIONS',
+      storyId: sid || story.id,
+      shortId: story.short_id,
+    });
+    // Clear sessionStorage so StoryRoute fetches fresh data on next visit
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key?.startsWith('taleweaver_story_') && key.includes(story.id)) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  };
+
   const handleIllustrationAction = async (
     mode: "missing" | "all" | "add" | "single",
     artStyle?: string,
@@ -149,6 +164,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
         return;
       }
 
+      const sid = result.story_id || story.id;
       const label = mode === "add" ? "Adding illustrations..." : `Regenerating ${result.failed_count} images...`;
       setRegenStatus(label);
       regenPollingRef.current = setInterval(async () => {
@@ -156,6 +172,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
           const status = await pollJobStatus(result.job_id);
           if (status.status === "complete") {
             if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+            evictIllustrationCache(sid);
             setRegenStatus("Done!");
             onRegenerationComplete?.();
             setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 1500);

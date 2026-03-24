@@ -201,6 +201,26 @@ registerRoute(
 // ============================================================================
 
 self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  // Evict cached illustrations and metadata after regeneration
+  if (event.data?.type === 'EVICT_ILLUSTRATIONS') {
+    const { storyId, shortId } = event.data;
+    event.waitUntil(Promise.all([
+      storyId && caches.open('story-illustrations').then(async (cache) => {
+        const keys = await cache.keys();
+        const prefix = `/storage/stories/${storyId}/`;
+        await Promise.all(
+          keys.filter((r) => new URL(r.url).pathname.startsWith(prefix)).map((r) => cache.delete(r))
+        );
+      }),
+      shortId && caches.open('story-metadata').then(async (cache) => {
+        const keys = await cache.keys();
+        await Promise.all(
+          keys.filter((r) => new URL(r.url).pathname.includes(shortId)).map((r) => cache.delete(r))
+        );
+      }),
+    ]));
+  }
+
   if (event.data?.type === 'PREFETCH_AUDIO' && event.data.url) {
     const audioUrl = event.data.url;
     event.waitUntil(
