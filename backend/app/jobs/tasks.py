@@ -197,3 +197,170 @@ async def _run_regeneration(
         mark_job_failed(db, job_id, str(e))
     finally:
         db.close()
+
+
+@huey.task(retries=1, retry_delay=30)
+def add_illustrations_task(
+    job_id: str,
+    short_id: str,
+    story_id: str,
+    art_style: str,
+    custom_art_style_prompt: str = None,
+):
+    """
+    Add illustrations to a story that has none.
+
+    Runs scene analysis (LLM) to generate illustration prompts,
+    then generates images for all scenes.
+    """
+    asyncio.run(
+        _run_add_illustrations(job_id, short_id, story_id, art_style, custom_art_style_prompt)
+    )
+
+
+async def _run_add_illustrations(
+    job_id: str,
+    short_id: str,
+    story_id: str,
+    art_style: str,
+    custom_art_style_prompt: str = None,
+):
+    """Async add-illustrations logic — runs scene analysis then illustration generation."""
+    import yaml
+    from pathlib import Path
+
+    from app.db.crud import (
+        get_story_by_short_id,
+        update_job_progress,
+        update_story_illustrations,
+        mark_job_complete,
+        mark_job_failed,
+    )
+    from app.db.database import SessionLocal
+    from app.graph.nodes.scene_analyzer import scene_analyzer
+    from app.graph.nodes.timestamp_calculator import timestamp_calculator
+    from app.services.illustration.factory import get_illustration_provider
+    from app.utils.storage import save_illustration, get_illustration_url
+
+    DATA_DIR = Path(__file__).parent.parent / "data"
+    with open(DATA_DIR / "art_styles.yaml") as f:
+        art_styles = {style["id"]: style for style in yaml.safe_load(f)}
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            mark_job_failed(db, job_id, f"Story {short_id} not found")
+            return
+
+        # Step 1: Run scene analysis
+        update_job_progress(db, job_id, 5, "Analyzing story scenes...")
+
+        analysis_state = {
+            "art_style": art_style,
+            "story_text": story.transcript,
+            "title": story.title,
+            "kid_name": story.kid_name,
+            "kid_age": story.kid_age,
+            "story_type": story.story_type,
+        }
+        analysis_result = await scene_analyzer(analysis_state)
+
+        scenes = analysis_result.get("scenes")
+        character_description = analysis_result.get("character_description", "")
+
+        if not scenes:
+            mark_job_failed(db, job_id, "Scene analysis failed — no scenes generated")
+            return
+
+        logger.info(f"[{job_id}] Scene analysis complete: {len(scenes)} scenes")
+
+        # Step 2: Calculate timestamps
+        ts_state = {"scenes": scenes, "duration_seconds": story.duration_seconds}
+        ts_result = timestamp_calculator(ts_state)
+        scenes = ts_result["scenes"]
+
+        # Step 3: Resolve art style prompt
+        if art_style == "custom":
+            art_style_prompt = custom_art_style_prompt or ""
+        else:
+            art_style_data = art_styles.get(art_style)
+            if not art_style_data or not art_style_data.get("prompt"):
+                mark_job_failed(db, job_id, f"Unknown art style: {art_style}")
+                return
+            art_style_prompt = art_style_data["prompt"]
+
+        # Step 4: Generate illustrations
+        provider = get_illustration_provider()
+        succeeded = 0
+
+        for i, scene in enumerate(scenes):
+            try:
+                prompt = scene.get("illustration_prompt", "")
+                if i == 0 and character_description:
+                    prompt = f"{character_description}. {prompt}"
+
+                image_bytes = await provider.generate_image(
+                    prompt=prompt,
+                    art_style=art_style_prompt,
+                )
+
+                image_path = save_illustration(story_id, i, image_bytes)
+                image_url = get_illustration_url(story_id, i)
+
+                scene["image_path"] = image_path
+                scene["image_url"] = image_url
+                scene["generation_metadata"] = {
+                    "provider": provider.get_provider_info()["name"],
+                    "model": provider.get_provider_info()["model"],
+                    "art_style": art_style,
+                    "index": i,
+                    "succeeded": True,
+                }
+                succeeded += 1
+
+            except Exception as e:
+                logger.error(f"[{job_id}] Failed to generate scene {i}: {e}")
+                scene["image_path"] = None
+                scene["image_url"] = None
+                scene["generation_metadata"] = {
+                    "provider": provider.get_provider_info()["name"],
+                    "index": i,
+                    "succeeded": False,
+                    "error": str(e),
+                }
+
+            progress = 10 + ((i + 1) / len(scenes)) * 85
+            update_job_progress(
+                db, job_id, progress,
+                f"Generated {i + 1} of {len(scenes)} illustrations",
+            )
+
+        # Step 5: Build scene_data and update story
+        scene_data = {
+            "scenes": scenes,
+            "art_style_prompt": art_style_prompt,
+            "character_description": character_description,
+        }
+
+        update_story_illustrations(
+            db, short_id, scene_data, art_style=art_style
+        )
+
+        if succeeded > 0:
+            mark_job_complete(
+                db, job_id,
+                title=f"Added {succeeded}/{len(scenes)} illustrations",
+                duration_seconds=0,
+                transcript="",
+                short_id=short_id,
+            )
+            logger.info(f"[{job_id}] Add illustrations complete: {succeeded}/{len(scenes)} succeeded")
+        else:
+            mark_job_failed(db, job_id, "All illustration generation attempts failed")
+
+    except Exception as e:
+        logger.error(f"[{job_id}] Add illustrations failed: {e}", exc_info=True)
+        mark_job_failed(db, job_id, str(e))
+    finally:
+        db.close()
