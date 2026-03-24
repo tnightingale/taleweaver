@@ -12,13 +12,15 @@
 
 ### Development Process (MUST FOLLOW)
 
-**1. Worktrees - One per feature/stage**
+**1. Worktrees - All changes in a worktree, never on main**
 ```bash
 git worktree add ../taleweaver-feature-name -b feature/feature-name
 cd ../taleweaver-feature-name
 # Work, commit, test
-cd /path/to/taleweaver && git merge feature/feature-name && git push
+git push -u origin feature/feature-name
+gh pr create --title "Add feature X" --body "..."
 ```
+> **Claude Code agents:** Use the `EnterWorktree` tool to create a worktree at the start of any task that modifies code. On completion, push the branch and open a PR with `gh pr create`. Never merge directly to main.
 
 **2. Commits - Small, frequent, logical**
 - ✅ One logical change per commit
@@ -75,11 +77,13 @@ docker compose run --rm backend-test          # Verify baseline
 - ✅ Create worktree (don't work in main)
 - ✅ Follow TDD
 - ✅ Commit frequently
-- ✅ Test before merge
+- ✅ Test before push
+- ✅ Push branch and open a PR via `gh pr create`
 - ✅ Update docs
 
 **DON'T:**
 - ❌ Work in main branch
+- ❌ Merge directly to main — always open a PR
 - ❌ Large commits
 - ❌ Skip tests
 - ❌ Push broken builds
@@ -141,10 +145,9 @@ PLAN
 # 4. Test production build
 docker build -t taleweaver:test .
 
-# 5. Merge final stage
-cd /path/to/taleweaver
-git merge feature/new-feature
-git push origin main
+# 5. Push and open PR
+git push -u origin feature/new-feature
+gh pr create --title "Add new-feature" --body "Summary of changes..."
 ```
 
 ### Feature Template
@@ -153,14 +156,14 @@ git push origin main
 1. Create worktree
 2. TDD implementation
 3. Test build
-4. Merge & push
+4. Push branch & open PR
 
 **Large feature (>2 hours):**
 1. Create stages plan document
 2. For each stage:
    - Create separate worktree
    - TDD implementation
-   - Merge & push
+   - Push branch & open PR
    - Update stages doc
 3. Final testing & documentation
 
@@ -315,7 +318,7 @@ git commit -m "Add API endpoint for X"
 
 ```bash
 # 1. All tests pass
-docker compose run --rm backend-test
+COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-test
 
 # 2. Production build succeeds
 docker build -t taleweaver:test .
@@ -324,8 +327,9 @@ docker build -t taleweaver:test .
 docker run -d -p 8080:80 taleweaver:test
 curl http://localhost:8080/up
 
-# 4. Push
-git push origin main
+# 4. Push branch & open PR (never push directly to main)
+git push -u origin feature/your-branch
+gh pr create --title "Your title" --body "..."
 ```
 
 ---
@@ -381,8 +385,9 @@ git commit -m "Implement endpoint"
 # 4. Test build
 docker build -t taleweaver:test .
 
-# 5. Merge
-cd /path/to/taleweaver && git merge feature/endpoint && git push
+# 5. Push & open PR
+git push -u origin feature/endpoint
+gh pr create --title "Add endpoint" --body "..."
 ```
 
 ### Add Frontend Component
@@ -398,8 +403,9 @@ cd frontend && npm run build
 # 3. Test in container
 docker build -t taleweaver:test .
 
-# 4. Push
-git push origin main
+# 4. Push & open PR
+git push -u origin feature/component-name
+gh pr create --title "Add NewComponent" --body "..."
 ```
 
 ### Fix Bug

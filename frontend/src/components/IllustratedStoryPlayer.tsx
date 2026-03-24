@@ -1,12 +1,14 @@
 import { useRef, useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
+import { regenerateIllustrations } from "../api/client";
 import { useFullscreen } from "../hooks/useFullscreen";
 
 interface Props {
   audioUrl: string;
   scenes: Scene[];
   title: string;
+  shortId?: string;
   durationSeconds: number;
   transcript?: string;
   onCreateAnother: () => void;
@@ -24,6 +26,7 @@ export default function IllustratedStoryPlayer({
   audioUrl,
   scenes,
   title,
+  shortId,
   durationSeconds,
   transcript,
   onCreateAnother,
@@ -42,7 +45,45 @@ export default function IllustratedStoryPlayer({
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenStatus, setRegenStatus] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
+
+  const hasMissingImages = scenes?.some(s => !s.image_url);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const handleRegenerate = async () => {
+    if (!shortId) return;
+    setIsRegenerating(true);
+    setRegenStatus("Starting...");
+    setMenuOpen(false);
+    try {
+      const result = await regenerateIllustrations(shortId);
+      if (result.message) {
+        setRegenStatus(result.message);
+        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
+      } else {
+        setRegenStatus(`Regenerating ${result.failed_count} images...`);
+        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 10000);
+      }
+    } catch (err) {
+      setRegenStatus(err instanceof Error ? err.message : "Failed to regenerate");
+      setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+    }
+  };
 
   // Orientation detection
   useEffect(() => {
@@ -541,7 +582,52 @@ export default function IllustratedStoryPlayer({
           </svg>
           New Story
         </button>
+        {shortId && hasMissingImages && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-medium
+                       bg-white/5 border border-purple-500/20 text-purple-200
+                       hover:bg-purple-500/20 transition-all cursor-pointer"
+              title="More options"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <circle cx="10" cy="4" r="1.5" />
+                <circle cx="10" cy="10" r="1.5" />
+                <circle cx="10" cy="16" r="1.5" />
+              </svg>
+            </button>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full mb-2 right-0 min-w-[180px] rounded-xl overflow-hidden
+                           bg-black/80 backdrop-blur-xl border border-white/10 shadow-xl z-30"
+                >
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    className="w-full px-4 py-2.5 text-left text-sm text-starlight/80
+                             hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {isRegenerating ? "Regenerating..." : "Regenerate images"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
+
+      {/* Regeneration status */}
+      {regenStatus && (
+        <div className="text-center pb-2">
+          <span className="text-[11px] text-purple-300/80 animate-pulse">{regenStatus}</span>
+        </div>
+      )}
 
       {/* Transcript toggle */}
       {transcript && (

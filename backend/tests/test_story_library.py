@@ -166,6 +166,54 @@ def test_list_stories_sorts_newest_first(test_db, test_client):
             assert curr_date >= next_date, "Should be sorted newest first"
 
 
+def test_list_stories_includes_art_style_and_scenes(test_db, test_client):
+    """GET /api/stories returns art_style and scenes for illustrated stories"""
+    scene_data = {
+        "scenes": [
+            {
+                "beat_index": 0,
+                "beat_name": "Once upon a time",
+                "text_excerpt": "Opening...",
+                "timestamp_start": 0.0,
+                "timestamp_end": 30.0,
+                "image_url": None,
+            },
+            {
+                "beat_index": 1,
+                "beat_name": "Every day",
+                "text_excerpt": "Middle...",
+                "timestamp_start": 30.0,
+                "timestamp_end": 60.0,
+                "image_url": "/storage/stories/illustrated-test/scene_1.png",
+            },
+        ]
+    }
+    save_story(
+        db=test_db,
+        story_id="illustrated-test",
+        title="Illustrated Story",
+        kid_name="Test",
+        kid_age=5,
+        story_type="custom",
+        transcript="Story text",
+        duration_seconds=60,
+        audio_bytes=b"audio",
+        art_style="watercolor_dream",
+        scene_data=scene_data,
+    )
+
+    response = test_client.get("/api/stories")
+    assert response.status_code == 200
+    data = response.json()
+
+    illustrated = next(s for s in data["stories"] if s["id"] == "illustrated-test")
+    assert illustrated["art_style"] == "watercolor_dream"
+    assert illustrated["scenes"] is not None
+    assert len(illustrated["scenes"]) == 2
+    assert illustrated["scenes"][0]["image_url"] is None
+    assert illustrated["scenes"][1]["image_url"] == "/storage/stories/illustrated-test/scene_1.png"
+
+
 def test_get_unique_kid_names(test_db):
     """Can get list of unique kid names for filter dropdown"""
     # Create stories with duplicate names

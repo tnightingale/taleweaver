@@ -1,6 +1,8 @@
 # Audio Story Creator for Kids — Taleweaver
 
 > **For developers/agents:** See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete development standards, workflows, and processes. Follow those guidelines for all development work.
+>
+> **IMPORTANT — All code changes MUST be made in a worktree** (never commit directly to main). On completion, push the branch and open a PR via `gh pr create`. See [DEVELOPMENT.md § Standards](#) for the full workflow.
 
 ## What This Is
 
@@ -78,9 +80,10 @@ COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-
 | `/api/story/historical` | POST | Create historical story job (accepts mood + length) |
 | `/api/story/status/{job_id}` | GET | Poll job progress (now includes short_id) |
 | `/api/story/audio/{job_id}` | GET | Download completed audio (temporary, for active jobs) |
-| `/api/stories` | GET | List all stories with filters/pagination (library) |
+| `/api/stories` | GET | List all stories with filters/pagination/scenes (library) |
 | `/api/stories/{short_id}` | DELETE | Delete story (DB record + audio file) |
 | `/api/stories/{short_id}` | PATCH | Update story title |
+| `/api/stories/{short_id}/regenerate-illustrations` | POST | Re-run illustration generation for failed/missing scenes |
 | `/s/{short_id}` | GET | Get story metadata by permalink (permanent) |
 | `/s/{short_id}/audio` | GET | Stream audio by permalink (permanent) |
 
