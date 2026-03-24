@@ -92,6 +92,7 @@ RUN printf ':80 {\n\
     \n\
     handle /storage/* {\n\
         root * /\n\
+        header /storage/stories/*.png Cache-Control "public, max-age=3600, must-revalidate"\n\
         header Cache-Control "public, max-age=31536000, immutable"\n\
         file_server\n\
     }\n\

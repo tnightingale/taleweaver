@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
-import { regenerateIllustrations } from "../api/client";
+import { regenerateIllustrations, pollJobStatus } from "../api/client";
 import { useFullscreen } from "../hooks/useFullscreen";
 import ArtStylePickerModal from "./ArtStylePickerModal";
 import ConfirmDialog from "./ConfirmDialog";
@@ -11,11 +11,13 @@ interface Props {
   scenes: Scene[];
   title: string;
   shortId?: string;
+  storyId?: string;
   artStyle?: string;
   durationSeconds: number;
   transcript?: string;
   onCreateAnother: () => void;
   onBackToLibrary?: () => void;
+  onScenesUpdated?: (scenes: Scene[]) => void;
   offlineStatus?: ReactNode;
 }
 
@@ -25,20 +27,32 @@ const formatTime = (seconds: number) => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
+function evictIllustrationCache(storyId?: string, shortId?: string) {
+  navigator.serviceWorker?.controller?.postMessage({
+    type: 'EVICT_ILLUSTRATIONS',
+    storyId,
+    shortId,
+  });
+}
+
 export default function IllustratedStoryPlayer({
   audioUrl,
-  scenes,
+  scenes: initialScenes,
   title,
   shortId,
+  storyId,
   artStyle,
   durationSeconds,
   transcript,
   onCreateAnother,
   onBackToLibrary,
+  onScenesUpdated,
   offlineStatus,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [scenes, setScenes] = useState(initialScenes);
+  const regenPollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds);
@@ -57,6 +71,14 @@ export default function IllustratedStoryPlayer({
   const [confirmSingleScene, setConfirmSingleScene] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
+
+  // Sync scenes from props
+  useEffect(() => { setScenes(initialScenes); }, [initialScenes]);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => { if (regenPollingRef.current) clearInterval(regenPollingRef.current); };
+  }, []);
 
   const hasMissingImages = scenes?.some(s => !s.image_url);
   const hasIllustrations = artStyle && scenes && scenes.length > 0;
@@ -86,10 +108,43 @@ export default function IllustratedStoryPlayer({
       if (result.message) {
         setRegenStatus(result.message);
         setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
-      } else {
-        setRegenStatus(`Regenerating ${result.failed_count} images...`);
-        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 10000);
+        return;
       }
+
+      const sid = result.story_id || storyId;
+      const label = mode === "single"
+        ? "Regenerating image..."
+        : `Regenerating ${result.failed_count} images...`;
+      setRegenStatus(label);
+
+      if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+      regenPollingRef.current = setInterval(async () => {
+        try {
+          const status = await pollJobStatus(result.job_id);
+          if (status.status === "complete") {
+            if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+            evictIllustrationCache(sid, shortId);
+            // Refresh scenes from the completed job response
+            if ("scenes" in status && status.scenes) {
+              setScenes(status.scenes);
+              onScenesUpdated?.(status.scenes);
+            }
+            setRegenStatus("Done!");
+            setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 1500);
+          } else if (status.status === "failed") {
+            if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+            const errorMsg = "error" in status ? status.error : "Regeneration failed";
+            setRegenStatus(errorMsg || "Regeneration failed");
+            setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+          } else if ("progress_detail" in status && status.progress_detail) {
+            setRegenStatus(status.progress_detail);
+          }
+        } catch {
+          if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+          setRegenStatus("Failed to check status");
+          setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+        }
+      }, 2000);
     } catch (err) {
       setRegenStatus(err instanceof Error ? err.message : "Failed to regenerate");
       setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);

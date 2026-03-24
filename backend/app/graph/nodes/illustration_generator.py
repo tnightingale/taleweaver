@@ -2,6 +2,7 @@
 Illustration Generator Node - Generates images for each scene
 """
 import logging
+import time
 import yaml
 from pathlib import Path
 
@@ -82,7 +83,7 @@ async def illustration_generator(state: StoryState) -> dict:
             
             # Save to storage
             image_path = save_illustration(story_id, i, image_bytes)
-            image_url = get_illustration_url(story_id, i)
+            image_url = get_illustration_url(story_id, i) + f"?v={int(time.time())}"
             
             # Update THIS scene's metadata immediately
             scene["image_path"] = image_path

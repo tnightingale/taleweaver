@@ -469,6 +469,7 @@ async def regenerate_illustrations_endpoint(
             return {
                 "job_id": job_id,
                 "status": "processing",
+                "story_id": story.id,
                 "failed_count": 0,
                 "total_scenes": 0,
             }
@@ -543,6 +544,7 @@ async def regenerate_illustrations_endpoint(
         return {
             "job_id": job_id,
             "status": "processing",
+            "story_id": story.id,
             "failed_count": len(target_indices),
             "total_scenes": len(scenes),
         }

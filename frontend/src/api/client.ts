@@ -124,7 +124,7 @@ export async function regenerateIllustrations(
     custom_art_style_prompt?: string;
     scene_index?: number;
   }
-): Promise<{ job_id: string; status: string; failed_count: number; total_scenes: number; message?: string }> {
+): Promise<{ job_id: string; status: string; story_id?: string; failed_count: number; total_scenes: number; message?: string }> {
   const res = await fetch(`${BASE}/stories/${shortId}/regenerate-illustrations`, {
     method: "POST",
     ...(options

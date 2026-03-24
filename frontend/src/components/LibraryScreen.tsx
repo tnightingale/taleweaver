@@ -256,6 +256,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                             onPlay={() => onPlayStory(story)}
                             onDelete={() => handleDelete(story)}
                             onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                            onRegenerationComplete={() => loadStories(true)}
                           />
                         ))}
                       </div>
@@ -272,6 +273,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                             onPlay={() => onPlayStory(story)}
                             onDelete={() => handleDelete(story)}
                             onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                            onRegenerationComplete={() => loadStories(true)}
                           />
                         ))}
                       </div>
@@ -288,6 +290,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                             onPlay={() => onPlayStory(story)}
                             onDelete={() => handleDelete(story)}
                             onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                            onRegenerationComplete={() => loadStories(true)}
                           />
                         ))}
                       </div>
@@ -304,6 +307,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                             onPlay={() => onPlayStory(story)}
                             onDelete={() => handleDelete(story)}
                             onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                            onRegenerationComplete={() => loadStories(true)}
                           />
                         ))}
                       </div>
