@@ -136,49 +136,47 @@ export default function StandalonePlayer() {
     );
   }
 
+  // Build offline status indicator as a ReactNode to pass via prop
+  const offlineIndicator = isOffline ? (
+    <div className="px-3 py-1.5 rounded-full bg-purple-900/80 text-purple-200 text-[10px] backdrop-blur-sm
+                    border border-purple-500/20 shadow-lg">
+      Offline
+    </div>
+  ) : cachedOffline ? (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="px-3 py-1.5 rounded-full bg-purple-900/80 text-ethereal text-[10px] backdrop-blur-sm
+                 border border-purple-500/20 shadow-lg"
+    >
+      <span>Saved for offline</span>
+    </motion.div>
+  ) : null;
+
   return (
-    <>
-      {isOffline && (
-        <div className="fixed bottom-[8.5rem] sm:bottom-auto sm:top-2 left-3 z-30 px-3 py-1.5 rounded-full
-                        bg-purple-900/80 text-purple-200 text-[10px] backdrop-blur-sm
-                        border border-purple-500/20 shadow-lg">
-          Offline
-        </div>
-      )}
-      {cachedOffline && !isOffline && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          className="fixed bottom-[8.5rem] sm:bottom-auto sm:top-2 left-3 z-30 px-3 py-1.5 rounded-full
-                     bg-purple-900/80 text-ethereal text-[10px] backdrop-blur-sm
-                     border border-purple-500/20 shadow-lg"
-        >
-          <span>Saved for offline</span>
-        </motion.div>
-      )}
-      <StoryScreen
-        isGenerating={false}
-        title={story.title}
-        audioUrl={story.audio_url}
-        durationSeconds={story.duration_seconds}
-        transcript={story.transcript}
-        storyData={{
-          job_id: story.id,
-          status: "complete",
-          title: story.title,
-          duration_seconds: story.duration_seconds,
-          audio_url: story.audio_url,
-          transcript: story.transcript,
-          short_id: story.short_id,
-          permalink: story.permalink,
-          has_illustrations: story.has_illustrations || false,
-          art_style: story.art_style,
-          scenes: story.scenes,
-        }}
-        onCreateAnother={() => navigate("/")}
-        onBackToLibrary={() => navigate("/library")}
-      />
-    </>
+    <StoryScreen
+      isGenerating={false}
+      title={story.title}
+      audioUrl={story.audio_url}
+      durationSeconds={story.duration_seconds}
+      transcript={story.transcript}
+      storyData={{
+        job_id: story.id,
+        status: "complete",
+        title: story.title,
+        duration_seconds: story.duration_seconds,
+        audio_url: story.audio_url,
+        transcript: story.transcript,
+        short_id: story.short_id,
+        permalink: story.permalink,
+        has_illustrations: story.has_illustrations || false,
+        art_style: story.art_style,
+        scenes: story.scenes,
+      }}
+      onCreateAnother={() => navigate("/")}
+      onBackToLibrary={() => navigate("/library")}
+      offlineStatus={offlineIndicator}
+    />
   );
 }
