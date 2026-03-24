@@ -209,8 +209,9 @@ async def google_login(request: Request, invite: Optional[str] = None):
 
     redirect_uri = _get_google_redirect_uri(request)
 
-    # Store invite code in state param (JSON-encoded)
-    state = json.dumps({"invite": invite or "", "nonce": secrets.token_urlsafe(16)})
+    # Generate CSRF nonce and store in state + httpOnly cookie for validation in callback
+    nonce = secrets.token_urlsafe(32)
+    state = json.dumps({"invite": invite or "", "nonce": nonce})
 
     client = AsyncOAuth2Client(
         client_id=settings.google_client_id,
@@ -219,7 +220,17 @@ async def google_login(request: Request, invite: Optional[str] = None):
         scope="openid email profile",
     )
     uri, _ = client.create_authorization_url(GOOGLE_AUTHORIZE_URL, state=state)
-    return RedirectResponse(url=uri)
+    response = RedirectResponse(url=uri)
+    response.set_cookie(
+        key="oauth_nonce",
+        value=nonce,
+        httponly=True,
+        secure=not settings.disable_ssl,
+        samesite="lax",
+        max_age=600,  # 10 minutes
+        path="/api/auth",
+    )
+    return response
 
 
 @router.get("/google/callback")
@@ -228,11 +239,17 @@ async def google_callback(request: Request, code: str, state: str = ""):
     if not settings.google_client_id or not settings.google_client_secret:
         raise HTTPException(status_code=501, detail="Google OAuth not configured")
 
-    # Parse state
+    # Parse state and validate CSRF nonce against cookie
     try:
         state_data = json.loads(state)
     except (json.JSONDecodeError, TypeError):
         state_data = {}
+
+    state_nonce = state_data.get("nonce", "")
+    cookie_nonce = request.cookies.get("oauth_nonce", "")
+    if not state_nonce or not cookie_nonce or state_nonce != cookie_nonce:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state (possible CSRF)")
+
     invite_code = state_data.get("invite", "")
 
     redirect_uri = _get_google_redirect_uri(request)
@@ -296,6 +313,7 @@ async def google_callback(request: Request, code: str, state: str = ""):
         # Set cookies and redirect to app
         response = RedirectResponse(url="/", status_code=302)
         _set_auth_cookies(response, user.id)
+        response.delete_cookie("oauth_nonce", path="/api/auth")
         return response
     finally:
         db.close()

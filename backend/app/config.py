@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 30
     google_client_id: str = ""
     google_client_secret: str = ""
+    cors_origins: str = ""  # Comma-separated allowed origins (e.g. "https://example.com,http://localhost:5173")
     
     # SMTP Configuration (provided by Once email settings)
     smtp_address: str = ""

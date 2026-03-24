@@ -18,18 +18,25 @@ from app.routes.story import router as story_router
 from app.routes.auth import router as auth_router
 from app.models.responses import StoryResponse, StoriesListResponse
 from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrationsRequest
-from app.auth.dependencies import get_current_user, get_optional_user, verify_story_ownership
+from app.auth.dependencies import get_current_user, verify_story_ownership
 from app.db.models import User
 
 app = FastAPI(title="Taleweaver")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: when credentials are used (cookie-based auth), origins must be explicit.
+# Set CORS_ORIGINS env var to a comma-separated list of allowed origins.
+# Without it, CORS is disabled (same-origin only, which is the production default
+# since Caddy serves both frontend and API on the same origin).
+from app.config import settings as _settings
+_cors_origins = [o.strip() for o in _settings.cors_origins.split(",") if o.strip()] if _settings.cors_origins else []
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.include_router(auth_router)
 app.include_router(config_router)
@@ -43,7 +50,7 @@ from app.db.models import JobState
 _last_orphan_check: Optional[datetime] = None
 
 @app.get("/api/jobs/recent")
-async def get_recent_jobs(user: Optional[User] = Depends(get_optional_user)):
+async def get_recent_jobs(user: User = Depends(get_current_user)):
     """Get jobs from last 24 hours for navigation persistence"""
     global _last_orphan_check
     from sqlalchemy.exc import OperationalError
@@ -63,10 +70,10 @@ async def get_recent_jobs(user: Optional[User] = Depends(get_optional_user)):
             _last_orphan_check = now
 
         cutoff = now - timedelta(hours=24)
-        query = db.query(JobState).filter(JobState.created_at > cutoff)
-        if user:
-            query = query.filter(JobState.user_id == user.id)
-        jobs = query.order_by(JobState.created_at.desc()).limit(20).all()
+        jobs = db.query(JobState).filter(
+            JobState.created_at > cutoff,
+            JobState.user_id == user.id,
+        ).order_by(JobState.created_at.desc()).limit(20).all()
 
         return {
             "jobs": [
