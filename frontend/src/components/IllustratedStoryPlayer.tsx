@@ -354,7 +354,7 @@ export default function IllustratedStoryPlayer({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3 }}
-                className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg"
+                className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg font-display"
               >
                 Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
               </motion.p>
