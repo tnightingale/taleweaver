@@ -304,14 +304,16 @@ async def create_historical_story(request: HistoricalStoryRequest, user: User = 
 
 
 @router.get("/status/{job_id}")
-async def get_job_status(job_id: str):
+async def get_job_status(job_id: str, user: User = Depends(get_current_user)):
     from app.db.crud import get_job_state
     from app.db.database import SessionLocal
-    
+
     db = SessionLocal()
     try:
         job = get_job_state(db, job_id)
         if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        if job.user_id and job.user_id != user.id:
             raise HTTPException(status_code=404, detail="Job not found")
 
         if job.status == "complete":
@@ -375,19 +377,21 @@ async def get_job_status(job_id: str):
 
 
 @router.get("/audio/{job_id}")
-async def get_audio(job_id: str, download: bool = False):
+async def get_audio(job_id: str, download: bool = False, user: User = Depends(get_current_user)):
     """
     Get audio for completed job (streams from saved file).
     Note: Audio is saved to filesystem when story completes.
     """
     from app.db.crud import get_story_by_id
     from app.db.database import SessionLocal
-    
+
     db = SessionLocal()
     try:
         # job_id is the same as story_id
         story = get_story_by_id(db, job_id)
         if not story:
+            raise HTTPException(status_code=404, detail="Story not found or not yet complete")
+        if story.user_id and story.user_id != user.id:
             raise HTTPException(status_code=404, detail="Story not found or not yet complete")
         
         audio_path = Path(story.audio_path)
@@ -405,20 +409,22 @@ async def get_audio(job_id: str, download: bool = False):
 
 
 @router.post("/retry/{job_id}")
-async def retry_job(job_id: str):
+async def retry_job(job_id: str, user: User = Depends(get_current_user)):
     """
     Resume a failed job from last checkpoint.
-    
+
     Only works for jobs marked as resumable (quota/rate limit errors).
     """
     from app.db.crud import get_job_state
     from app.db.database import SessionLocal
-    
+
     db = SessionLocal()
     try:
         job = get_job_state(db, job_id)
-        
+
         if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        if job.user_id and job.user_id != user.id:
             raise HTTPException(status_code=404, detail="Job not found")
         
         if job.status not in ["failed"]:

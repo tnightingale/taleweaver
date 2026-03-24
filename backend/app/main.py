@@ -163,7 +163,7 @@ async def health_check():
 
 
 @app.get("/api/status")
-async def status():
+async def status(_user: User = Depends(get_current_user)):
     """Application status including configuration state."""
     from app.config import settings
     
