@@ -65,14 +65,14 @@ async def test_gemini_retries_on_no_image_response():
     provider.model = MagicMock()
     provider.model.generate_content = mock_generate
 
-    with pytest.raises(Exception, match="No image found"):
+    with pytest.raises(Exception, match="No image in Gemini response"):
         await provider.generate_image(
             prompt="test prompt",
             art_style="watercolor",
         )
 
-    # Should have tried twice (initial + 1 retry)
-    assert call_count == 2, f"Expected 2 attempts, got {call_count}"
+    # Should have tried 3 times (MAX_ATTEMPTS=3)
+    assert call_count == 3, f"Expected 3 attempts, got {call_count}"
 
 
 @pytest.mark.asyncio
