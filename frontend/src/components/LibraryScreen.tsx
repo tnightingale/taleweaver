@@ -193,6 +193,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                   onPlay={() => onPlayStory(story)}
                   onDelete={() => handleDelete(story)}
                   onUpdateTitle={(newTitle) => handleUpdateTitle(story, newTitle)}
+                  onRegenerationComplete={() => loadStories(true)}
                 />
               ))}
             </AnimatePresence>
@@ -214,6 +215,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
                         onPlay={() => onPlayStory(story)}
                         onDelete={() => handleDelete(story)}
                         onUpdateTitle={async (newTitle) => await handleUpdateTitle(story, newTitle)}
+                        onRegenerationComplete={() => loadStories(true)}
                       />
                     ))}
                   </div>
