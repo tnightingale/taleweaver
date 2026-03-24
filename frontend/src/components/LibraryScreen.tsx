@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata, LibraryView } from "../types";
 import { listStories, deleteStory, updateStoryTitle } from "../api/client";
+import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import StoryCard from "./StoryCard";
 
 interface Props {
@@ -18,6 +19,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
   const [view, setView] = useState<LibraryView>("grid");
   const [filterKid, setFilterKid] = useState<string>("");
   const [offset, setOffset] = useState(0);
+  const { isOffline } = useOfflineStatus();
   const limit = 20;
 
   const loadStories = async (reset: boolean = false) => {
@@ -162,9 +164,31 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
             Loading stories...
           </div>
         ) : error ? (
-          <div className="text-center text-red-400 py-20">
-            {error}
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <div className="text-5xl mb-4">{isOffline ? "📡" : "⚠️"}</div>
+            <h2 className="text-xl font-display text-starlight mb-2">
+              {isOffline
+                ? "You're offline"
+                : "Couldn't load your stories"}
+            </h2>
+            <p className="text-starlight/60 mb-6 max-w-md mx-auto">
+              {isOffline
+                ? "Open the library while connected to save it for offline access."
+                : "Something went wrong reaching the server. Check your connection and try again."}
+            </p>
+            {!isOffline && (
+              <button
+                onClick={() => loadStories(true)}
+                className="btn-glow"
+              >
+                Try Again
+              </button>
+            )}
+          </motion.div>
         ) : stories.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

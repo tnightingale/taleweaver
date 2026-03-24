@@ -13,7 +13,7 @@ const APP_SHELL_CACHE = 'app-shell';
 const EXPECTED_CACHES = new Set([
   APP_SHELL_CACHE,
   'google-fonts-stylesheets', 'google-fonts-webfonts',
-  'story-metadata', 'story-audio', 'story-illustrations',
+  'library-stories', 'story-metadata', 'story-audio', 'story-illustrations',
 ]);
 
 // ============================================================================
@@ -118,6 +118,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Library stories list
+  if (url.pathname === '/api/stories') {
+    // Let Workbox handle via registerRoute below
+    return;
+  }
+
   // Story metadata
   if (url.pathname.match(/^\/api\/permalink\/[^/]+$/)) {
     // Let Workbox handle via registerRoute below
@@ -158,6 +164,17 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 }),
+    ],
+  })
+);
+
+registerRoute(
+  ({ url }: { url: URL }) => url.pathname === '/api/stories',
+  new StaleWhileRevalidate({
+    cacheName: 'library-stories',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 7 * 24 * 60 * 60 }),
     ],
   })
 );
