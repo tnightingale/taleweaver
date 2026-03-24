@@ -332,9 +332,9 @@ export default function IllustratedStoryPlayer({
         >
           {imageArea(true)}
           {playOverlay}
-          {/* Offline status — floats above bottom-left of illustration */}
+          {/* Offline status — top-right of illustration */}
           {offlineStatus && (
-            <div className="absolute bottom-3 left-3 z-10">{offlineStatus}</div>
+            <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
           )}
         </div>
 
@@ -464,9 +464,9 @@ export default function IllustratedStoryPlayer({
       >
         {imageArea(false)}
         {playOverlay}
-        {/* Offline status — floats above bottom-left of illustration */}
+        {/* Offline status — top-right of illustration */}
         {offlineStatus && (
-          <div className="absolute bottom-3 left-3 z-10">{offlineStatus}</div>
+          <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
         )}
       </div>
 
