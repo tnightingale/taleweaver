@@ -4,6 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
+// Mock auth context so App can render without a real AuthProvider
+vi.mock('./contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user', email: 'test@test.com', display_name: 'Test' },
+    loading: false,
+    login: vi.fn(),
+    signup: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 const mockCreateCustomStory = vi.fn();
 const mockCreateHistoricalStory = vi.fn();
 const mockPollJobStatus = vi.fn();
