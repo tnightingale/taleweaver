@@ -138,8 +138,9 @@ export default function StandalonePlayer() {
 
   // Build offline status indicator as a ReactNode to pass via prop
   const offlineIndicator = isOffline ? (
-    <div className="px-3 py-1.5 rounded-full bg-purple-900/80 text-purple-200 text-[10px] backdrop-blur-sm
-                    border border-purple-500/20 shadow-lg">
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm
+                    border border-white/10 text-white/70 text-[10px]">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
       Offline
     </div>
   ) : cachedOffline ? (
@@ -147,10 +148,11 @@ export default function StandalonePlayer() {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="px-3 py-1.5 rounded-full bg-purple-900/80 text-ethereal text-[10px] backdrop-blur-sm
-                 border border-purple-500/20 shadow-lg"
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm
+                 border border-white/10 text-white/70 text-[10px]"
     >
-      <span>Saved for offline</span>
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      Saved for offline
     </motion.div>
   ) : null;
 

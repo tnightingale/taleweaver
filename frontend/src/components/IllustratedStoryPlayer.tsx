@@ -332,6 +332,10 @@ export default function IllustratedStoryPlayer({
         >
           {imageArea(true)}
           {playOverlay}
+          {/* Offline status — top-right of illustration */}
+          {offlineStatus && (
+            <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
+          )}
         </div>
 
         {/* Floating chapter title — top overlay */}
@@ -460,12 +464,11 @@ export default function IllustratedStoryPlayer({
       >
         {imageArea(false)}
         {playOverlay}
+        {/* Offline status — top-right of illustration */}
+        {offlineStatus && (
+          <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
+        )}
       </div>
-
-      {/* Offline status slot */}
-      {offlineStatus && (
-        <div className="flex justify-start px-4 py-1">{offlineStatus}</div>
-      )}
 
       {/* Player controls — glass card */}
       <div
