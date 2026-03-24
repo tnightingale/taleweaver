@@ -1,6 +1,8 @@
 # Audio Story Creator for Kids — Taleweaver
 
 > **For developers/agents:** See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete development standards, workflows, and processes. Follow those guidelines for all development work.
+>
+> **IMPORTANT — All code changes MUST be made in a worktree** (never commit directly to main). On completion, push the branch and open a PR via `gh pr create`. See [DEVELOPMENT.md § Standards](#) for the full workflow.
 
 ## What This Is
 
