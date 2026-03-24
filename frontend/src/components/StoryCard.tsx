@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata } from "../types";
-import { regenerateIllustrations } from "../api/client";
+import { regenerateIllustrations, pollJobStatus } from "../api/client";
 import ArtStylePickerModal from "./ArtStylePickerModal";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -10,6 +10,7 @@ interface Props {
   onPlay: () => void;
   onDelete: () => void;
   onUpdateTitle: (newTitle: string) => Promise<void>;
+  onRegenerationComplete?: () => void;
 }
 
 const formatDuration = (seconds: number) => {
@@ -29,7 +30,7 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleDateString();
 };
 
-export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Props) {
+export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRegenerationComplete }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(story.title);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -42,6 +43,14 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [showStylePicker, setShowStylePicker] = useState<"add" | "all" | null>(null);
   const [showConfirmRegenAll, setShowConfirmRegenAll] = useState<{ artStyle: string; customPrompt?: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const regenPollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  // Clean up regeneration polling on unmount
+  useEffect(() => {
+    return () => {
+      if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+    };
+  }, []);
 
   // Close menu on outside click
   useEffect(() => {
@@ -137,11 +146,33 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
       if (result.message) {
         setRegenStatus(result.message);
         setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
-      } else {
-        const label = mode === "add" ? "Adding illustrations..." : `Regenerating ${result.failed_count} images...`;
-        setRegenStatus(label);
-        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 10000);
+        return;
       }
+
+      const label = mode === "add" ? "Adding illustrations..." : `Regenerating ${result.failed_count} images...`;
+      setRegenStatus(label);
+      regenPollingRef.current = setInterval(async () => {
+        try {
+          const status = await pollJobStatus(result.job_id);
+          if (status.status === "complete") {
+            if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+            setRegenStatus("Done!");
+            onRegenerationComplete?.();
+            setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 1500);
+          } else if (status.status === "failed") {
+            if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+            const errorMsg = "error" in status ? status.error : "Regeneration failed";
+            setRegenStatus(errorMsg || "Regeneration failed");
+            setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+          } else if ("progress_detail" in status && status.progress_detail) {
+            setRegenStatus(status.progress_detail);
+          }
+        } catch {
+          if (regenPollingRef.current) clearInterval(regenPollingRef.current);
+          setRegenStatus("Failed to check status");
+          setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+        }
+      }, 2000);
     } catch (err) {
       setRegenStatus(err instanceof Error ? err.message : "Failed");
       setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);

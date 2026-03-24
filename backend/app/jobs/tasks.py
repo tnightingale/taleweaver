@@ -7,6 +7,7 @@ gen, audio stitching) doesn't affect API responsiveness.
 """
 import asyncio
 import logging
+import time
 
 from app.jobs.huey_app import huey
 
@@ -146,7 +147,7 @@ async def _run_regeneration(
                 )
 
                 image_path = save_illustration(story_id, scene_idx, image_bytes)
-                image_url = get_illustration_url(story_id, scene_idx)
+                image_url = get_illustration_url(story_id, scene_idx) + f"?v={int(time.time())}"
 
                 scene["image_path"] = image_path
                 scene["image_url"] = image_url
