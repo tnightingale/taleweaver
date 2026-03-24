@@ -4,6 +4,8 @@ import type { JobCompleteResponse } from "../types";
 import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
 import ProgressRing from "./ProgressRing";
 import { useFullscreen } from "../hooks/useFullscreen";
+import { useMediaSession } from "../hooks/useMediaSession";
+import { useAirPlay } from "../hooks/useAirPlay";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -62,6 +64,26 @@ export default function StoryScreen({
   const [audioError, setAudioError] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+
+  const handleMediaSeekTo = (time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  useMediaSession({
+    title,
+    artwork: undefined,
+    isPlaying,
+    duration,
+    currentTime,
+    onPlay: () => audioRef.current?.play().catch(() => {}),
+    onPause: () => audioRef.current?.pause(),
+    onSeekTo: handleMediaSeekTo,
+  });
 
   // Sync duration from props when they change
   useEffect(() => {
@@ -283,6 +305,22 @@ export default function StoryScreen({
                       >
                         {isPlaying ? "⏸" : "▶"}
                       </motion.button>
+                      {airPlayAvailable && (
+                        <button
+                          onClick={showAirPlayPicker}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center
+                                   transition-all cursor-pointer
+                                   ${airPlayActive
+                                     ? "text-mystic bg-mystic/20"
+                                     : "text-starlight/60 hover:text-starlight hover:bg-white/10"
+                                   }`}
+                          title={airPlayActive ? "AirPlay active" : "AirPlay"}
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                            <path d="M6 22h12l-6-6-6 6zM21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H3V5h18v12h-4v2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                          </svg>
+                        </button>
+                      )}
                       {fullscreenSupported && (
                         <button
                           onClick={toggleFullscreen}
@@ -298,11 +336,20 @@ export default function StoryScreen({
                   </>
                 )}
 
+                {/* AirPlay Active Indicator */}
+                {airPlayActive && (
+                  <p className="text-center text-sm text-mystic/80 animate-pulse">
+                    Playing on AirPlay
+                  </p>
+                )}
+
                 {/* Hidden Audio Element */}
                 <audio
                   ref={audioRef}
                   src={audioUrl}
                   preload="auto"
+                  // @ts-expect-error WebKit-specific attribute for AirPlay
+                  x-webkit-airplay="allow"
                   onLoadedMetadata={handleLoadedMetadata}
                   onTimeUpdate={handleTimeUpdate}
                   onPlay={() => setIsPlaying(true)}
