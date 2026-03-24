@@ -399,7 +399,6 @@ export default function StoryScreen({
                   ref={audioRef}
                   src={audioUrl}
                   preload="auto"
-                  // @ts-expect-error WebKit-specific attribute for AirPlay
                   x-webkit-airplay="allow"
                   onLoadedMetadata={handleLoadedMetadata}
                   onTimeUpdate={handleTimeUpdate}

@@ -488,7 +488,6 @@ export default function IllustratedStoryPlayer({
     <audio
       ref={audioRef}
       src={audioUrl}
-      // @ts-expect-error WebKit-specific attribute for AirPlay
       x-webkit-airplay="allow"
       onLoadedMetadata={handleLoadedMetadata}
       onTimeUpdate={handleTimeUpdate}
