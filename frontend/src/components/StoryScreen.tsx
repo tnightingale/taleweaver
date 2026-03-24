@@ -196,6 +196,7 @@ export default function StoryScreen({
                 audioUrl={audioUrl}
                 scenes={storyData.scenes}
                 title={title}
+                shortId={storyData.short_id}
                 durationSeconds={durationSeconds}
                 transcript={transcript}
                 onCreateAnother={onCreateAnother}

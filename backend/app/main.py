@@ -300,26 +300,45 @@ async def list_all_stories(
             sort=sort
         )
         
-        story_responses = [
-            StoryResponse(
-                id=story.id,
-                short_id=story.short_id,
-                title=story.title,
-                kid_name=story.kid_name,
-                kid_age=story.kid_age,
-                story_type=story.story_type,
-                genre=story.genre,
-                event_id=story.event_id,
-                transcript=story.transcript,
-                duration_seconds=story.duration_seconds,
-                created_at=story.created_at.isoformat() + 'Z',
-                permalink=f"/s/{story.short_id}",
-                audio_url=f"/api/permalink/{story.short_id}/audio",
-                has_illustrations=story.has_illustrations,
-                cover_image_url=_get_cover_image_url(story),
+        from app.models.responses import SceneResponse
+
+        story_responses = []
+        for story in stories:
+            scenes = None
+            if story.has_illustrations and story.scene_data:
+                scenes = [
+                    SceneResponse(
+                        beat_index=s["beat_index"],
+                        beat_name=s["beat_name"],
+                        text_excerpt=s["text_excerpt"],
+                        timestamp_start=s["timestamp_start"],
+                        timestamp_end=s["timestamp_end"],
+                        image_url=s.get("image_url")
+                    )
+                    for s in story.scene_data.get("scenes", [])
+                ]
+
+            story_responses.append(
+                StoryResponse(
+                    id=story.id,
+                    short_id=story.short_id,
+                    title=story.title,
+                    kid_name=story.kid_name,
+                    kid_age=story.kid_age,
+                    story_type=story.story_type,
+                    genre=story.genre,
+                    event_id=story.event_id,
+                    transcript=story.transcript,
+                    duration_seconds=story.duration_seconds,
+                    created_at=story.created_at.isoformat() + 'Z',
+                    permalink=f"/s/{story.short_id}",
+                    audio_url=f"/api/permalink/{story.short_id}/audio",
+                    has_illustrations=story.has_illustrations,
+                    art_style=story.art_style,
+                    scenes=scenes,
+                    cover_image_url=_get_cover_image_url(story),
+                )
             )
-            for story in stories
-        ]
         
         has_more = (offset + len(stories)) < total
         
