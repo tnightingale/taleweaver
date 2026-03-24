@@ -12,6 +12,31 @@ import type {
 
 const BASE = "/api";
 
+let _refreshing: Promise<boolean> | null = null;
+
+/**
+ * Fetch wrapper that handles 401 by refreshing the access token and retrying.
+ */
+async function authFetch(url: string, options?: RequestInit): Promise<Response> {
+  let res = await fetch(url, options);
+  if (res.status === 401) {
+    // Deduplicate concurrent refresh attempts
+    if (!_refreshing) {
+      _refreshing = fetch(`${BASE}/auth/refresh`, { method: "POST" })
+        .then((r) => r.ok)
+        .finally(() => { _refreshing = null; });
+    }
+    const refreshed = await _refreshing;
+    if (refreshed) {
+      res = await fetch(url, options);
+    } else {
+      // Refresh failed — redirect to login
+      window.location.href = "/login";
+    }
+  }
+  return res;
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -21,17 +46,17 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function fetchGenres(): Promise<Genre[]> {
-  const res = await fetch(`${BASE}/genres`);
+  const res = await authFetch(`${BASE}/genres`);
   return handleResponse(res);
 }
 
 export async function fetchHistoricalEvents(): Promise<HistoricalEvent[]> {
-  const res = await fetch(`${BASE}/historical-events`);
+  const res = await authFetch(`${BASE}/historical-events`);
   return handleResponse(res);
 }
 
 export async function fetchArtStyles(): Promise<ArtStyle[]> {
-  const res = await fetch(`${BASE}/art-styles`);
+  const res = await authFetch(`${BASE}/art-styles`);
   return handleResponse(res);
 }
 
@@ -44,7 +69,7 @@ export async function createCustomStory(
   artStyle?: string,
   customArtStylePrompt?: string,
 ): Promise<JobCreatedResponse> {
-  const res = await fetch(`${BASE}/story/custom`, {
+  const res = await authFetch(`${BASE}/story/custom`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ 
@@ -68,7 +93,7 @@ export async function createHistoricalStory(
   artStyle?: string,
   customArtStylePrompt?: string,
 ): Promise<JobCreatedResponse> {
-  const res = await fetch(`${BASE}/story/historical`, {
+  const res = await authFetch(`${BASE}/story/historical`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ 
@@ -86,7 +111,7 @@ export async function createHistoricalStory(
 export async function pollJobStatus(
   jobId: string
 ): Promise<JobStatusResponse | JobCompleteResponse> {
-  const res = await fetch(`${BASE}/story/status/${jobId}`);
+  const res = await authFetch(`${BASE}/story/status/${jobId}`);
   return handleResponse(res);
 }
 
@@ -95,7 +120,7 @@ export function getAudioUrl(jobId: string): string {
 }
 
 export async function retryJob(jobId: string): Promise<{job_id: string; status: string; retry_count: number}> {
-  const res = await fetch(`${BASE}/story/retry/${jobId}`, {
+  const res = await authFetch(`${BASE}/story/retry/${jobId}`, {
     method: "POST",
   });
   return handleResponse(res);
@@ -112,7 +137,7 @@ export interface RecentJob {
 }
 
 export async function fetchRecentJobs(): Promise<{jobs: RecentJob[]}> {
-  const res = await fetch(`${BASE}/jobs/recent`);
+  const res = await authFetch(`${BASE}/jobs/recent`);
   return handleResponse(res);
 }
 
@@ -125,7 +150,7 @@ export async function regenerateIllustrations(
     scene_index?: number;
   }
 ): Promise<{ job_id: string; status: string; story_id?: string; failed_count: number; total_scenes: number; message?: string }> {
-  const res = await fetch(`${BASE}/stories/${shortId}/regenerate-illustrations`, {
+  const res = await authFetch(`${BASE}/stories/${shortId}/regenerate-illustrations`, {
     method: "POST",
     ...(options
       ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(options) }
@@ -147,12 +172,12 @@ export async function listStories(
   params.append("offset", offset.toString());
   params.append("sort", sort);
 
-  const res = await fetch(`${BASE}/stories?${params}`);
+  const res = await authFetch(`${BASE}/stories?${params}`);
   return handleResponse(res);
 }
 
 export async function deleteStory(shortId: string): Promise<void> {
-  const res = await fetch(`${BASE}/stories/${shortId}`, {
+  const res = await authFetch(`${BASE}/stories/${shortId}`, {
     method: "DELETE",
   });
   if (!res.ok) {
@@ -165,7 +190,7 @@ export async function updateStoryTitle(
   shortId: string,
   newTitle: string
 ): Promise<StoryMetadata> {
-  const res = await fetch(`${BASE}/stories/${shortId}`, {
+  const res = await authFetch(`${BASE}/stories/${shortId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title: newTitle }),
