@@ -179,6 +179,7 @@ export default function StandalonePlayer() {
       onCreateAnother={() => navigate("/")}
       onBackToLibrary={() => navigate("/library")}
       offlineStatus={offlineIndicator}
+      readOnly
     />
   );
 }

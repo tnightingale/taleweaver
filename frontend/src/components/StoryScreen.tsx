@@ -28,6 +28,7 @@ interface Props {
   onCreateAnother: () => void;
   onBackToLibrary?: () => void;
   offlineStatus?: ReactNode;
+  readOnly?: boolean;
 }
 
 const formatTime = (seconds: number) => {
@@ -49,6 +50,7 @@ export default function StoryScreen({
   onCreateAnother,
   onBackToLibrary,
   offlineStatus,
+  readOnly = false,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -204,6 +206,7 @@ export default function StoryScreen({
                 onCreateAnother={onCreateAnother}
                 onBackToLibrary={onBackToLibrary}
                 offlineStatus={offlineStatus}
+                readOnly={readOnly}
               />
             ) : (
               /* Standard Audio Player */

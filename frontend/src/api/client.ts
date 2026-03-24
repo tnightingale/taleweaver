@@ -18,7 +18,7 @@ let _refreshing: Promise<boolean> | null = null;
  * Fetch wrapper that handles 401 by refreshing the access token and retrying.
  */
 async function authFetch(url: string, options?: RequestInit): Promise<Response> {
-  let res = await fetch(url, options);
+  let res = options ? await fetch(url, options) : await fetch(url);
   if (res.status === 401) {
     // Deduplicate concurrent refresh attempts
     if (!_refreshing) {
@@ -28,7 +28,7 @@ async function authFetch(url: string, options?: RequestInit): Promise<Response> 
     }
     const refreshed = await _refreshing;
     if (refreshed) {
-      res = await fetch(url, options);
+      res = options ? await fetch(url, options) : await fetch(url);
     } else {
       // Refresh failed — redirect to login
       window.location.href = "/login";
