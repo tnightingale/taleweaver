@@ -120,6 +120,7 @@ async def illustration_generator(state: StoryState) -> dict:
             logger.exception(f"❌ Failed to generate illustration {i+1}/{len(scenes)} (beat: {scene['beat_name']})")
             logger.error(f"   Error type: {type(img_error).__name__}")
             logger.error(f"   Error message: {str(img_error)}")
+            logger.error(f"   Prompt length: {len(full_prompt)} chars")
             
             # Record failure in scene metadata
             scene["image_path"] = None
