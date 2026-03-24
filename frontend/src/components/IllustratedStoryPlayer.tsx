@@ -159,7 +159,7 @@ export default function IllustratedStoryPlayer({
       className={`max-w-5xl mx-auto ${
         isFullscreen
           ? "relative h-screen bg-void overflow-hidden"
-          : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block h-[100dvh] sm:h-auto"
+          : "sm:px-4 sm:py-8 sm:space-y-8 flex flex-col sm:block h-[100dvh] sm:h-auto overflow-hidden sm:overflow-visible"
       }`}
       onClick={isFullscreen ? resetHideTimer : undefined}
       onMouseMove={isFullscreen ? resetHideTimer : undefined}
@@ -281,43 +281,43 @@ export default function IllustratedStoryPlayer({
             ? `absolute bottom-0 left-0 right-0 transition-opacity duration-300
                ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}
                bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 pb-4 px-4`
-            : `fixed left-0 right-0 sm:relative sm:static
-               bottom-[calc(3rem+env(safe-area-inset-bottom))] sm:bottom-auto
-               glass-card sm:rounded-2xl rounded-none
-               border-t border-white/10 sm:border
+            : `fixed left-2 right-2 sm:left-auto sm:right-auto sm:relative sm:static
+               bottom-[calc(3.25rem+env(safe-area-inset-bottom))] sm:bottom-auto
+               glass-card rounded-2xl
+               border border-white/10
                backdrop-blur-xl
-               px-4 py-2.5 sm:p-6 sm:pb-6`
+               px-4 py-3 sm:p-6 sm:pb-6`
         }`}
         style={!isFullscreen ? { WebkitBackdropFilter: "blur(20px)" } : undefined}
       >
         {/* Mobile: compact single row. Desktop: stacked layout */}
-        <div className="sm:hidden flex items-center gap-2">
+        <div className="sm:hidden flex items-center gap-3">
           <button
             onClick={restartFromBeginning}
-            className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                      text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
                      transition-all cursor-pointer"
             title="Start from beginning"
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <rect x="2" y="4" width="2.5" height="12" rx="0.5" />
               <path d="M7 10l8-6v12z" />
             </svg>
           </button>
           <button
             onClick={togglePlay}
-            className="w-10 h-10 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
+            className="w-12 h-12 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
                      flex items-center justify-center text-white
                      shadow-[0_0_12px_rgba(168,85,247,0.3)]
                      transition-all cursor-pointer"
           >
             {isPlaying ? (
-              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                 <rect x="5" y="4" width="3" height="12" rx="0.5" />
                 <rect x="12" y="4" width="3" height="12" rx="0.5" />
               </svg>
             ) : (
-              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-0.5">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 ml-0.5">
                 <path d="M6 4l10 6-10 6z" />
               </svg>
             )}
@@ -350,18 +350,18 @@ export default function IllustratedStoryPlayer({
             ))}
           </div>
 
-          <span className="text-[10px] text-starlight/50 font-mono shrink-0 w-[4.5rem] text-right">
+          <span className="text-xs text-starlight/50 font-mono shrink-0">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
 
           {fullscreenSupported && (
             <button
               onClick={toggleFullscreen}
-              className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                        text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
                        transition-all cursor-pointer"
             >
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
                 {isFullscreen ? (
                   <>
                     <polyline points="7,3 7,7 3,7" />
@@ -485,25 +485,31 @@ export default function IllustratedStoryPlayer({
       {/* Mobile: nav buttons pinned below the player */}
       {!isFullscreen && (
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-10
-                        flex items-center justify-center gap-2
-                        py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]
+                        flex items-center justify-center gap-3
+                        py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))]
                         bg-void/90 backdrop-blur-sm border-t border-white/5">
           {onBackToLibrary && (
             <button
               onClick={onBackToLibrary}
-              className="px-4 py-1.5 rounded-full text-[11px] font-medium
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
                        bg-white/5 border border-purple-500/20 text-purple-200
                        hover:bg-purple-500/20 transition-all cursor-pointer"
             >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M3 4h6v6H3V4zm0 8h6v4H3v-4zm8-8h6v4h-6V4zm0 6h6v6h-6v-6z"/>
+              </svg>
               Library
             </button>
           )}
           <button
             onClick={onCreateAnother}
-            className="px-4 py-1.5 rounded-full text-[11px] font-medium
+            className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
                      bg-purple-500/20 border border-purple-500/30 text-purple-200
                      hover:bg-purple-500/30 transition-all cursor-pointer"
           >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+            </svg>
             New Story
           </button>
         </div>
