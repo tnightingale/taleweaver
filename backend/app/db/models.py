@@ -81,7 +81,10 @@ class JobState(Base):
     
     # Job identification
     job_id = Column(String, primary_key=True)
-    
+
+    # Ownership
+    user_id = Column(String, nullable=True)
+
     # Status tracking
     status = Column(String, nullable=False, default="processing")  # processing, complete, failed
     current_stage = Column(String)  # writing, splitting, synthesizing, etc.

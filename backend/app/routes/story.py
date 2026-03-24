@@ -6,11 +6,13 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, FileResponse
 
 logger = logging.getLogger(__name__)
 
+from app.auth.dependencies import get_current_user
+from app.db.models import User
 from app.graph.pipeline import create_story_pipeline
 from app.models.requests import CustomStoryRequest, HistoricalStoryRequest
 from app.models.responses import JobCreatedResponse, JobStatusResponse, JobCompleteResponse
@@ -154,6 +156,7 @@ async def run_pipeline(job_id: str, state: dict):
                 art_style=state.get("art_style"),
                 scene_data=scene_data,
                 cover_image_path=final_state.get("cover_image_path"),
+                user_id=state.get("user_id"),
             )
             short_id = db_story.short_id
             logger.info(f"[{job_id}] Story persisted with short_id={short_id}")
@@ -186,7 +189,7 @@ async def run_pipeline(job_id: str, state: dict):
 
 
 @router.post("/custom", response_model=JobCreatedResponse)
-async def create_custom_story(request: CustomStoryRequest):
+async def create_custom_story(request: CustomStoryRequest, user: User = Depends(get_current_user)):
     from app.db.crud import create_job_state, cleanup_old_jobs
     from app.db.database import SessionLocal
     
@@ -219,6 +222,7 @@ async def create_custom_story(request: CustomStoryRequest):
         "length": request.length,
         "art_style": request.art_style,
         "custom_art_style_prompt": request.custom_art_style_prompt,
+        "user_id": user.id,
     }
 
     # Create job state in database (stores params for retry)
@@ -241,7 +245,7 @@ async def create_custom_story(request: CustomStoryRequest):
 
 
 @router.post("/historical", response_model=JobCreatedResponse)
-async def create_historical_story(request: HistoricalStoryRequest):
+async def create_historical_story(request: HistoricalStoryRequest, user: User = Depends(get_current_user)):
     from app.db.crud import create_job_state, cleanup_old_jobs
     from app.db.database import SessionLocal
     
@@ -277,6 +281,7 @@ async def create_historical_story(request: HistoricalStoryRequest):
         "length": request.length,
         "art_style": request.art_style,
         "custom_art_style_prompt": request.custom_art_style_prompt,
+        "user_id": user.id,
     }
 
     # Create job state in database (stores params for retry)

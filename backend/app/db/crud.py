@@ -43,6 +43,7 @@ def save_story(
     art_style: str = None,
     scene_data: dict = None,
     cover_image_path: str = None,
+    user_id: str = None,
 ) -> Story:
     """
     Save story to database and write audio to filesystem.
@@ -107,6 +108,7 @@ def save_story(
         has_illustrations=bool(scene_data),
         scene_data=scene_data,
         cover_image_path=cover_image_path,
+        user_id=user_id,
     )
     db.add(db_story)
     db.commit()
@@ -147,27 +149,31 @@ def list_stories(
     db: Session,
     kid_name: Optional[str] = None,
     story_type: Optional[str] = None,
+    user_id: Optional[str] = None,
     limit: int = 20,
     offset: int = 0,
     sort: str = "created_desc"
 ) -> Tuple[List[Story], int]:
     """
     List stories with optional filters, pagination, and sorting.
-    
+
     Args:
         db: SQLAlchemy database session
         kid_name: Optional filter by kid name
         story_type: Optional filter by story type (custom/historical)
+        user_id: Optional filter by owner user ID
         limit: Number of stories to return (default 20)
         offset: Number of stories to skip (for pagination)
         sort: Sort order - created_desc, created_asc, title, duration
-        
+
     Returns:
         Tuple of (stories list, total count)
     """
     query = db.query(Story)
-    
+
     # Apply filters
+    if user_id:
+        query = query.filter(Story.user_id == user_id)
     if kid_name:
         query = query.filter(Story.kid_name == kid_name)
     if story_type:
@@ -329,6 +335,7 @@ def create_job_state(
         stages=json.dumps(stages),
         progress=0.0,
         story_params_json=json.dumps(story_params) if story_params else None,
+        user_id=story_params.get("user_id") if story_params else None,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
