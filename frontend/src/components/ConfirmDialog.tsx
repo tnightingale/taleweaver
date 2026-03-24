@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 
 interface Props {
@@ -15,7 +16,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -50,6 +51,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { fetchArtStyles } from "../api/client";
 import type { ArtStyle } from "../types";
@@ -30,7 +31,7 @@ export default function ArtStylePickerModal({
 
   const canConfirm = selected && (selected !== "custom" || customPrompt.trim().length > 0);
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -120,6 +121,7 @@ export default function ArtStylePickerModal({
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
