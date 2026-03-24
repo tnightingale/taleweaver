@@ -6,6 +6,8 @@ import ProgressRing from "./ProgressRing";
 import { useFullscreen } from "../hooks/useFullscreen";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useAirPlay } from "../hooks/useAirPlay";
+import { useChromecast } from "../hooks/useChromecast";
+import CastButton from "./CastButton";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -66,29 +68,48 @@ export default function StoryScreen({
   const [copied, setCopied] = useState(false);
 
   const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+  const chromecast = useChromecast();
+
+  const isCasting = chromecast.isConnected;
 
   const handleMediaSeekTo = (time: number) => {
-    if (audioRef.current) {
+    if (isCasting) {
+      chromecast.seek(time);
+    } else if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setCurrentTime(time);
     }
+    setCurrentTime(time);
   };
 
   useMediaSession({
     title,
     artwork: undefined,
     isPlaying,
-    duration,
-    currentTime,
-    onPlay: () => audioRef.current?.play().catch(() => {}),
-    onPause: () => audioRef.current?.pause(),
+    duration: isCasting ? chromecast.duration : duration,
+    currentTime: isCasting ? chromecast.currentTime : currentTime,
+    onPlay: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.play().catch(() => {});
+    },
+    onPause: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.pause();
+    },
     onSeekTo: handleMediaSeekTo,
   });
 
+  // Sync Chromecast state to local state when casting
+  useEffect(() => {
+    if (!isCasting) return;
+    setCurrentTime(chromecast.currentTime);
+    setIsPlaying(!chromecast.isPaused);
+    if (chromecast.duration > 0) setDuration(chromecast.duration);
+  }, [isCasting, chromecast.currentTime, chromecast.isPaused, chromecast.duration]);
+
   // Sync duration from props when they change
   useEffect(() => {
-    setDuration(durationSeconds);
-  }, [durationSeconds]);
+    if (!isCasting) setDuration(durationSeconds);
+  }, [durationSeconds, isCasting]);
 
   const handleLoadedMetadata = () => {
     if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
@@ -97,6 +118,10 @@ export default function StoryScreen({
   };
 
   const togglePlay = () => {
+    if (isCasting) {
+      chromecast.playOrPause();
+      return;
+    }
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -110,8 +135,26 @@ export default function StoryScreen({
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const t = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = t;
+    if (isCasting) {
+      chromecast.seek(t);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = t;
+    }
     setCurrentTime(t);
+  };
+
+  const handleCastClick = () => {
+    if (isCasting) {
+      chromecast.disconnect();
+    } else {
+      // Build absolute audio URL for Chromecast to fetch directly
+      const absoluteAudioUrl = audioUrl.startsWith("http")
+        ? audioUrl
+        : `${window.location.origin}${audioUrl}`;
+      chromecast.cast({ audioUrl: absoluteAudioUrl, title });
+      // Pause local audio when starting cast
+      audioRef.current?.pause();
+    }
   };
 
   const handleSeekStart = () => setIsSeeking(true);
@@ -321,6 +364,12 @@ export default function StoryScreen({
                           </svg>
                         </button>
                       )}
+                      <CastButton
+                        isAvailable={chromecast.isAvailable}
+                        isConnected={chromecast.isConnected}
+                        deviceName={chromecast.deviceName}
+                        onClick={handleCastClick}
+                      />
                       {fullscreenSupported && (
                         <button
                           onClick={toggleFullscreen}
@@ -336,10 +385,12 @@ export default function StoryScreen({
                   </>
                 )}
 
-                {/* AirPlay Active Indicator */}
-                {airPlayActive && (
+                {/* Casting Indicator */}
+                {(airPlayActive || isCasting) && (
                   <p className="text-center text-sm text-mystic/80 animate-pulse">
-                    Playing on AirPlay
+                    {airPlayActive
+                      ? "Playing on AirPlay"
+                      : `Casting to ${chromecast.deviceName ?? "device"}`}
                   </p>
                 )}
 

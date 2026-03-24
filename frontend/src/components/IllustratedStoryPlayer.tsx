@@ -5,6 +5,8 @@ import { regenerateIllustrations, pollJobStatus } from "../api/client";
 import { useFullscreen } from "../hooks/useFullscreen";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useAirPlay } from "../hooks/useAirPlay";
+import { useChromecast } from "../hooks/useChromecast";
+import CastButton from "./CastButton";
 import ArtStylePickerModal from "./ArtStylePickerModal";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -76,12 +78,17 @@ export default function IllustratedStoryPlayer({
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
   const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+  const chromecast = useChromecast();
+
+  const isCasting = chromecast.isConnected;
 
   const handleMediaSeekTo = (time: number) => {
-    if (audioRef.current) {
+    if (isCasting) {
+      chromecast.seek(time);
+    } else if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setCurrentTime(time);
     }
+    setCurrentTime(time);
   };
 
   // Current scene artwork for Media Session lock screen
@@ -91,12 +98,45 @@ export default function IllustratedStoryPlayer({
     title,
     artwork: currentSceneArtwork,
     isPlaying,
-    duration,
-    currentTime,
-    onPlay: () => audioRef.current?.play().catch(() => {}),
-    onPause: () => audioRef.current?.pause(),
+    duration: isCasting ? chromecast.duration : duration,
+    currentTime: isCasting ? chromecast.currentTime : currentTime,
+    onPlay: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.play().catch(() => {});
+    },
+    onPause: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.pause();
+    },
     onSeekTo: handleMediaSeekTo,
   });
+
+  // Sync Chromecast state to local state when casting
+  useEffect(() => {
+    if (!isCasting) return;
+    setCurrentTime(chromecast.currentTime);
+    setIsPlaying(!chromecast.isPaused);
+    if (chromecast.duration > 0) setDuration(chromecast.duration);
+  }, [isCasting, chromecast.currentTime, chromecast.isPaused, chromecast.duration]);
+
+  const handleCastClick = () => {
+    if (isCasting) {
+      chromecast.disconnect();
+    } else {
+      const absoluteAudioUrl = audioUrl.startsWith("http")
+        ? audioUrl
+        : `${window.location.origin}${audioUrl}`;
+      chromecast.cast({
+        audioUrl: absoluteAudioUrl,
+        title,
+        artwork: currentSceneArtwork
+          ? new URL(currentSceneArtwork, window.location.origin).href
+          : undefined,
+        scenes,
+      });
+      audioRef.current?.pause();
+    }
+  };
 
   // Sync scenes from props
   useEffect(() => { setScenes(initialScenes); }, [initialScenes]);
@@ -236,6 +276,10 @@ export default function IllustratedStoryPlayer({
   };
 
   const togglePlay = () => {
+    if (isCasting) {
+      chromecast.playOrPause();
+      return;
+    }
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -249,7 +293,11 @@ export default function IllustratedStoryPlayer({
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const t = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = t;
+    if (isCasting) {
+      chromecast.seek(t);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = t;
+    }
     setCurrentTime(t);
   };
 
@@ -552,6 +600,13 @@ export default function IllustratedStoryPlayer({
               </button>
             )}
 
+            <CastButton
+              isAvailable={chromecast.isAvailable}
+              isConnected={chromecast.isConnected}
+              deviceName={chromecast.deviceName}
+              onClick={handleCastClick}
+            />
+
             {fullscreenSupported && (
               <button
                 onClick={toggleFullscreen}
@@ -672,6 +727,13 @@ export default function IllustratedStoryPlayer({
               {airPlayIcon}
             </button>
           )}
+
+          <CastButton
+            isAvailable={chromecast.isAvailable}
+            isConnected={chromecast.isConnected}
+            deviceName={chromecast.deviceName}
+            onClick={handleCastClick}
+          />
 
           {fullscreenSupported && (
             <button
