@@ -1,16 +1,47 @@
 """SQLAlchemy models for story persistence"""
-from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON, Float, LargeBinary, Index
+from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON, Float, LargeBinary, Index, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
+
+
+class User(Base):
+    """User account for multi-tenant story ownership"""
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True)  # UUID
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=True)  # null for OAuth-only users
+    display_name = Column(String, nullable=False)
+    google_id = Column(String, unique=True, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    stories = relationship("Story", back_populates="user")
+
+
+class Invite(Base):
+    """Single-use invite codes for registration"""
+    __tablename__ = "invites"
+
+    id = Column(String, primary_key=True)  # UUID
+    code = Column(String, unique=True, nullable=False, index=True)
+    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+    used_by = Column(String, ForeignKey("users.id"), nullable=True)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Story(Base):
     """Persistent story record with metadata and audio reference"""
     __tablename__ = "stories"
-    
+
     # Primary identifiers
     id = Column(String, primary_key=True)  # UUID (same as job_id)
     short_id = Column(String(8), unique=True, nullable=False, index=True)  # Compact permalink
+
+    # Ownership
+    user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
+    user = relationship("User", back_populates="stories")
     
     # Story metadata
     title = Column(String, nullable=False)

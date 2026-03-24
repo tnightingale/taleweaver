@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # Once Platform Variables (automatically provided by Once)
     secret_key_base: str = ""  # Unique identifier for cryptographic signing
     disable_ssl: bool = False  # Set to true if running without SSL
+
+    # Authentication
+    jwt_secret: str = ""  # Falls back to secret_key_base if empty
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 30
+    google_client_id: str = ""
+    google_client_secret: str = ""
     
     # SMTP Configuration (provided by Once email settings)
     smtp_address: str = ""

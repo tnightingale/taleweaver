@@ -20,3 +20,7 @@ sqlalchemy==2.0.25
 huey==2.5.2
 google-generativeai==0.8.3
 pillow==11.0.0
+authlib==1.4.1
+passlib[bcrypt]==1.7.4
+pyjwt==2.9.0
+python-multipart==0.0.20
