@@ -5,7 +5,7 @@ Uses isolated test database fixtures from conftest.py
 import pytest
 from pathlib import Path
 
-from app.db.crud import save_story, get_story_by_short_id, delete_story, update_story_title
+from app.db.crud import save_story, get_story_by_short_id, delete_story, update_story_title, update_story_illustrations
 
 
 def test_delete_story_removes_database_record(test_db):
@@ -179,3 +179,93 @@ def test_update_story_title_api_empty_title(test_db, test_client):
     # Try to update with empty title
     response = test_client.patch(f"/api/stories/{short_id}", json={"title": ""})
     assert response.status_code == 422, "Should reject empty title with validation error"
+
+
+# ============================================================================
+# Update Story Illustrations
+# ============================================================================
+
+
+def test_update_story_illustrations(test_db):
+    """update_story_illustrations updates scene_data and has_illustrations flag"""
+    story = save_story(
+        db=test_db,
+        story_id="illust-update-test",
+        title="Test Story",
+        kid_name="Test",
+        kid_age=7,
+        story_type="custom",
+        transcript="...",
+        duration_seconds=100,
+        audio_bytes=b"audio",
+        scene_data=None,
+    )
+    short_id = story.short_id
+    assert story.has_illustrations is False
+
+    new_scene_data = {
+        "scenes": [
+            {"beat_index": 0, "image_url": "/storage/stories/test/scene_0.png"},
+            {"beat_index": 1, "image_url": None},
+        ],
+        "art_style_prompt": "watercolor",
+    }
+
+    updated = update_story_illustrations(test_db, short_id, new_scene_data)
+    assert updated is not None
+    assert updated.scene_data == new_scene_data
+    assert updated.has_illustrations is True  # at least one scene has image_url
+
+
+def test_update_story_illustrations_no_images(test_db):
+    """has_illustrations should be False when all scenes have null image_url"""
+    story = save_story(
+        db=test_db,
+        story_id="illust-none-test",
+        title="No Images",
+        kid_name="Test",
+        kid_age=7,
+        story_type="custom",
+        transcript="...",
+        duration_seconds=100,
+        audio_bytes=b"audio",
+        art_style="watercolor_dream",
+        scene_data={"scenes": [{"beat_index": 0, "image_url": "/old.png"}]},
+    )
+    short_id = story.short_id
+    assert story.has_illustrations is True
+
+    # Update with all-null images
+    new_scene_data = {
+        "scenes": [{"beat_index": 0, "image_url": None}],
+    }
+    updated = update_story_illustrations(test_db, short_id, new_scene_data)
+    assert updated.has_illustrations is False
+
+
+def test_update_story_illustrations_with_cover(test_db):
+    """update_story_illustrations optionally updates cover_image_path"""
+    story = save_story(
+        db=test_db,
+        story_id="illust-cover-test",
+        title="Cover Test",
+        kid_name="Test",
+        kid_age=7,
+        story_type="custom",
+        transcript="...",
+        duration_seconds=100,
+        audio_bytes=b"audio",
+    )
+    short_id = story.short_id
+
+    scene_data = {"scenes": [{"beat_index": 0, "image_url": "/img.png"}]}
+    updated = update_story_illustrations(
+        test_db, short_id, scene_data, cover_image_path="/new/cover.png"
+    )
+    assert updated.cover_image_path == "/new/cover.png"
+
+
+def test_update_story_illustrations_not_found(test_db):
+    """update_story_illustrations returns None for non-existent story"""
+    result = update_story_illustrations(test_db, "notfound", {"scenes": []})
+    assert result is None

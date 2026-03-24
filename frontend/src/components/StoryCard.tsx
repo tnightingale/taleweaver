@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata } from "../types";
+import { regenerateIllustrations } from "../api/client";
 
 interface Props {
   story: StoryMetadata;
@@ -34,6 +35,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [cachedOffline, setCachedOffline] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenStatus, setRegenStatus] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -108,6 +111,29 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const getTypeLabel = () => {
     if (story.story_type === "historical") return "Historical";
     return story.genre || "Custom";
+  };
+
+  // Show regenerate option when story has art_style but some scenes have missing images
+  const hasMissingImages = story.art_style && story.scenes?.some(s => !s.image_url);
+
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    setRegenStatus("Starting...");
+    setMenuOpen(false);
+    try {
+      const result = await regenerateIllustrations(story.short_id);
+      if (result.message) {
+        setRegenStatus(result.message);
+        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
+      } else {
+        setRegenStatus(`Regenerating ${result.failed_count} images...`);
+        // Clear status after a delay — the library will refresh to show updated images
+        setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 10000);
+      }
+    } catch (err) {
+      setRegenStatus(err instanceof Error ? err.message : "Failed to regenerate");
+      setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
+    }
   };
 
   return (
@@ -238,6 +264,15 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
                     >
                       Edit title
                     </button>
+                    {hasMissingImages && (
+                      <button
+                        onClick={handleRegenerate}
+                        disabled={isRegenerating}
+                        className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors disabled:opacity-50"
+                      >
+                        {isRegenerating ? "Regenerating..." : "Regenerate images"}
+                      </button>
+                    )}
                     <div className="border-t border-white/10 my-1" />
                     <button
                       onClick={handleDelete}
@@ -252,6 +287,13 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
             </div>
           )}
         </div>
+
+        {/* Regeneration status */}
+        {regenStatus && (
+          <div className="text-[11px] text-purple-300/80 animate-pulse">
+            {regenStatus}
+          </div>
+        )}
 
         {/* Metadata */}
         <div className="flex items-center gap-1.5 text-xs text-starlight/50">

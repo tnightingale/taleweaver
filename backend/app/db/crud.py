@@ -240,6 +240,43 @@ def delete_story(db: Session, short_id: str) -> bool:
     return True
 
 
+def update_story_illustrations(
+    db: Session,
+    short_id: str,
+    scene_data: dict,
+    cover_image_path: Optional[str] = None,
+) -> Optional[Story]:
+    """
+    Update illustration data on an existing story.
+
+    Used by the regeneration flow to patch in newly generated images
+    without re-running the full pipeline.
+
+    Args:
+        db: SQLAlchemy database session
+        short_id: Compact short ID of story to update
+        scene_data: Updated scene metadata dict (scenes, art_style_prompt, etc.)
+        cover_image_path: Optional new cover image path
+
+    Returns:
+        Updated Story record or None if not found
+    """
+    story = db.query(Story).filter(Story.short_id == short_id).first()
+    if not story:
+        return None
+
+    story.scene_data = scene_data
+    # has_illustrations is true if any scene has an image_url
+    scenes = scene_data.get("scenes", [])
+    story.has_illustrations = any(s.get("image_url") for s in scenes)
+    if cover_image_path is not None:
+        story.cover_image_path = cover_image_path
+
+    db.commit()
+    db.refresh(story)
+    return story
+
+
 def update_story_title(db: Session, short_id: str, new_title: str) -> Optional[Story]:
     """
     Update story title.
