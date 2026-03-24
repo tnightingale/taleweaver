@@ -117,10 +117,19 @@ export async function fetchRecentJobs(): Promise<{jobs: RecentJob[]}> {
 }
 
 export async function regenerateIllustrations(
-  shortId: string
+  shortId: string,
+  options?: {
+    mode?: "missing" | "all" | "add" | "single";
+    art_style?: string;
+    custom_art_style_prompt?: string;
+    scene_index?: number;
+  }
 ): Promise<{ job_id: string; status: string; failed_count: number; total_scenes: number; message?: string }> {
   const res = await fetch(`${BASE}/stories/${shortId}/regenerate-illustrations`, {
     method: "POST",
+    ...(options
+      ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(options) }
+      : {}),
   });
   return handleResponse(res);
 }

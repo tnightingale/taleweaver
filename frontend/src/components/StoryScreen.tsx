@@ -197,6 +197,7 @@ export default function StoryScreen({
                 scenes={storyData.scenes}
                 title={title}
                 shortId={storyData.short_id}
+                artStyle={storyData.art_style}
                 durationSeconds={durationSeconds}
                 transcript={transcript}
                 onCreateAnother={onCreateAnother}
