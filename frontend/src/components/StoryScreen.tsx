@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { JobCompleteResponse } from "../types";
 import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
@@ -27,6 +27,7 @@ interface Props {
   storyData?: JobCompleteResponse;
   onCreateAnother: () => void;
   onBackToLibrary?: () => void;
+  offlineStatus?: ReactNode;
 }
 
 const formatTime = (seconds: number) => {
@@ -47,6 +48,7 @@ export default function StoryScreen({
   storyData,
   onCreateAnother,
   onBackToLibrary,
+  offlineStatus,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -198,6 +200,7 @@ export default function StoryScreen({
                 transcript={transcript}
                 onCreateAnother={onCreateAnother}
                 onBackToLibrary={onBackToLibrary}
+                offlineStatus={offlineStatus}
               />
             ) : (
               /* Standard Audio Player */
