@@ -380,3 +380,75 @@ async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRe
         )
     finally:
         db.close()
+
+
+@app.post("/api/stories/{short_id}/regenerate-illustrations")
+async def regenerate_illustrations_endpoint(short_id: str):
+    """
+    Regenerate failed/missing illustrations for an existing story.
+
+    Creates a background job that re-runs illustration generation only
+    for scenes whose image_url is null or generation_metadata.succeeded is false.
+    """
+    import uuid
+    from app.db.crud import get_story_by_short_id, create_job_state
+    from app.db.database import SessionLocal
+
+    logger = logging.getLogger(__name__)
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+
+        if not story.art_style:
+            raise HTTPException(
+                status_code=400,
+                detail="Story has no art style — cannot regenerate illustrations",
+            )
+
+        if not story.scene_data or not story.scene_data.get("scenes"):
+            raise HTTPException(
+                status_code=400,
+                detail="Story has no scene data — generate illustrations first",
+            )
+
+        scenes = story.scene_data["scenes"]
+        failed_indices = [
+            i for i, s in enumerate(scenes)
+            if not s.get("image_url")
+            or (s.get("generation_metadata", {}) or {}).get("succeeded") is False
+        ]
+
+        if not failed_indices:
+            return {"status": "ok", "message": "All illustrations already present"}
+
+        job_id = str(uuid.uuid4())
+        stages = ["generating_illustrations"]
+        create_job_state(db, job_id, stages)
+
+        # Enqueue via huey
+        from app.jobs.tasks import regenerate_illustrations_task
+        regenerate_illustrations_task(
+            job_id,
+            story.short_id,
+            story.id,
+            story.art_style,
+            story.scene_data,
+            failed_indices,
+        )
+
+        logger.info(
+            f"[{job_id}] Regeneration queued for story {short_id}: "
+            f"{len(failed_indices)}/{len(scenes)} scenes"
+        )
+
+        return {
+            "job_id": job_id,
+            "status": "processing",
+            "failed_count": len(failed_indices),
+            "total_scenes": len(scenes),
+        }
+    finally:
+        db.close()
