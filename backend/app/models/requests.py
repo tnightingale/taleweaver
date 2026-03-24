@@ -38,3 +38,10 @@ class HistoricalStoryRequest(BaseModel):
 
 class UpdateStoryTitleRequest(BaseModel):
     title: str = Field(min_length=1, max_length=200)
+
+
+class RegenerateIllustrationsRequest(BaseModel):
+    mode: str = Field(default="missing")  # "missing" | "all" | "add" | "single"
+    art_style: Optional[str] = Field(default=None, max_length=50)
+    custom_art_style_prompt: Optional[str] = Field(default=None, max_length=500)
+    scene_index: Optional[int] = None

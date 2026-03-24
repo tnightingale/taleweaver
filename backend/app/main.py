@@ -14,7 +14,7 @@ from fastapi.responses import Response, FileResponse
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
 from app.models.responses import StoryResponse, StoriesListResponse
-from app.models.requests import UpdateStoryTitleRequest
+from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrationsRequest
 
 app = FastAPI(title="Taleweaver")
 
@@ -402,12 +402,18 @@ async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRe
 
 
 @app.post("/api/stories/{short_id}/regenerate-illustrations")
-async def regenerate_illustrations_endpoint(short_id: str):
+async def regenerate_illustrations_endpoint(
+    short_id: str,
+    request: Optional[RegenerateIllustrationsRequest] = None,
+):
     """
-    Regenerate failed/missing illustrations for an existing story.
+    Manage illustrations for an existing story.
 
-    Creates a background job that re-runs illustration generation only
-    for scenes whose image_url is null or generation_metadata.succeeded is false.
+    Modes:
+    - "missing" (default): Regenerate only failed/missing illustrations
+    - "single": Regenerate a specific scene by index
+    - "all": Regenerate all illustrations (optionally with a new art style)
+    - "add": Add illustrations to a story that has none
     """
     import uuid
     from app.db.crud import get_story_by_short_id, create_job_state
@@ -415,58 +421,129 @@ async def regenerate_illustrations_endpoint(short_id: str):
 
     logger = logging.getLogger(__name__)
 
+    mode = request.mode if request else "missing"
+    valid_modes = ("missing", "single", "all", "add")
+    if mode not in valid_modes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid mode: {mode}. Must be one of: {', '.join(valid_modes)}",
+        )
+
     db = SessionLocal()
     try:
         story = get_story_by_short_id(db, short_id)
         if not story:
             raise HTTPException(status_code=404, detail="Story not found")
 
+        # ── mode="add": add illustrations to a story that has none ──
+        if mode == "add":
+            if story.scene_data and story.scene_data.get("scenes"):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Story already has illustrations — use mode='all' to regenerate",
+                )
+            if not request or not request.art_style:
+                raise HTTPException(
+                    status_code=400,
+                    detail="art_style is required when adding illustrations",
+                )
+
+            job_id = str(uuid.uuid4())
+            stages = ["analyzing_scenes", "generating_illustrations"]
+            create_job_state(db, job_id, stages)
+
+            from app.jobs.tasks import add_illustrations_task
+            add_illustrations_task(
+                job_id,
+                story.short_id,
+                story.id,
+                request.art_style,
+                request.custom_art_style_prompt,
+            )
+
+            logger.info(
+                f"[{job_id}] Add illustrations queued for story {short_id} "
+                f"(style: {request.art_style})"
+            )
+
+            return {
+                "job_id": job_id,
+                "status": "processing",
+                "failed_count": 0,
+                "total_scenes": 0,
+            }
+
+        # All other modes require existing art_style and scene_data
         if not story.art_style:
             raise HTTPException(
                 status_code=400,
-                detail="Story has no art style — cannot regenerate illustrations",
+                detail="Story has no art style — use mode='add' to add illustrations",
             )
 
         if not story.scene_data or not story.scene_data.get("scenes"):
             raise HTTPException(
                 status_code=400,
-                detail="Story has no scene data — generate illustrations first",
+                detail="Story has no scene data — use mode='add' to add illustrations",
             )
 
         scenes = story.scene_data["scenes"]
-        failed_indices = [
-            i for i, s in enumerate(scenes)
-            if not s.get("image_url")
-            or (s.get("generation_metadata", {}) or {}).get("succeeded") is False
-        ]
 
-        if not failed_indices:
-            return {"status": "ok", "message": "All illustrations already present"}
+        # ── mode="single": regenerate one specific scene ──
+        if mode == "single":
+            if request is None or request.scene_index is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="scene_index is required for mode='single'",
+                )
+            if request.scene_index < 0 or request.scene_index >= len(scenes):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"scene_index {request.scene_index} out of range (0-{len(scenes) - 1})",
+                )
+            target_indices = [request.scene_index]
+
+        # ── mode="all": regenerate every scene ──
+        elif mode == "all":
+            target_indices = list(range(len(scenes)))
+
+        # ── mode="missing": only failed/missing scenes ──
+        else:
+            target_indices = [
+                i for i, s in enumerate(scenes)
+                if not s.get("image_url")
+                or (s.get("generation_metadata", {}) or {}).get("succeeded") is False
+            ]
+            if not target_indices:
+                return {"status": "ok", "message": "All illustrations already present"}
+
+        # Determine art style to use
+        art_style = story.art_style
+        if mode == "all" and request and request.art_style:
+            art_style = request.art_style
 
         job_id = str(uuid.uuid4())
         stages = ["generating_illustrations"]
         create_job_state(db, job_id, stages)
 
-        # Enqueue via huey
         from app.jobs.tasks import regenerate_illustrations_task
         regenerate_illustrations_task(
             job_id,
             story.short_id,
             story.id,
-            story.art_style,
+            art_style,
             story.scene_data,
-            failed_indices,
+            target_indices,
         )
 
         logger.info(
-            f"[{job_id}] Regeneration queued for story {short_id}: "
-            f"{len(failed_indices)}/{len(scenes)} scenes"
+            f"[{job_id}] Regeneration queued for story {short_id} (mode={mode}): "
+            f"{len(target_indices)}/{len(scenes)} scenes"
         )
 
         return {
             "job_id": job_id,
             "status": "processing",
-            "failed_count": len(failed_indices),
+            "failed_count": len(target_indices),
             "total_scenes": len(scenes),
         }
     finally:

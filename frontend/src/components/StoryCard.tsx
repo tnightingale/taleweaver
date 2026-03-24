@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata } from "../types";
 import { regenerateIllustrations } from "../api/client";
+import ArtStylePickerModal from "./ArtStylePickerModal";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   story: StoryMetadata;
@@ -37,6 +39,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
   const [cachedOffline, setCachedOffline] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenStatus, setRegenStatus] = useState("");
+  const [showStylePicker, setShowStylePicker] = useState<"add" | "all" | null>(null);
+  const [showConfirmRegenAll, setShowConfirmRegenAll] = useState<{ artStyle: string; customPrompt?: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -113,25 +117,33 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
     return story.genre || "Custom";
   };
 
-  // Show regenerate option when story has art_style but some scenes have missing images
   const hasMissingImages = story.art_style && story.scenes?.some(s => !s.image_url);
+  const hasIllustrations = story.art_style && story.scenes && story.scenes.length > 0;
+  const hasNoIllustrations = !story.art_style || !story.scenes;
 
-  const handleRegenerate = async () => {
+  const handleIllustrationAction = async (
+    mode: "missing" | "all" | "add" | "single",
+    artStyle?: string,
+    customPrompt?: string,
+  ) => {
     setIsRegenerating(true);
     setRegenStatus("Starting...");
     setMenuOpen(false);
     try {
-      const result = await regenerateIllustrations(story.short_id);
+      const options: { mode: typeof mode; art_style?: string; custom_art_style_prompt?: string } = { mode };
+      if (artStyle) options.art_style = artStyle;
+      if (customPrompt) options.custom_art_style_prompt = customPrompt;
+      const result = await regenerateIllustrations(story.short_id, options);
       if (result.message) {
         setRegenStatus(result.message);
         setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
       } else {
-        setRegenStatus(`Regenerating ${result.failed_count} images...`);
-        // Clear status after a delay — the library will refresh to show updated images
+        const label = mode === "add" ? "Adding illustrations..." : `Regenerating ${result.failed_count} images...`;
+        setRegenStatus(label);
         setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 10000);
       }
     } catch (err) {
-      setRegenStatus(err instanceof Error ? err.message : "Failed to regenerate");
+      setRegenStatus(err instanceof Error ? err.message : "Failed");
       setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 3000);
     }
   };
@@ -264,13 +276,31 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
                     >
                       Edit title
                     </button>
-                    {hasMissingImages && (
+                    {hasNoIllustrations && (
                       <button
-                        onClick={handleRegenerate}
+                        onClick={() => { setMenuOpen(false); setShowStylePicker("add"); }}
                         disabled={isRegenerating}
                         className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors disabled:opacity-50"
                       >
-                        {isRegenerating ? "Regenerating..." : "Regenerate images"}
+                        Add illustrations
+                      </button>
+                    )}
+                    {hasMissingImages && (
+                      <button
+                        onClick={() => handleIllustrationAction("missing")}
+                        disabled={isRegenerating}
+                        className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors disabled:opacity-50"
+                      >
+                        {isRegenerating ? "Regenerating..." : "Regenerate missing images"}
+                      </button>
+                    )}
+                    {hasIllustrations && (
+                      <button
+                        onClick={() => { setMenuOpen(false); setShowStylePicker("all"); }}
+                        disabled={isRegenerating}
+                        className="w-full px-4 py-2 text-left text-sm text-starlight/80 hover:bg-white/10 transition-colors disabled:opacity-50"
+                      >
+                        Regenerate all images
                       </button>
                     )}
                     <div className="border-t border-white/10 my-1" />
@@ -306,6 +336,40 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle }: Pr
           <span>{formatDate(story.created_at)}</span>
         </div>
       </div>
+
+      {/* Art style picker modal */}
+      <AnimatePresence>
+        {showStylePicker && (
+          <ArtStylePickerModal
+            currentStyle={showStylePicker === "all" ? story.art_style : undefined}
+            onConfirm={(artStyle, customPrompt) => {
+              if (showStylePicker === "add") {
+                handleIllustrationAction("add", artStyle, customPrompt);
+              } else {
+                setShowConfirmRegenAll({ artStyle, customPrompt });
+              }
+              setShowStylePicker(null);
+            }}
+            onCancel={() => setShowStylePicker(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm regenerate all dialog */}
+      <AnimatePresence>
+        {showConfirmRegenAll && (
+          <ConfirmDialog
+            title="Regenerate all images?"
+            message={`This will replace all ${story.scenes?.length ?? 0} existing images. This cannot be undone.`}
+            confirmLabel="Regenerate all"
+            onConfirm={() => {
+              handleIllustrationAction("all", showConfirmRegenAll.artStyle, showConfirmRegenAll.customPrompt);
+              setShowConfirmRegenAll(null);
+            }}
+            onCancel={() => setShowConfirmRegenAll(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

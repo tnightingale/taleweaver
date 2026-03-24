@@ -3,12 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
 import { regenerateIllustrations } from "../api/client";
 import { useFullscreen } from "../hooks/useFullscreen";
+import ArtStylePickerModal from "./ArtStylePickerModal";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   audioUrl: string;
   scenes: Scene[];
   title: string;
   shortId?: string;
+  artStyle?: string;
   durationSeconds: number;
   transcript?: string;
   onCreateAnother: () => void;
@@ -27,6 +30,7 @@ export default function IllustratedStoryPlayer({
   scenes,
   title,
   shortId,
+  artStyle,
   durationSeconds,
   transcript,
   onCreateAnother,
@@ -48,10 +52,14 @@ export default function IllustratedStoryPlayer({
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenStatus, setRegenStatus] = useState("");
+  const [showStylePicker, setShowStylePicker] = useState<"all" | null>(null);
+  const [showConfirmRegenAll, setShowConfirmRegenAll] = useState<{ artStyle: string; customPrompt?: string } | null>(null);
+  const [confirmSingleScene, setConfirmSingleScene] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
 
   const hasMissingImages = scenes?.some(s => !s.image_url);
+  const hasIllustrations = artStyle && scenes && scenes.length > 0;
 
   // Close menu on outside click
   useEffect(() => {
@@ -65,13 +73,16 @@ export default function IllustratedStoryPlayer({
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
-  const handleRegenerate = async () => {
+  const handleIllustrationAction = async (
+    mode: "missing" | "all" | "single",
+    opts?: { art_style?: string; custom_art_style_prompt?: string; scene_index?: number },
+  ) => {
     if (!shortId) return;
     setIsRegenerating(true);
     setRegenStatus("Starting...");
     setMenuOpen(false);
     try {
-      const result = await regenerateIllustrations(shortId);
+      const result = await regenerateIllustrations(shortId, { mode, ...opts });
       if (result.message) {
         setRegenStatus(result.message);
         setTimeout(() => { setIsRegenerating(false); setRegenStatus(""); }, 2000);
@@ -582,7 +593,7 @@ export default function IllustratedStoryPlayer({
           </svg>
           New Story
         </button>
-        {shortId && hasMissingImages && (
+        {shortId && (
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -604,17 +615,29 @@ export default function IllustratedStoryPlayer({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute bottom-full mb-2 right-0 min-w-[180px] rounded-xl overflow-hidden
-                           bg-black/80 backdrop-blur-xl border border-white/10 shadow-xl z-30"
+                  className="absolute bottom-full mb-2 right-0 min-w-[200px] rounded-xl overflow-hidden
+                           bg-black/80 backdrop-blur-xl border border-white/10 shadow-xl z-30 py-1"
                 >
-                  <button
-                    onClick={handleRegenerate}
-                    disabled={isRegenerating}
-                    className="w-full px-4 py-2.5 text-left text-sm text-starlight/80
-                             hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {isRegenerating ? "Regenerating..." : "Regenerate images"}
-                  </button>
+                  {hasMissingImages && (
+                    <button
+                      onClick={() => handleIllustrationAction("missing")}
+                      disabled={isRegenerating}
+                      className="w-full px-4 py-2.5 text-left text-sm text-starlight/80
+                               hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {isRegenerating ? "Regenerating..." : "Regenerate missing images"}
+                    </button>
+                  )}
+                  {hasIllustrations && (
+                    <button
+                      onClick={() => { setMenuOpen(false); setShowStylePicker("all"); }}
+                      disabled={isRegenerating}
+                      className="w-full px-4 py-2.5 text-left text-sm text-starlight/80
+                               hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      Regenerate all images
+                    </button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -652,16 +675,39 @@ export default function IllustratedStoryPlayer({
           >
             {scenes.map((scene, i) => (
               <div key={i} className="space-y-3">
-                <h3 className="font-display text-lg text-glow">
-                  Chapter {i + 1}: {scene.beat_name}
-                </h3>
-                {scene.image_url && (
-                  <img
-                    src={scene.image_url}
-                    alt={scene.beat_name}
-                    loading="lazy"
-                    className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                  />
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg text-glow">
+                    Chapter {i + 1}: {scene.beat_name}
+                  </h3>
+                  {shortId && (
+                    <button
+                      onClick={() => setConfirmSingleScene(i)}
+                      disabled={isRegenerating}
+                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center
+                               text-starlight/30 hover:text-starlight/70 hover:bg-white/10
+                               transition-all cursor-pointer disabled:opacity-30"
+                      title="Regenerate this image"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                        <path d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {scene.image_url ? (
+                  <div className="relative max-w-md mx-auto">
+                    <img
+                      src={scene.image_url}
+                      alt={scene.beat_name}
+                      loading="lazy"
+                      className="w-full rounded-lg shadow-lg"
+                    />
+                  </div>
+                ) : (
+                  <div className="max-w-md mx-auto aspect-[4/3] rounded-lg bg-gradient-to-br from-purple-900/20 to-abyss/40
+                               flex items-center justify-center text-starlight/30 text-sm">
+                    No image
+                  </div>
                 )}
                 <p className="text-starlight/80 leading-relaxed">
                   {scene.text_excerpt}
@@ -669,6 +715,55 @@ export default function IllustratedStoryPlayer({
               </div>
             ))}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Art style picker modal */}
+      <AnimatePresence>
+        {showStylePicker && (
+          <ArtStylePickerModal
+            currentStyle={artStyle}
+            onConfirm={(selectedStyle, customPrompt) => {
+              setShowConfirmRegenAll({ artStyle: selectedStyle, customPrompt });
+              setShowStylePicker(null);
+            }}
+            onCancel={() => setShowStylePicker(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm regenerate all dialog */}
+      <AnimatePresence>
+        {showConfirmRegenAll && (
+          <ConfirmDialog
+            title="Regenerate all images?"
+            message={`This will replace all ${scenes.length} existing images. This cannot be undone.`}
+            confirmLabel="Regenerate all"
+            onConfirm={() => {
+              handleIllustrationAction("all", {
+                art_style: showConfirmRegenAll.artStyle,
+                custom_art_style_prompt: showConfirmRegenAll.customPrompt,
+              });
+              setShowConfirmRegenAll(null);
+            }}
+            onCancel={() => setShowConfirmRegenAll(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm single scene regeneration */}
+      <AnimatePresence>
+        {confirmSingleScene !== null && (
+          <ConfirmDialog
+            title="Regenerate this image?"
+            message={`This will replace the image for Chapter ${confirmSingleScene + 1}: ${scenes[confirmSingleScene]?.beat_name ?? ""}.`}
+            confirmLabel="Regenerate"
+            onConfirm={() => {
+              handleIllustrationAction("single", { scene_index: confirmSingleScene });
+              setConfirmSingleScene(null);
+            }}
+            onCancel={() => setConfirmSingleScene(null)}
+          />
         )}
       </AnimatePresence>
     </div>

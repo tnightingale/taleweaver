@@ -245,6 +245,7 @@ def update_story_illustrations(
     short_id: str,
     scene_data: dict,
     cover_image_path: Optional[str] = None,
+    art_style: Optional[str] = None,
 ) -> Optional[Story]:
     """
     Update illustration data on an existing story.
@@ -257,6 +258,7 @@ def update_story_illustrations(
         short_id: Compact short ID of story to update
         scene_data: Updated scene metadata dict (scenes, art_style_prompt, etc.)
         cover_image_path: Optional new cover image path
+        art_style: Optional new art style (for style changes or adding illustrations)
 
     Returns:
         Updated Story record or None if not found
@@ -271,6 +273,8 @@ def update_story_illustrations(
     story.has_illustrations = any(s.get("image_url") for s in scenes)
     if cover_image_path is not None:
         story.cover_image_path = cover_image_path
+    if art_style is not None:
+        story.art_style = art_style
 
     db.commit()
     db.refresh(story)
