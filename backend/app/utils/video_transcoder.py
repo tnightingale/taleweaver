@@ -90,6 +90,7 @@ def _generate_video_sync(
                 "pad=1920:1080:-1:-1:color=black,"
                 "format=yuv420p"
             ),
+            "-r", "1",  # 1 fps — Apple TV needs regular frames to stream
             "-c:v", "libx264", "-preset", "medium", "-crf", "23",
             "-tune", "stillimage",
             "-c:a", "aac", "-b:a", "192k",
