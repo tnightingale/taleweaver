@@ -7,9 +7,9 @@ logging.basicConfig(
 
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import Response, FileResponse, StreamingResponse
 
 from fastapi import Depends
 
@@ -298,8 +298,11 @@ async def get_story_audio_permalink(short_id: str):
 
 
 @app.get("/api/permalink/{short_id}/video")
-async def get_story_video_permalink(short_id: str):
-    """Stream video by compact short ID (for AirPlay)"""
+async def get_story_video_permalink(short_id: str, request: Request):
+    """Stream video by compact short ID (for AirPlay).
+
+    Supports HTTP Range requests (required by AirPlay/Apple TV).
+    """
     from app.db.crud import get_story_by_short_id
     from app.db.database import SessionLocal
 
@@ -317,12 +320,53 @@ async def get_story_video_permalink(short_id: str):
     if not video_path.exists():
         raise HTTPException(status_code=404, detail="Video file not found")
 
+    file_size = video_path.stat().st_size
+    range_header = request.headers.get("range")
+
+    common_headers = {
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Disposition": "inline",
+    }
+
+    if range_header:
+        range_spec = range_header.replace("bytes=", "")
+        parts = range_spec.split("-")
+        start = int(parts[0]) if parts[0] else 0
+        end = int(parts[1]) if parts[1] else file_size - 1
+        end = min(end, file_size - 1)
+        content_length = end - start + 1
+
+        def iter_range():
+            chunk_size = 64 * 1024
+            with open(video_path, "rb") as f:
+                f.seek(start)
+                remaining = content_length
+                while remaining > 0:
+                    read_size = min(chunk_size, remaining)
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        return StreamingResponse(
+            iter_range(),
+            status_code=206,
+            media_type="video/mp4",
+            headers={
+                **common_headers,
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(content_length),
+            },
+        )
+
     return FileResponse(
         path=video_path,
         media_type="video/mp4",
         headers={
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "Content-Disposition": "inline",
+            **common_headers,
+            "Content-Length": str(file_size),
         },
     )
 
