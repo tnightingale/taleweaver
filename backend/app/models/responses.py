@@ -52,6 +52,7 @@ class JobCompleteResponse(BaseModel):
     has_illustrations: bool = False
     art_style: Optional[str] = None
     scenes: Optional[List[SceneResponse]] = None
+    video_url: Optional[str] = None
 
 
 class StoryResponse(BaseModel):
@@ -73,6 +74,7 @@ class StoryResponse(BaseModel):
     art_style: Optional[str] = None
     scenes: Optional[List[SceneResponse]] = None
     cover_image_url: Optional[str] = None
+    video_url: Optional[str] = None
 
 
 class StoriesListResponse(BaseModel):

@@ -191,6 +191,13 @@ async def status(_user: User = Depends(get_current_user)):
     }
 
 
+def _get_video_url(story) -> Optional[str]:
+    """Get video URL if a generated MP4 exists for this story."""
+    if getattr(story, "video_path", None) and Path(story.video_path).exists():
+        return f"/api/permalink/{story.short_id}/video"
+    return None
+
+
 def _get_cover_image_url(story) -> Optional[str]:
     """Get cover image URL: prefer dedicated cover, fall back to first scene image."""
     if getattr(story, "cover_image_path", None):
@@ -249,6 +256,7 @@ async def get_story_permalink(short_id: str):
             art_style=story.art_style,
             scenes=scenes,
             cover_image_url=_get_cover_image_url(story),
+            video_url=_get_video_url(story),
         )
         return Response(
             content=response.model_dump_json(),
@@ -287,6 +295,99 @@ async def get_story_audio_permalink(short_id: str):
         filename=f"{safe_filename}.mp3",
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
+
+
+@app.get("/api/permalink/{short_id}/video")
+async def get_story_video_permalink(short_id: str):
+    """Stream video by compact short ID (for AirPlay)"""
+    from app.db.crud import get_story_by_short_id
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    story = get_story_by_short_id(db, short_id)
+    db.close()
+
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    if not story.video_path:
+        raise HTTPException(status_code=404, detail="Video not generated yet")
+
+    video_path = Path(story.video_path)
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="Video file not found")
+
+    safe_filename = "".join(c for c in story.title if c.isalnum() or c in (' ', '-', '_')).strip()
+    safe_filename = safe_filename or "story"
+
+    return FileResponse(
+        path=video_path,
+        media_type="video/mp4",
+        filename=f"{safe_filename}.mp4",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+@app.post("/api/stories/{short_id}/video")
+async def generate_story_video_endpoint(
+    short_id: str, user: User = Depends(get_current_user)
+):
+    """Trigger video generation for an illustrated story, or return cached URL."""
+    import uuid
+    from app.db.crud import get_story_by_short_id, create_job_state
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        verify_story_ownership(story, user)
+
+        if not story.has_illustrations or not story.scene_data:
+            raise HTTPException(
+                status_code=400, detail="Story has no illustrations"
+            )
+
+        # If video already exists, return immediately
+        if story.video_path and Path(story.video_path).exists():
+            return {
+                "status": "complete",
+                "video_url": f"/api/permalink/{story.short_id}/video",
+            }
+
+        # Check for existing in-progress video generation job
+        existing = (
+            db.query(JobState)
+            .filter(
+                JobState.short_id == short_id,
+                JobState.status == "processing",
+                JobState.current_stage == "generating_video",
+            )
+            .first()
+        )
+        if existing:
+            return {"job_id": existing.job_id, "status": "processing"}
+
+        # Create job and enqueue
+        job_id = str(uuid.uuid4())
+        create_job_state(
+            db, job_id, ["generating_video"],
+            story_params={"user_id": user.id},
+        )
+
+        # Set short_id on the job so we can detect duplicates
+        job = db.query(JobState).filter(JobState.job_id == job_id).first()
+        if job:
+            job.short_id = short_id
+            db.commit()
+
+        from app.jobs.tasks import generate_video_task
+        generate_video_task(job_id, story.short_id, story.id)
+
+        return {"job_id": job_id, "status": "processing"}
+    finally:
+        db.close()
 
 
 # Library routes
@@ -352,6 +453,7 @@ async def list_all_stories(
                     art_style=story.art_style,
                     scenes=scenes,
                     cover_image_url=_get_cover_image_url(story),
+                    video_url=_get_video_url(story),
                 )
             )
         

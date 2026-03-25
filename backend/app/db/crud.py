@@ -229,15 +229,14 @@ def delete_story(db: Session, short_id: str) -> bool:
     if not story:
         return False
     
-    # Delete audio file
+    # Delete the entire story directory (audio, illustrations, video)
     audio_path = Path(story.audio_path)
-    if audio_path.exists():
+    story_dir = audio_path.parent
+    if story_dir.exists() and story_dir.name != "stories":
+        import shutil
+        shutil.rmtree(story_dir, ignore_errors=True)
+    elif audio_path.exists():
         audio_path.unlink()
-        # Also try to remove the parent directory if empty
-        try:
-            audio_path.parent.rmdir()
-        except OSError:
-            pass  # Directory not empty or doesn't exist
     
     # Delete database record
     db.delete(story)
@@ -282,6 +281,18 @@ def update_story_illustrations(
     if art_style is not None:
         story.art_style = art_style
 
+    db.commit()
+    db.refresh(story)
+    return story
+
+
+def update_story_video_path(db: Session, short_id: str, video_path: str) -> Optional[Story]:
+    """Set the video_path on a story after video generation completes."""
+    story = db.query(Story).filter(Story.short_id == short_id).first()
+    if not story:
+        return None
+
+    story.video_path = video_path
     db.commit()
     db.refresh(story)
     return story

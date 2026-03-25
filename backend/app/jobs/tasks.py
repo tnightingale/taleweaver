@@ -365,3 +365,80 @@ async def _run_add_illustrations(
         mark_job_failed(db, job_id, str(e))
     finally:
         db.close()
+
+
+@huey.task(retries=1, retry_delay=30)
+def generate_video_task(job_id: str, short_id: str, story_id: str):
+    """
+    Generate MP4 slideshow video from illustrations + audio.
+
+    Combines scene PNGs with the audio MP3 into an H.264/AAC MP4
+    suitable for AirPlay to Apple TV.
+    """
+    asyncio.run(_run_video_generation(job_id, short_id, story_id))
+
+
+async def _run_video_generation(job_id: str, short_id: str, story_id: str):
+    """Async video generation logic — runs in its own event loop."""
+    from pathlib import Path
+
+    from app.config import settings
+    from app.db.crud import (
+        get_story_by_short_id,
+        update_job_progress,
+        update_story_video_path,
+        mark_job_complete,
+        mark_job_failed,
+    )
+    from app.db.database import SessionLocal
+    from app.utils.video_transcoder import generate_story_video
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            mark_job_failed(db, job_id, f"Story {short_id} not found")
+            return
+
+        if not story.has_illustrations or not story.scene_data:
+            mark_job_failed(db, job_id, "Story has no illustrations")
+            return
+
+        scenes = story.scene_data.get("scenes", [])
+        if not scenes:
+            mark_job_failed(db, job_id, "Story has no scene data")
+            return
+
+        audio_path = Path(story.audio_path)
+        if not audio_path.exists():
+            mark_job_failed(db, job_id, "Audio file not found")
+            return
+
+        story_dir = settings.storage_path / "stories" / story_id
+        output_path = story_dir / "video.mp4"
+
+        update_job_progress(db, job_id, 10, "Generating video...")
+
+        await generate_story_video(
+            story_dir=story_dir,
+            scenes=scenes,
+            audio_path=audio_path,
+            output_path=output_path,
+        )
+
+        update_story_video_path(db, short_id, str(output_path))
+
+        mark_job_complete(
+            db, job_id,
+            title="Video generated",
+            duration_seconds=story.duration_seconds,
+            transcript="",
+            short_id=short_id,
+        )
+        logger.info(f"[{job_id}] Video generation complete for story {short_id}")
+
+    except Exception as e:
+        logger.error(f"[{job_id}] Video generation failed: {e}", exc_info=True)
+        mark_job_failed(db, job_id, str(e))
+    finally:
+        db.close()

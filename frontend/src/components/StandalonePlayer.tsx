@@ -175,6 +175,7 @@ export default function StandalonePlayer() {
         has_illustrations: story.has_illustrations || false,
         art_style: story.art_style,
         scenes: story.scenes,
+        video_url: story.video_url,
       }}
       onCreateAnother={() => navigate("/")}
       onBackToLibrary={() => navigate("/library")}

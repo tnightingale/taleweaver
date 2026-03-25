@@ -274,6 +274,7 @@ export default function StoryScreen({
                 onBackToLibrary={onBackToLibrary}
                 offlineStatus={offlineStatus}
                 readOnly={readOnly}
+                videoUrl={storyData.video_url}
               />
             ) : (
               /* Standard Audio Player */
