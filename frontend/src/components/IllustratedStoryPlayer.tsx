@@ -510,13 +510,13 @@ export default function IllustratedStoryPlayer({
         className={seekBarClass}
         style={seekBarStyle}
       />
-      {/* Scene marker dots — positioned relative to the visible track, not the thumb */}
-      <div className="absolute left-0 right-0 h-1.5 sm:h-2 top-1/2 -translate-y-1/2 pointer-events-none">
+      {/* Scene marker dots — match the full input height so 50% aligns with the track center */}
+      <div className="absolute inset-0 pointer-events-none">
         {scenes.map((scene, i) => i === 0 ? null : (
           <button
             key={i}
             onClick={() => jumpToScene(i)}
-            className="absolute w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white/60 cursor-pointer hover:bg-white/90 transition-colors pointer-events-auto"
+            className="absolute w-2 h-2 rounded-full bg-white/50 cursor-pointer hover:bg-white/80 transition-colors pointer-events-auto"
             style={{
               left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
               top: "50%",
