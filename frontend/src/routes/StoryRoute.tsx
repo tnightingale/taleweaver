@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import StoryScreen from "../components/StoryScreen";
-import { pollJobStatus, getAudioUrl, retryJob } from "../api/client";
+import { pollJobStatus, retryJob } from "../api/client";
 import type { JobCompleteResponse } from "../types";
 
 export default function StoryRoute() {
@@ -31,10 +31,9 @@ export default function StoryRoute() {
         const status = await pollJobStatus(id);
         if (status.status === "complete" && "title" in status) {
           clearInterval(pollingRef.current);
-          const url = getAudioUrl(id);
           setStoryTitle(status.title);
           setStoryDuration(status.duration_seconds);
-          setAudioUrl(url);
+          setAudioUrl(status.audio_url);
           setTranscript(status.transcript);
           setStoryData(status);
           setIsGenerating(false);

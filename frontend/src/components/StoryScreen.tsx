@@ -4,6 +4,10 @@ import type { JobCompleteResponse } from "../types";
 import IllustratedStoryPlayer from "./IllustratedStoryPlayer";
 import ProgressRing from "./ProgressRing";
 import { useFullscreen } from "../hooks/useFullscreen";
+import { useMediaSession } from "../hooks/useMediaSession";
+import { useAirPlay } from "../hooks/useAirPlay";
+import { useChromecast } from "../hooks/useChromecast";
+import CastButton from "./CastButton";
 
 const STAGE_LABELS: Record<string, string> = {
   writing: "Writing the story...",
@@ -63,10 +67,49 @@ export default function StoryScreen({
   const [showTranscript, setShowTranscript] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+  const chromecast = useChromecast();
+
+  const isCasting = chromecast.isConnected;
+
+  const handleMediaSeekTo = (time: number) => {
+    if (isCasting) {
+      chromecast.seek(time);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+    setCurrentTime(time);
+  };
+
+  useMediaSession({
+    title,
+    artwork: undefined,
+    isPlaying,
+    duration: isCasting ? chromecast.duration : duration,
+    currentTime: isCasting ? chromecast.currentTime : currentTime,
+    onPlay: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.play().catch(() => {});
+    },
+    onPause: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.pause();
+    },
+    onSeekTo: handleMediaSeekTo,
+  });
+
+  // Sync Chromecast state to local state when casting
+  useEffect(() => {
+    if (!isCasting) return;
+    setCurrentTime(chromecast.currentTime);
+    setIsPlaying(!chromecast.isPaused);
+    if (chromecast.duration > 0) setDuration(chromecast.duration);
+  }, [isCasting, chromecast.currentTime, chromecast.isPaused, chromecast.duration]);
+
   // Sync duration from props when they change
   useEffect(() => {
-    setDuration(durationSeconds);
-  }, [durationSeconds]);
+    if (!isCasting) setDuration(durationSeconds);
+  }, [durationSeconds, isCasting]);
 
   const handleLoadedMetadata = () => {
     if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
@@ -75,6 +118,10 @@ export default function StoryScreen({
   };
 
   const togglePlay = () => {
+    if (isCasting) {
+      chromecast.playOrPause();
+      return;
+    }
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -88,8 +135,26 @@ export default function StoryScreen({
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const t = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = t;
+    if (isCasting) {
+      chromecast.seek(t);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = t;
+    }
     setCurrentTime(t);
+  };
+
+  const handleCastClick = () => {
+    if (isCasting) {
+      chromecast.disconnect();
+    } else {
+      // Build absolute audio URL for Chromecast to fetch directly
+      const absoluteAudioUrl = audioUrl.startsWith("http")
+        ? audioUrl
+        : `${window.location.origin}${audioUrl}`;
+      chromecast.cast({ audioUrl: absoluteAudioUrl, title });
+      // Pause local audio when starting cast
+      audioRef.current?.pause();
+    }
   };
 
   const handleSeekStart = () => setIsSeeking(true);
@@ -283,6 +348,28 @@ export default function StoryScreen({
                       >
                         {isPlaying ? "⏸" : "▶"}
                       </motion.button>
+                      {airPlayAvailable && (
+                        <button
+                          onClick={showAirPlayPicker}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center
+                                   transition-all cursor-pointer
+                                   ${airPlayActive
+                                     ? "text-mystic bg-mystic/20"
+                                     : "text-starlight/60 hover:text-starlight hover:bg-white/10"
+                                   }`}
+                          title={airPlayActive ? "AirPlay active" : "AirPlay"}
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                            <path d="M6 22h12l-6-6-6 6zM21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H3V5h18v12h-4v2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                          </svg>
+                        </button>
+                      )}
+                      <CastButton
+                        isAvailable={chromecast.isAvailable}
+                        isConnected={chromecast.isConnected}
+                        deviceName={chromecast.deviceName}
+                        onClick={handleCastClick}
+                      />
                       {fullscreenSupported && (
                         <button
                           onClick={toggleFullscreen}
@@ -298,11 +385,21 @@ export default function StoryScreen({
                   </>
                 )}
 
+                {/* Casting Indicator */}
+                {(airPlayActive || isCasting) && (
+                  <p className="text-center text-sm text-mystic/80 animate-pulse">
+                    {airPlayActive
+                      ? "Playing on AirPlay"
+                      : `Casting to ${chromecast.deviceName ?? "device"}`}
+                  </p>
+                )}
+
                 {/* Hidden Audio Element */}
                 <audio
                   ref={audioRef}
                   src={audioUrl}
                   preload="auto"
+                  x-webkit-airplay="allow"
                   onLoadedMetadata={handleLoadedMetadata}
                   onTimeUpdate={handleTimeUpdate}
                   onPlay={() => setIsPlaying(true)}

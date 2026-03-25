@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
 import { regenerateIllustrations, pollJobStatus } from "../api/client";
 import { useFullscreen } from "../hooks/useFullscreen";
+import { useMediaSession } from "../hooks/useMediaSession";
+import { useAirPlay } from "../hooks/useAirPlay";
+import { useChromecast } from "../hooks/useChromecast";
+import CastButton from "./CastButton";
 import ArtStylePickerModal from "./ArtStylePickerModal";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -73,6 +77,66 @@ export default function IllustratedStoryPlayer({
   const [confirmSingleScene, setConfirmSingleScene] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
+  const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+  const chromecast = useChromecast();
+
+  const isCasting = chromecast.isConnected;
+
+  const handleMediaSeekTo = (time: number) => {
+    if (isCasting) {
+      chromecast.seek(time);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+    setCurrentTime(time);
+  };
+
+  // Current scene artwork for Media Session lock screen
+  const currentSceneArtwork = scenes[currentSceneIndex]?.image_url;
+
+  useMediaSession({
+    title,
+    artwork: currentSceneArtwork,
+    isPlaying,
+    duration: isCasting ? chromecast.duration : duration,
+    currentTime: isCasting ? chromecast.currentTime : currentTime,
+    onPlay: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.play().catch(() => {});
+    },
+    onPause: () => {
+      if (isCasting) chromecast.playOrPause();
+      else audioRef.current?.pause();
+    },
+    onSeekTo: handleMediaSeekTo,
+  });
+
+  // Sync Chromecast state to local state when casting
+  useEffect(() => {
+    if (!isCasting) return;
+    setCurrentTime(chromecast.currentTime);
+    setIsPlaying(!chromecast.isPaused);
+    if (chromecast.duration > 0) setDuration(chromecast.duration);
+  }, [isCasting, chromecast.currentTime, chromecast.isPaused, chromecast.duration]);
+
+  const handleCastClick = () => {
+    if (isCasting) {
+      chromecast.disconnect();
+    } else {
+      const absoluteAudioUrl = audioUrl.startsWith("http")
+        ? audioUrl
+        : `${window.location.origin}${audioUrl}`;
+      chromecast.cast({
+        audioUrl: absoluteAudioUrl,
+        title,
+        artwork: currentSceneArtwork
+          ? new URL(currentSceneArtwork, window.location.origin).href
+          : undefined,
+        scenes,
+      });
+      audioRef.current?.pause();
+    }
+  };
 
   // Sync scenes from props
   useEffect(() => { setScenes(initialScenes); }, [initialScenes]);
@@ -212,6 +276,10 @@ export default function IllustratedStoryPlayer({
   };
 
   const togglePlay = () => {
+    if (isCasting) {
+      chromecast.playOrPause();
+      return;
+    }
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -225,7 +293,11 @@ export default function IllustratedStoryPlayer({
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const t = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = t;
+    if (isCasting) {
+      chromecast.seek(t);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = t;
+    }
     setCurrentTime(t);
   };
 
@@ -325,6 +397,13 @@ export default function IllustratedStoryPlayer({
     </svg>
   );
 
+  // AirPlay icon
+  const airPlayIcon = (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4.5 h-4.5">
+      <path d="M6 22h12l-6-6-6 6zM21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H3V5h18v12h-4v2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+    </svg>
+  );
+
   // Fullscreen icon
   const fullscreenIcon = (expand: boolean) => (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
@@ -409,6 +488,7 @@ export default function IllustratedStoryPlayer({
     <audio
       ref={audioRef}
       src={audioUrl}
+      x-webkit-airplay="allow"
       onLoadedMetadata={handleLoadedMetadata}
       onTimeUpdate={handleTimeUpdate}
       onPlay={() => setIsPlaying(true)}
@@ -503,6 +583,28 @@ export default function IllustratedStoryPlayer({
             <span className="text-xs text-white/50 font-mono shrink-0">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
+
+            {airPlayAvailable && (
+              <button
+                onClick={showAirPlayPicker}
+                className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                         transition-all cursor-pointer
+                         ${airPlayActive
+                           ? "text-purple-400 bg-purple-500/20"
+                           : "text-white/60 hover:text-white hover:bg-white/10"
+                         }`}
+                title={airPlayActive ? "AirPlay active" : "AirPlay"}
+              >
+                {airPlayIcon}
+              </button>
+            )}
+
+            <CastButton
+              isAvailable={chromecast.isAvailable}
+              isConnected={chromecast.isConnected}
+              deviceName={chromecast.deviceName}
+              onClick={handleCastClick}
+            />
 
             {fullscreenSupported && (
               <button
@@ -609,6 +711,28 @@ export default function IllustratedStoryPlayer({
           <span className="text-xs text-starlight/50 font-mono shrink-0">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
+
+          {airPlayAvailable && (
+            <button
+              onClick={showAirPlayPicker}
+              className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       transition-all cursor-pointer
+                       ${airPlayActive
+                         ? "text-purple-400 bg-purple-500/20"
+                         : "text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20"
+                       }`}
+              title={airPlayActive ? "AirPlay active" : "AirPlay"}
+            >
+              {airPlayIcon}
+            </button>
+          )}
+
+          <CastButton
+            isAvailable={chromecast.isAvailable}
+            isConnected={chromecast.isConnected}
+            deviceName={chromecast.deviceName}
+            onClick={handleCastClick}
+          />
 
           {fullscreenSupported && (
             <button
