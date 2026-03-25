@@ -6,6 +6,7 @@ import { useFullscreen } from "../hooks/useFullscreen";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useAirPlay } from "../hooks/useAirPlay";
 import { useChromecast } from "../hooks/useChromecast";
+import { useWakeLock } from "../hooks/useWakeLock";
 import CastButton from "./CastButton";
 import ArtStylePickerModal from "./ArtStylePickerModal";
 import ConfirmDialog from "./ConfirmDialog";
@@ -60,6 +61,7 @@ export default function IllustratedStoryPlayer({
   const [scenes, setScenes] = useState(initialScenes);
   const regenPollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
+  useWakeLock(isPlaying);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds);
   const [isSeeking, setIsSeeking] = useState(false);
