@@ -308,6 +308,16 @@ export default function StoryScreen({
 
             {/* Push notification prompt */}
             <NotificationPrompt />
+
+            {/* Back to Library */}
+            {onBackToLibrary && (
+              <button
+                onClick={onBackToLibrary}
+                className="text-sm text-starlight/40 hover:text-starlight/70 transition-colors"
+              >
+                ← Back to Library
+              </button>
+            )}
           </motion.div>
         ) : (
           audioUrl && (
