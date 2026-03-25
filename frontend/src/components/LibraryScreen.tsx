@@ -36,9 +36,16 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
 
         // If a processing job just completed, refresh story list
         const processingIds = data.jobs.filter(j => j.status === "processing").map(j => j.job_id);
+        const prevHadProcessing = prevJobIdsRef.current.length > 0;
         const justCompleted = prevJobIdsRef.current.some(id => !processingIds.includes(id));
         prevJobIdsRef.current = processingIds;
         if (justCompleted) {
+          // Evict SW story cache so we get the fresh list with the new story
+          if ("caches" in window) {
+            caches.open("library-stories").then(c => c.keys().then(keys =>
+              Promise.all(keys.map(k => c.delete(k)))
+            )).catch(() => {});
+          }
           loadStories(true);
         }
       } catch { /* ignore */ }
