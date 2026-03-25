@@ -514,11 +514,11 @@ export default function IllustratedStoryPlayer({
         <button
           key={i}
           onClick={() => jumpToScene(i)}
-          className="absolute w-[2px] h-full bg-white/40 cursor-pointer hover:bg-white/70 transition-colors"
+          className="absolute w-2 h-2 rounded-full bg-white/50 cursor-pointer hover:bg-white/80 transition-colors"
           style={{
             left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
-            top: 0,
-            transform: "translateX(-50%)",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
           }}
         />
       ))}
