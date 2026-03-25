@@ -139,11 +139,12 @@ async def run_pipeline(job_id: str, state: dict):
                             job_rec.transcript = node_output["story_text"]
                         db.commit()
                 elif node_name == "scene_analyzer":
-                    scenes = node_output.get("scenes", [])
-                    update_job_progress_data(db, job_id, current_progress, {
-                        "message": "Analyzing scenes...",
-                        "scene_count": len(scenes),
-                    })
+                    scenes = node_output.get("scenes") or []
+                    if scenes:
+                        update_job_progress_data(db, job_id, current_progress, {
+                            "message": "Analyzing scenes...",
+                            "scene_count": len(scenes),
+                        })
                 elif node_name == "cover_generator":
                     cover_path = node_output.get("cover_image_path")
                     if cover_path:
