@@ -94,7 +94,7 @@ def _friendly_error(e: Exception) -> str:
 
 
 async def run_pipeline(job_id: str, state: dict):
-    from app.db.crud import update_job_stage, mark_job_complete, mark_job_failed, save_story
+    from app.db.crud import get_job_state, update_job_stage, update_job_progress_data, mark_job_complete, mark_job_failed, save_story
     from app.db.database import SessionLocal
     
     db = SessionLocal()
@@ -126,6 +126,30 @@ async def run_pipeline(job_id: str, state: dict):
                     final_state = {**state, **event[node_name]}
                 else:
                     final_state.update(event[node_name])
+
+                # Persist partial results as they become available
+                node_output = event[node_name]
+                current_progress = stage_progress if (idx + 1 < len(STAGE_ORDER)) else 0
+                if node_name == "story_writer":
+                    job_rec = get_job_state(db, job_id)
+                    if job_rec:
+                        if node_output.get("title"):
+                            job_rec.title = node_output["title"]
+                        if node_output.get("story_text"):
+                            job_rec.transcript = node_output["story_text"]
+                        db.commit()
+                elif node_name == "scene_analyzer":
+                    scenes = node_output.get("scenes", [])
+                    update_job_progress_data(db, job_id, current_progress, {
+                        "message": "Analyzing scenes...",
+                        "scene_count": len(scenes),
+                    })
+                elif node_name == "cover_generator":
+                    cover_path = node_output.get("cover_image_path")
+                    if cover_path:
+                        update_job_progress_data(db, job_id, current_progress, {
+                            "cover_url": f"/storage/stories/{job_id}/cover.png",
+                        })
 
         # Build scene_data for database
         scene_data = None
@@ -368,17 +392,50 @@ async def get_job_status(job_id: str, user: User = Depends(get_current_user)):
                 segments_total=partial_data.get("segments_total"),
                 checkpoint_node=partial_data.get("checkpoint_node")
             )
-        
+
+        # Extract story params for partial results
+        story_params = {}
+        if job.story_params_json:
+            try:
+                story_params = json.loads(job.story_params_json)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Parse structured progress_detail
+        progress_data = None
+        completed_illustrations = None
+        cover_image_url = None
+        if job.progress_detail:
+            try:
+                progress_data = json.loads(job.progress_detail)
+                illus = progress_data.get("illustrations", {})
+                if illus.get("urls"):
+                    completed_illustrations = illus["urls"]
+                if progress_data.get("cover_url"):
+                    cover_image_url = progress_data["cover_url"]
+            except (json.JSONDecodeError, TypeError):
+                pass
+
         return JobStatusResponse(
             job_id=job_id,
             status=job.status,
             current_stage=job.current_stage or "",
             progress=int(job.progress or 0),
-            total_segments=0,  # Deprecated field
+            total_segments=0,
             error=job.error_message or "",
             resumable=job.resumable,
             partial_progress=partial_progress,
             retry_count=job.retry_count,
+            title=job.title,
+            transcript=job.transcript,
+            kid_name=story_params.get("kid_name"),
+            kid_age=story_params.get("kid_age"),
+            genre=story_params.get("genre"),
+            mood=story_params.get("mood"),
+            art_style=story_params.get("art_style") or job.art_style,
+            cover_image_url=cover_image_url,
+            completed_illustrations=completed_illustrations,
+            progress_data=progress_data,
         )
     finally:
         db.close()

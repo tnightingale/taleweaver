@@ -28,6 +28,17 @@ class JobStatusResponse(BaseModel):
     resumable: bool = False
     partial_progress: Optional[PartialProgress] = None
     retry_count: int = 0
+    # Partial results (available during generation)
+    title: Optional[str] = None
+    transcript: Optional[str] = None
+    kid_name: Optional[str] = None
+    kid_age: Optional[int] = None
+    genre: Optional[str] = None
+    mood: Optional[str] = None
+    art_style: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    completed_illustrations: Optional[List[str]] = None
+    progress_data: Optional[dict] = None
 
 
 class SceneResponse(BaseModel):

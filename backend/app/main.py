@@ -1,3 +1,4 @@
+import json
 import logging
 
 logging.basicConfig(
@@ -75,6 +76,22 @@ async def get_recent_jobs(user: User = Depends(get_current_user)):
             JobState.user_id == user.id,
         ).order_by(JobState.created_at.desc()).limit(20).all()
 
+        def _job_params(job):
+            if not job.story_params_json:
+                return {}
+            try:
+                return json.loads(job.story_params_json)
+            except (ValueError, TypeError):
+                return {}
+
+        def _cover_url(job):
+            if not job.progress_detail:
+                return None
+            try:
+                return json.loads(job.progress_detail).get("cover_url")
+            except (ValueError, TypeError):
+                return None
+
         return {
             "jobs": [
                 {
@@ -84,7 +101,13 @@ async def get_recent_jobs(user: User = Depends(get_current_user)):
                     "progress": job.progress or 0,
                     "title": job.title,
                     "created_at": job.created_at.isoformat() + 'Z',
-                    "error": job.error_message if job.status == "failed" else None
+                    "error": job.error_message if job.status == "failed" else None,
+                    "kid_name": _job_params(job).get("kid_name"),
+                    "kid_age": _job_params(job).get("kid_age"),
+                    "genre": _job_params(job).get("genre"),
+                    "mood": _job_params(job).get("mood"),
+                    "art_style": _job_params(job).get("art_style"),
+                    "cover_image_url": _cover_url(job),
                 }
                 for job in jobs
             ]

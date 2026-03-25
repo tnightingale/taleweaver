@@ -5,6 +5,7 @@ import type { KidProfile, StoryType } from "../types";
 interface Props {
   onSubmit: (profile: KidProfile, type: StoryType) => void;
   onViewLibrary: () => void;
+  activeJobCount?: number;
 }
 
 const PERSONALITIES = ["adventurous", "curious", "shy", "funny"];
@@ -23,7 +24,7 @@ const item = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 260, damping: 20 } },
 };
 
-export default function HeroScreen({ onSubmit, onViewLibrary }: Props) {
+export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0 }: Props) {
   const [name, setName] = useState("");
   const [age, setAge] = useState<number | null>(null);
   const [showPersonalize, setShowPersonalize] = useState(false);
@@ -253,6 +254,13 @@ export default function HeroScreen({ onSubmit, onViewLibrary }: Props) {
                        transition-all text-sm font-medium"
           >
             📚 View Your Library
+            {activeJobCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center w-5 h-5
+                             bg-purple-500 text-white text-[10px] font-bold rounded-full
+                             animate-pulse">
+                {activeJobCount}
+              </span>
+            )}
           </motion.button>
         </div>
       </motion.div>

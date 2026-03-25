@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import StoryScreen from "../components/StoryScreen";
 import { pollJobStatus, retryJob } from "../api/client";
-import type { JobCompleteResponse } from "../types";
+import type { JobCompleteResponse, ProgressData } from "../types";
 
 export default function StoryRoute() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -18,6 +18,11 @@ export default function StoryRoute() {
   const [transcript, setTranscript] = useState("");
   const [storyData, setStoryData] = useState<JobCompleteResponse | undefined>(undefined);
   const [error, setError] = useState("");
+  const [partialTitle, setPartialTitle] = useState<string | null>(null);
+  const [partialTranscript, setPartialTranscript] = useState<string | null>(null);
+  const [completedIllustrations, setCompletedIllustrations] = useState<string[]>([]);
+  const [progressData, setProgressData] = useState<ProgressData | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const progressHighWater = useRef(0);
 
@@ -51,6 +56,13 @@ export default function StoryRoute() {
             setProgress(newProgress);
           }
           setProgressDetail(status.progress_detail || "");
+
+          // Capture partial results as they arrive
+          if ("title" in status && status.title) setPartialTitle(status.title);
+          if ("transcript" in status && status.transcript) setPartialTranscript(status.transcript);
+          if ("completed_illustrations" in status && status.completed_illustrations) setCompletedIllustrations(status.completed_illustrations);
+          if ("progress_data" in status && status.progress_data) setProgressData(status.progress_data);
+          if ("cover_image_url" in status && status.cover_image_url) setCoverImageUrl(status.cover_image_url);
         }
       } catch (err) {
         clearInterval(pollingRef.current);
@@ -188,6 +200,11 @@ export default function StoryRoute() {
       storyData={storyData}
       onCreateAnother={handleCreateAnother}
       onBackToLibrary={handleBackToLibrary}
+      partialTitle={partialTitle}
+      partialTranscript={partialTranscript}
+      completedIllustrations={completedIllustrations}
+      progressData={progressData}
+      coverImageUrl={coverImageUrl}
     />
   );
 }

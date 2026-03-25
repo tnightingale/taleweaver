@@ -134,6 +134,12 @@ export interface RecentJob {
   title: string | null;
   created_at: string;
   error: string | null;
+  kid_name?: string;
+  kid_age?: number;
+  genre?: string;
+  mood?: string;
+  art_style?: string;
+  cover_image_url?: string;
 }
 
 export async function fetchRecentJobs(): Promise<{jobs: RecentJob[]}> {
