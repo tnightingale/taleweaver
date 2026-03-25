@@ -82,7 +82,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
   const uniqueKids = Array.from(new Set(stories.map(s => s.kid_name))).sort();
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen w-full flex flex-col items-center px-4 py-12">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

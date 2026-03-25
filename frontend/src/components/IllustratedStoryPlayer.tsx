@@ -80,6 +80,9 @@ export default function IllustratedStoryPlayer({
   const [showStylePicker, setShowStylePicker] = useState<"all" | null>(null);
   const [showConfirmRegenAll, setShowConfirmRegenAll] = useState<{ artStyle: string; customPrompt?: string } | null>(null);
   const [confirmSingleScene, setConfirmSingleScene] = useState<number | null>(null);
+  const [doubleTapSide, setDoubleTapSide] = useState<"left" | "right" | null>(null);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapRef = useRef<{ time: number; side: "left" | "right" } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
   const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
@@ -430,10 +433,49 @@ export default function IllustratedStoryPlayer({
     }
   };
 
+  const skipBy = (seconds: number) => {
+    const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
+    if (isCasting) {
+      chromecast.seek(newTime);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+    setCurrentTime(newTime);
+  };
+
+  const handleImageTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, input")) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const side = x < rect.width / 2 ? "left" : "right";
+    const now = Date.now();
+
+    if (lastTapRef.current && now - lastTapRef.current.time < 350 && lastTapRef.current.side === side) {
+      // Double tap — skip
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      lastTapRef.current = null;
+      const skipAmount = side === "right" ? 15 : -15;
+      skipBy(skipAmount);
+      setDoubleTapSide(side);
+      setTimeout(() => setDoubleTapSide(null), 500);
+    } else {
+      // Single tap — wait to see if a second tap comes
+      lastTapRef.current = { time: now, side };
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = setTimeout(() => {
+        // Confirmed single tap — toggle play
+        togglePlay();
+        lastTapRef.current = null;
+      }, 350);
+    }
+    resetHideTimer();
+  };
+
   const currentScene = scenes[currentSceneIndex];
 
   // Shared seek bar classes
-  const seekBarClass = `w-full h-1.5 sm:h-2 bg-starlight/10 rounded-lg appearance-none cursor-pointer
+  const seekBarClass = `w-full h-1.5 sm:h-2 m-0 bg-starlight/10 rounded-lg appearance-none cursor-pointer
     [&::-webkit-slider-thumb]:appearance-none
     [&::-webkit-slider-thumb]:w-4
     [&::-webkit-slider-thumb]:h-4
@@ -454,7 +496,7 @@ export default function IllustratedStoryPlayer({
 
   // Shared seek bar with scene markers
   const seekBar = (
-    <div className="flex-1 relative">
+    <div className="flex-1 relative h-4 flex items-center">
       <input
         type="range"
         min={0}
@@ -468,18 +510,21 @@ export default function IllustratedStoryPlayer({
         className={seekBarClass}
         style={seekBarStyle}
       />
-      {scenes.map((scene, i) => (
-        <button
-          key={i}
-          onClick={() => jumpToScene(i)}
-          className="absolute w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
-          style={{
-            left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
-            top: "calc(100% + 4px)",
-            transform: "translate(-50%, 0)",
-          }}
-        />
-      ))}
+      {/* Scene marker dots — wrapper matches thumb height so 50% = track center */}
+      <div className="absolute inset-0 pointer-events-none">
+        {scenes.map((scene, i) => i === 0 ? null : (
+          <button
+            key={i}
+            onClick={() => jumpToScene(i)}
+            className="absolute w-2 h-2 rounded-full bg-white/50 cursor-pointer hover:bg-white/80 transition-colors pointer-events-auto"
+            style={{
+              left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 
@@ -531,6 +576,39 @@ export default function IllustratedStoryPlayer({
     </svg>
   );
 
+  // Skip backward icon (15s)
+  const skipBackIcon = (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+      <text x="12" y="15.5" textAnchor="middle" fontSize="7" fontWeight="bold" fontFamily="sans-serif">15</text>
+    </svg>
+  );
+
+  // Skip forward icon (15s)
+  const skipForwardIcon = (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z" />
+      <text x="12" y="15.5" textAnchor="middle" fontSize="7" fontWeight="bold" fontFamily="sans-serif">15</text>
+    </svg>
+  );
+
+  // Double-tap ripple overlay
+  const doubleTapOverlay = doubleTapSide && (
+    <motion.div
+      initial={{ opacity: 0.7 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`absolute top-0 ${doubleTapSide === "left" ? "left-0" : "right-0"} w-1/2 h-full z-20 flex items-center ${doubleTapSide === "left" ? "justify-center" : "justify-center"} pointer-events-none`}
+    >
+      <div className="bg-white/20 rounded-full p-4 backdrop-blur-sm">
+        <div className="flex flex-col items-center text-white">
+          {doubleTapSide === "left" ? skipBackIcon : skipForwardIcon}
+          <span className="text-xs mt-1 font-medium">15s</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   // Image with page-turn animation
   const imageArea = (landscape: boolean) => (
     <AnimatePresence mode="wait">
@@ -577,9 +655,17 @@ export default function IllustratedStoryPlayer({
     </AnimatePresence>
   );
 
-  // Play overlay — visible when paused
+  // Play overlay — visible when paused, with skip buttons on either side
   const playOverlay = !isPlaying && (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
+      <button
+        onClick={(e) => { e.stopPropagation(); skipBy(-15); }}
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-sm
+                   flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50
+                   transition-all cursor-pointer mr-4 sm:mr-6"
+      >
+        {skipBackIcon}
+      </button>
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
                       flex items-center justify-center text-white
                       shadow-[0_0_30px_rgba(0,0,0,0.3)]">
@@ -587,6 +673,14 @@ export default function IllustratedStoryPlayer({
           <path d="M6 4l10 6-10 6z" />
         </svg>
       </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); skipBy(15); }}
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-sm
+                   flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50
+                   transition-all cursor-pointer ml-4 sm:ml-6"
+      >
+        {skipForwardIcon}
+      </button>
     </div>
   );
 
@@ -632,46 +726,62 @@ export default function IllustratedStoryPlayer({
       >
         {audioElement}
 
-        {/* Full-viewport image */}
+        {/* Full-viewport image with double-tap zones */}
         <div
           className="w-full h-full cursor-pointer"
-          onClick={(e) => {
-            if ((e.target as HTMLElement).closest("button, input")) return;
-            togglePlay();
-            resetHideTimer();
-          }}
+          onClick={handleImageTap}
         >
           {imageArea(true)}
           {playOverlay}
+          {doubleTapOverlay}
           {/* Offline status — top-right of illustration */}
           {offlineStatus && (
             <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
           )}
         </div>
 
-        {/* Floating chapter title — top overlay */}
-        {currentScene && (
-          <div
-            className={`absolute top-0 left-0 right-0 z-10 px-4 pb-6
-              bg-gradient-to-b from-black/60 via-black/30 to-transparent
-              transition-opacity duration-300
-              ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={currentSceneIndex}
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg font-display"
+        {/* Floating top overlay — back button + chapter title */}
+        <div
+          className={`absolute top-0 left-0 right-0 z-10 px-4 pb-6
+            bg-gradient-to-b from-black/60 via-black/30 to-transparent
+            transition-opacity duration-300
+            ${controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
+        >
+          <div className="flex items-center">
+            {onBackToLibrary && (
+              <button
+                onClick={onBackToLibrary}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                         text-white/80 hover:text-white hover:bg-white/10
+                         transition-all cursor-pointer shrink-0"
               >
-                Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
-              </motion.p>
-            </AnimatePresence>
+                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
+                </svg>
+                Library
+              </button>
+            )}
+            {currentScene && (
+              <div className="flex-1">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={currentSceneIndex}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-xs sm:text-sm text-white/80 text-center drop-shadow-lg font-display"
+                  >
+                    Chapter {currentSceneIndex + 1} of {scenes.length}: {currentScene.beat_name}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+            )}
+            {/* Spacer to keep chapter title centered when back button is present */}
+            {onBackToLibrary && <div className="w-[85px] shrink-0" />}
           </div>
-        )}
+        </div>
 
         {/* Floating controls — bottom overlay */}
         <div
@@ -691,6 +801,15 @@ export default function IllustratedStoryPlayer({
               {restartIcon}
             </button>
             <button
+              onClick={() => skipBy(-15)}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       text-white/60 hover:text-white hover:bg-white/10
+                       transition-all cursor-pointer"
+              title="Skip back 15 seconds"
+            >
+              {skipBackIcon}
+            </button>
+            <button
               onClick={togglePlay}
               className="w-12 h-12 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
                        flex items-center justify-center text-white
@@ -698,6 +817,15 @@ export default function IllustratedStoryPlayer({
                        transition-all cursor-pointer"
             >
               {playPauseIcon}
+            </button>
+            <button
+              onClick={() => skipBy(15)}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       text-white/60 hover:text-white hover:bg-white/10
+                       transition-all cursor-pointer"
+              title="Skip forward 15 seconds"
+            >
+              {skipForwardIcon}
             </button>
 
             {seekBar}
@@ -795,17 +923,15 @@ export default function IllustratedStoryPlayer({
         </div>
       )}
 
-      {/* Image — full width, natural aspect ratio */}
+      {/* Image — full width, natural aspect ratio, with double-tap zones */}
       <div
         className="w-full cursor-pointer relative"
         style={{ perspective: "2000px" }}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest("button, input")) return;
-          togglePlay();
-        }}
+        onClick={handleImageTap}
       >
         {imageArea(false)}
         {playOverlay}
+        {doubleTapOverlay}
         {/* Offline status — top-right of illustration */}
         {offlineStatus && (
           <div className="absolute top-3 right-3 z-10">{offlineStatus}</div>
@@ -817,7 +943,8 @@ export default function IllustratedStoryPlayer({
         className="glass-card mx-2 sm:mx-0 rounded-2xl border border-white/10 backdrop-blur-xl px-4 py-3 mt-3"
         style={{ WebkitBackdropFilter: "blur(20px)" }}
       >
-        <div className="flex items-center gap-3">
+        {/* Buttons row */}
+        <div className="flex items-center justify-center gap-2">
           <button
             onClick={restartFromBeginning}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
@@ -828,6 +955,15 @@ export default function IllustratedStoryPlayer({
             {restartIcon}
           </button>
           <button
+            onClick={() => skipBy(-15)}
+            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     transition-all cursor-pointer"
+            title="Skip back 15 seconds"
+          >
+            {skipBackIcon}
+          </button>
+          <button
             onClick={togglePlay}
             className="w-12 h-12 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
                      flex items-center justify-center text-white
@@ -836,12 +972,15 @@ export default function IllustratedStoryPlayer({
           >
             {playPauseIcon}
           </button>
-
-          {seekBar}
-
-          <span className="text-xs text-starlight/50 font-mono shrink-0">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
+          <button
+            onClick={() => skipBy(15)}
+            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     transition-all cursor-pointer"
+            title="Skip forward 15 seconds"
+          >
+            {skipForwardIcon}
+          </button>
 
           {(airPlayAvailable || videoAirPlayAvailable) && (
             <button
@@ -885,6 +1024,16 @@ export default function IllustratedStoryPlayer({
               {fullscreenIcon(!isFullscreen)}
             </button>
           )}
+        </div>
+
+        {/* Seek bar */}
+        <div className="mt-2">
+          {seekBar}
+          <div className="text-right mt-1">
+            <span className="text-xs text-starlight/50 font-mono">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
         </div>
       </div>
 
