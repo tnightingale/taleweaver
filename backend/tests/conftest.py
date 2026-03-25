@@ -1,10 +1,14 @@
 """
 Shared pytest fixtures for test isolation
 """
+import os
 import pytest
 from pathlib import Path
 import tempfile
 import shutil
+
+# Set JWT secret for tests (must be set before any app imports)
+os.environ.setdefault("SECRET_KEY_BASE", "test-secret-key-for-jwt-signing")
 
 from app.db.database import init_db
 
@@ -80,26 +84,38 @@ def test_db():
 
 
 @pytest.fixture(scope="function")
-def test_client(test_db):
+def test_user(test_db):
+    """Create a test user and return it."""
+    from app.db.auth_crud import create_user
+    from app.auth.passwords import hash_password
+
+    user = create_user(
+        test_db,
+        email="test@example.com",
+        display_name="Test User",
+        password_hash=hash_password("testpassword"),
+    )
+    return user
+
+
+@pytest.fixture(scope="function")
+def test_client(test_db, test_user):
     """
     Create a TestClient with isolated database for API endpoint tests.
-    
-    This fixture ensures the FastAPI TestClient uses the same isolated
-    database as the test_db fixture, preventing state sharing between tests.
-    
-    Note: This fixture depends on test_db to ensure they share the same database.
-    
+
+    The client is pre-authenticated with a test user via access_token cookie.
+
     Usage:
         def test_api_endpoint(test_db, test_client):
-            # Both use the same isolated database
-            save_story(db=test_db, ...)  # Create data in test DB
-            response = test_client.get("/api/stories")  # Client sees same data
+            save_story(db=test_db, ...)
+            response = test_client.get("/api/stories")
     """
     from fastapi.testclient import TestClient
     from app.main import app
-    
-    # test_db fixture has already set up the isolated database
-    # The app will use the same database connection through SessionLocal
-    
+    from app.auth.tokens import create_access_token
+
     client = TestClient(app)
+    # Set auth cookie so all requests are authenticated
+    token = create_access_token(test_user.id)
+    client.cookies.set("access_token", token)
     yield client

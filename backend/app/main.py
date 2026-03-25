@@ -11,20 +11,34 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
 
+from fastapi import Depends
+
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
+from app.routes.auth import router as auth_router
 from app.models.responses import StoryResponse, StoriesListResponse
 from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrationsRequest
+from app.auth.dependencies import get_current_user, verify_story_ownership
+from app.db.models import User
 
 app = FastAPI(title="Taleweaver")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: when credentials are used (cookie-based auth), origins must be explicit.
+# Set CORS_ORIGINS env var to a comma-separated list of allowed origins.
+# Without it, CORS is disabled (same-origin only, which is the production default
+# since Caddy serves both frontend and API on the same origin).
+from app.config import settings as _settings
+_cors_origins = [o.strip() for o in _settings.cors_origins.split(",") if o.strip()] if _settings.cors_origins else []
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
+app.include_router(auth_router)
 app.include_router(config_router)
 app.include_router(story_router)
 
@@ -36,7 +50,7 @@ from app.db.models import JobState
 _last_orphan_check: Optional[datetime] = None
 
 @app.get("/api/jobs/recent")
-async def get_recent_jobs():
+async def get_recent_jobs(user: User = Depends(get_current_user)):
     """Get jobs from last 24 hours for navigation persistence"""
     global _last_orphan_check
     from sqlalchemy.exc import OperationalError
@@ -57,10 +71,9 @@ async def get_recent_jobs():
 
         cutoff = now - timedelta(hours=24)
         jobs = db.query(JobState).filter(
-            JobState.created_at > cutoff
-        ).order_by(
-            JobState.created_at.desc()
-        ).limit(20).all()
+            JobState.created_at > cutoff,
+            JobState.user_id == user.id,
+        ).order_by(JobState.created_at.desc()).limit(20).all()
 
         return {
             "jobs": [
@@ -157,7 +170,7 @@ async def health_check():
 
 
 @app.get("/api/status")
-async def status():
+async def status(_user: User = Depends(get_current_user)):
     """Application status including configuration state."""
     from app.config import settings
     
@@ -283,18 +296,20 @@ async def list_all_stories(
     story_type: Optional[str] = None,
     limit: int = 20,
     offset: int = 0,
-    sort: str = "created_desc"
+    sort: str = "created_desc",
+    user: User = Depends(get_current_user),
 ):
-    """List stories with optional filters and pagination"""
+    """List stories with optional filters and pagination (scoped to current user)"""
     from app.db.crud import list_stories
     from app.db.database import SessionLocal
-    
+
     db = SessionLocal()
     try:
         stories, total = list_stories(
             db=db,
             kid_name=kid_name,
             story_type=story_type,
+            user_id=user.id,
             limit=limit,
             offset=offset,
             sort=sort
@@ -352,35 +367,41 @@ async def list_all_stories(
 
 
 @app.delete("/api/stories/{short_id}", status_code=204)
-async def delete_story_endpoint(short_id: str):
-    """Delete story by short ID"""
-    from app.db.crud import delete_story
+async def delete_story_endpoint(short_id: str, user: User = Depends(get_current_user)):
+    """Delete story by short ID (requires ownership)"""
+    from app.db.crud import delete_story, get_story_by_short_id
     from app.db.database import SessionLocal
-    
+
     db = SessionLocal()
     try:
-        deleted = delete_story(db, short_id)
-        if not deleted:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
             raise HTTPException(status_code=404, detail="Story not found")
+        verify_story_ownership(story, user)
+        delete_story(db, short_id)
         return None  # 204 No Content
     finally:
         db.close()
 
 
 @app.patch("/api/stories/{short_id}", response_model=StoryResponse)
-async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRequest):
-    """Update story title"""
-    from app.db.crud import update_story_title
+async def update_story_title_endpoint(
+    short_id: str, request: UpdateStoryTitleRequest, user: User = Depends(get_current_user)
+):
+    """Update story title (requires ownership)"""
+    from app.db.crud import update_story_title, get_story_by_short_id
     from app.db.database import SessionLocal
-    
+
     if not request.title or not request.title.strip():
         raise HTTPException(status_code=400, detail="Title cannot be empty")
-    
+
     db = SessionLocal()
     try:
-        story = update_story_title(db, short_id, request.title.strip())
+        story = get_story_by_short_id(db, short_id)
         if not story:
             raise HTTPException(status_code=404, detail="Story not found")
+        verify_story_ownership(story, user)
+        story = update_story_title(db, short_id, request.title.strip())
         
         return StoryResponse(
             id=story.id,
@@ -405,6 +426,7 @@ async def update_story_title_endpoint(short_id: str, request: UpdateStoryTitleRe
 async def regenerate_illustrations_endpoint(
     short_id: str,
     request: Optional[RegenerateIllustrationsRequest] = None,
+    user: User = Depends(get_current_user),
 ):
     """
     Manage illustrations for an existing story.
@@ -434,6 +456,7 @@ async def regenerate_illustrations_endpoint(
         story = get_story_by_short_id(db, short_id)
         if not story:
             raise HTTPException(status_code=404, detail="Story not found")
+        verify_story_ownership(story, user)
 
         # ── mode="add": add illustrations to a story that has none ──
         if mode == "add":

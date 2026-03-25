@@ -19,6 +19,7 @@ interface Props {
   onBackToLibrary?: () => void;
   onScenesUpdated?: (scenes: Scene[]) => void;
   offlineStatus?: ReactNode;
+  readOnly?: boolean;
 }
 
 const formatTime = (seconds: number) => {
@@ -48,6 +49,7 @@ export default function IllustratedStoryPlayer({
   onBackToLibrary,
   onScenesUpdated,
   offlineStatus,
+  readOnly = false,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -648,7 +650,7 @@ export default function IllustratedStoryPlayer({
           </svg>
           New Story
         </button>
-        {shortId && (
+        {shortId && !readOnly && (
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -734,7 +736,7 @@ export default function IllustratedStoryPlayer({
                   <h3 className="font-display text-lg text-glow">
                     Chapter {i + 1}: {scene.beat_name}
                   </h3>
-                  {shortId && (
+                  {shortId && !readOnly && (
                     <button
                       onClick={() => setConfirmSingleScene(i)}
                       disabled={isRegenerating}

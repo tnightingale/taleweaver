@@ -1,3 +1,9 @@
+export interface User {
+  id: string;
+  email: string;
+  display_name: string;
+}
+
 export interface KidProfile {
   name: string;
   age: number;
