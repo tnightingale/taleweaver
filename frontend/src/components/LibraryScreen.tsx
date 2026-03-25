@@ -36,7 +36,6 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
 
         // If a processing job just completed, refresh story list
         const processingIds = data.jobs.filter(j => j.status === "processing").map(j => j.job_id);
-        const prevHadProcessing = prevJobIdsRef.current.length > 0;
         const justCompleted = prevJobIdsRef.current.some(id => !processingIds.includes(id));
         prevJobIdsRef.current = processingIds;
         if (justCompleted) {
