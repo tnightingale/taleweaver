@@ -652,9 +652,17 @@ export default function IllustratedStoryPlayer({
     </AnimatePresence>
   );
 
-  // Play overlay — visible when paused
+  // Play overlay — visible when paused, with skip buttons on either side
   const playOverlay = !isPlaying && (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity">
+      <button
+        onClick={(e) => { e.stopPropagation(); skipBy(-15); }}
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-sm
+                   flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50
+                   transition-all cursor-pointer mr-4 sm:mr-6"
+      >
+        {skipBackIcon}
+      </button>
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-sm
                       flex items-center justify-center text-white
                       shadow-[0_0_30px_rgba(0,0,0,0.3)]">
@@ -662,6 +670,14 @@ export default function IllustratedStoryPlayer({
           <path d="M6 4l10 6-10 6z" />
         </svg>
       </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); skipBy(15); }}
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-sm
+                   flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50
+                   transition-all cursor-pointer ml-4 sm:ml-6"
+      >
+        {skipForwardIcon}
+      </button>
     </div>
   );
 
@@ -924,7 +940,8 @@ export default function IllustratedStoryPlayer({
         className="glass-card mx-2 sm:mx-0 rounded-2xl border border-white/10 backdrop-blur-xl px-4 py-3 mt-3"
         style={{ WebkitBackdropFilter: "blur(20px)" }}
       >
-        <div className="flex items-center gap-3">
+        {/* Buttons row */}
+        <div className="flex items-center justify-center gap-2">
           <button
             onClick={restartFromBeginning}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
@@ -961,12 +978,6 @@ export default function IllustratedStoryPlayer({
           >
             {skipForwardIcon}
           </button>
-
-          {seekBar}
-
-          <span className="text-xs text-starlight/50 font-mono shrink-0">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
 
           {(airPlayAvailable || videoAirPlayAvailable) && (
             <button
@@ -1010,6 +1021,14 @@ export default function IllustratedStoryPlayer({
               {fullscreenIcon(!isFullscreen)}
             </button>
           )}
+        </div>
+
+        {/* Seek bar row */}
+        <div className="flex items-center gap-3 mt-2">
+          {seekBar}
+          <span className="text-xs text-starlight/50 font-mono shrink-0">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
         </div>
       </div>
 
