@@ -17,6 +17,7 @@ from fastapi import Depends
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
 from app.routes.auth import router as auth_router
+from app.routes.push import router as push_router
 from app.models.responses import StoryResponse, StoriesListResponse
 from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrationsRequest
 from app.auth.dependencies import get_current_user, verify_story_ownership
@@ -42,6 +43,7 @@ if _cors_origins:
 app.include_router(auth_router)
 app.include_router(config_router)
 app.include_router(story_router)
+app.include_router(push_router)
 
 # Jobs endpoint (at /api/jobs/recent, not under /api/story)
 from datetime import datetime, timedelta

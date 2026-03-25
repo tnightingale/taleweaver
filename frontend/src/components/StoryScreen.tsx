@@ -10,6 +10,7 @@ import { useChromecast } from "../hooks/useChromecast";
 import { useWakeLock } from "../hooks/useWakeLock";
 import CastButton from "./CastButton";
 import { STAGE_LABELS } from "../constants/stages";
+import NotificationPrompt from "./NotificationPrompt";
 import type { ProgressData } from "../types";
 
 interface Props {
@@ -302,6 +303,9 @@ export default function StoryScreen({
                 </div>
               </details>
             )}
+
+            {/* Push notification prompt */}
+            <NotificationPrompt />
           </motion.div>
         ) : (
           audioUrl && (

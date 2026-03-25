@@ -204,10 +204,24 @@ async def run_pipeline(job_id: str, state: dict):
             raise  # Re-raise to trigger outer except
 
         logger.info(f"[{job_id}] Pipeline complete: title='{final_state['title']}', duration={final_state['duration_seconds']}s")
-        
+
+        # Send push notification
+        try:
+            from app.services.notifications import notify_story_complete
+            notify_story_complete(db, state.get("user_id", ""), final_state["title"], short_id)
+        except Exception as notify_err:
+            logger.warning(f"[{job_id}] Push notification failed: {notify_err}")
+
     except Exception as e:
         logger.error(f"[{job_id}] Pipeline failed: {e}", exc_info=True)
         mark_job_failed(db, job_id, _friendly_error(e))
+
+        # Send failure notification
+        try:
+            from app.services.notifications import notify_story_failed
+            notify_story_failed(db, state.get("user_id", ""), job_id, _friendly_error(e))
+        except Exception as notify_err:
+            logger.warning(f"[{job_id}] Push notification failed: {notify_err}")
     finally:
         db.close()
 

@@ -200,8 +200,25 @@ def run_migrations():
             migrations_applied.append("stories.video_path")
             logger.info("✅ Added column: stories.video_path")
 
+        # Migration 12: Create push_subscriptions table (2026-03-25)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='push_subscriptions'")
+        if not cursor.fetchone():
+            cursor.execute('''
+                CREATE TABLE push_subscriptions (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL REFERENCES users(id),
+                    endpoint TEXT NOT NULL UNIQUE,
+                    p256dh_key TEXT NOT NULL,
+                    auth_key TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            cursor.execute('CREATE INDEX idx_push_sub_user ON push_subscriptions(user_id)')
+            migrations_applied.append("push_subscriptions table")
+            logger.info("✅ Created table: push_subscriptions")
+
         conn.commit()
-        
+
         if migrations_applied:
             logger.info(f"✅ Database migrations complete: {', '.join(migrations_applied)}")
         else:

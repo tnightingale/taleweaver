@@ -1,4 +1,5 @@
 """SQLAlchemy models for story persistence"""
+from uuid import uuid4
 from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, JSON, Float, LargeBinary, Index, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -125,3 +126,15 @@ class JobState(Base):
     
     def __repr__(self):
         return f"<Story(id={self.id}, short_id={self.short_id}, title={self.title})>"
+
+
+class PushSubscription(Base):
+    """Browser push notification subscription linked to a user."""
+    __tablename__ = "push_subscriptions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    endpoint = Column(Text, nullable=False, unique=True)
+    p256dh_key = Column(String, nullable=False)
+    auth_key = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
