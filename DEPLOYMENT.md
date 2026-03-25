@@ -23,6 +23,7 @@ The repository includes a GitHub Actions workflow that automatically builds and 
 2. The workflow runs automatically on:
    - Every push to `main` branch → tagged as `latest`
    - Every new tag (e.g., `v1.0.0`) → tagged with version number
+   - Every pull request → tagged as `pr-N` (e.g., `pr-42`)
    - Manual trigger via GitHub Actions UI
 
 **To trigger a build:**
@@ -170,6 +171,29 @@ stories.yourdomain.com {
     reverse_proxy localhost:80
 }
 ```
+
+## PR Preview Deployments (LAN)
+
+Pull requests are automatically built and published to ghcr.io with `pr-N` tags. On a LAN server running Once, you can deploy any PR as a preview instance with its own subdomain and database.
+
+**Prerequisites:** Wildcard DNS (`*.taleweaver.lan`) and mkcert TLS configured on the server.
+
+**Deploy a PR:**
+
+```bash
+once deploy ghcr.io/tnightingale/taleweaver:pr-21 --host pr-21.localhost
+# The TLS watcher automatically swaps to https://pr-21.taleweaver.lan
+```
+
+Set environment variables for the app via the Once TUI (`once` command) after deploying.
+
+**Remove when done:**
+
+```bash
+once remove <app-name>   # e.g., once remove taleweaver.8068f8
+```
+
+Each preview instance gets its own storage volume (separate database and files).
 
 ## Architecture
 
