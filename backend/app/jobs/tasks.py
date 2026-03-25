@@ -50,6 +50,69 @@ def build_state_from_params(job_id: str, params: dict) -> dict:
     }
 
 
+def _maybe_enqueue_video(story_id: str) -> bool:
+    """
+    Enqueue video generation if the story is illustrated and has no video yet.
+
+    Checks all preconditions (illustrations, audio, no existing video, no
+    in-progress job) before enqueuing. Safe to call multiple times.
+
+    Returns True if a video job was enqueued, False otherwise.
+    """
+    import uuid
+    from pathlib import Path
+
+    from app.db.crud import get_story_by_id, create_job_state
+    from app.db.database import SessionLocal
+    from app.db.models import JobState
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_id(db, story_id)
+        if not story:
+            return False
+
+        if not story.has_illustrations or not story.scene_data:
+            return False
+        if not story.scene_data.get("scenes"):
+            return False
+        if not story.audio_path or not Path(story.audio_path).exists():
+            return False
+
+        # Already has video
+        if story.video_path and Path(story.video_path).exists():
+            return False
+
+        # Check for in-progress video job
+        existing = (
+            db.query(JobState)
+            .filter(
+                JobState.short_id == story.short_id,
+                JobState.status == "processing",
+                JobState.current_stage == "generating_video",
+            )
+            .first()
+        )
+        if existing:
+            return False
+
+        video_job_id = str(uuid.uuid4())
+        create_job_state(db, video_job_id, ["generating_video"])
+        job_record = db.query(JobState).filter(JobState.job_id == video_job_id).first()
+        if job_record:
+            job_record.short_id = story.short_id
+            db.commit()
+
+        generate_video_task(video_job_id, story.short_id, story.id)
+        logger.info(f"[{story_id}] Auto-enqueued video generation as job {video_job_id}")
+        return True
+    except Exception as e:
+        logger.error(f"[{story_id}] Failed to auto-enqueue video: {e}")
+        return False
+    finally:
+        db.close()
+
+
 @huey.task(retries=2, retry_delay=60)
 def generate_story_task(job_id: str, story_params: dict):
     """
@@ -64,6 +127,9 @@ def generate_story_task(job_id: str, story_params: dict):
     state = build_state_from_params(job_id, story_params)
     asyncio.run(run_pipeline(job_id, state))
     logger.info(f"[{job_id}] huey worker pipeline complete")
+
+    # Auto-enqueue video generation for illustrated stories
+    _maybe_enqueue_video(job_id)
 
 
 @huey.task(retries=1, retry_delay=30)
@@ -357,11 +423,91 @@ async def _run_add_illustrations(
                 short_id=short_id,
             )
             logger.info(f"[{job_id}] Add illustrations complete: {succeeded}/{len(scenes)} succeeded")
+
+            # Auto-enqueue video generation now that illustrations exist
+            _maybe_enqueue_video(story_id)
         else:
             mark_job_failed(db, job_id, "All illustration generation attempts failed")
 
     except Exception as e:
         logger.error(f"[{job_id}] Add illustrations failed: {e}", exc_info=True)
+        mark_job_failed(db, job_id, str(e))
+    finally:
+        db.close()
+
+
+@huey.task(retries=1, retry_delay=30)
+def generate_video_task(job_id: str, short_id: str, story_id: str):
+    """
+    Generate MP4 slideshow video from illustrations + audio.
+
+    Combines scene PNGs with the audio MP3 into an H.264/AAC MP4
+    suitable for AirPlay to Apple TV.
+    """
+    asyncio.run(_run_video_generation(job_id, short_id, story_id))
+
+
+async def _run_video_generation(job_id: str, short_id: str, story_id: str):
+    """Async video generation logic — runs in its own event loop."""
+    from pathlib import Path
+
+    from app.config import settings
+    from app.db.crud import (
+        get_story_by_short_id,
+        update_job_progress,
+        update_story_video_path,
+        mark_job_complete,
+        mark_job_failed,
+    )
+    from app.db.database import SessionLocal
+    from app.utils.video_transcoder import generate_story_video
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            mark_job_failed(db, job_id, f"Story {short_id} not found")
+            return
+
+        if not story.has_illustrations or not story.scene_data:
+            mark_job_failed(db, job_id, "Story has no illustrations")
+            return
+
+        scenes = story.scene_data.get("scenes", [])
+        if not scenes:
+            mark_job_failed(db, job_id, "Story has no scene data")
+            return
+
+        audio_path = Path(story.audio_path)
+        if not audio_path.exists():
+            mark_job_failed(db, job_id, "Audio file not found")
+            return
+
+        story_dir = settings.storage_path / "stories" / story_id
+        output_path = story_dir / "video.mp4"
+
+        update_job_progress(db, job_id, 10, "Generating video...")
+
+        await generate_story_video(
+            story_dir=story_dir,
+            scenes=scenes,
+            audio_path=audio_path,
+            output_path=output_path,
+        )
+
+        update_story_video_path(db, short_id, str(output_path))
+
+        mark_job_complete(
+            db, job_id,
+            title="Video generated",
+            duration_seconds=story.duration_seconds,
+            transcript="",
+            short_id=short_id,
+        )
+        logger.info(f"[{job_id}] Video generation complete for story {short_id}")
+
+    except Exception as e:
+        logger.error(f"[{job_id}] Video generation failed: {e}", exc_info=True)
         mark_job_failed(db, job_id, str(e))
     finally:
         db.close()

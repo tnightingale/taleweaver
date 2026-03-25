@@ -7,9 +7,9 @@ logging.basicConfig(
 
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import Response, FileResponse, StreamingResponse
 
 from fastapi import Depends
 
@@ -45,7 +45,7 @@ app.include_router(story_router)
 # Jobs endpoint (at /api/jobs/recent, not under /api/story)
 from datetime import datetime, timedelta
 from app.db.database import SessionLocal
-from app.db.models import JobState
+from app.db.models import JobState, Story
 
 _last_orphan_check: Optional[datetime] = None
 
@@ -191,6 +191,13 @@ async def status(_user: User = Depends(get_current_user)):
     }
 
 
+def _get_video_url(story) -> Optional[str]:
+    """Get video URL if a generated MP4 exists for this story."""
+    if getattr(story, "video_path", None) and Path(story.video_path).exists():
+        return f"/api/permalink/{story.short_id}/video"
+    return None
+
+
 def _get_cover_image_url(story) -> Optional[str]:
     """Get cover image URL: prefer dedicated cover, fall back to first scene image."""
     if getattr(story, "cover_image_path", None):
@@ -249,6 +256,7 @@ async def get_story_permalink(short_id: str):
             art_style=story.art_style,
             scenes=scenes,
             cover_image_url=_get_cover_image_url(story),
+            video_url=_get_video_url(story),
         )
         return Response(
             content=response.model_dump_json(),
@@ -287,6 +295,180 @@ async def get_story_audio_permalink(short_id: str):
         filename=f"{safe_filename}.mp3",
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
+
+
+@app.head("/api/permalink/{short_id}/video")
+@app.get("/api/permalink/{short_id}/video")
+async def get_story_video_permalink(short_id: str, request: Request):
+    """Stream video by compact short ID (for AirPlay).
+
+    Supports HTTP HEAD and Range requests (required by AirPlay/Apple TV).
+    """
+    from app.db.crud import get_story_by_short_id
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    story = get_story_by_short_id(db, short_id)
+    db.close()
+
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    if not story.video_path:
+        raise HTTPException(status_code=404, detail="Video not generated yet")
+
+    video_path = Path(story.video_path)
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="Video file not found")
+
+    file_size = video_path.stat().st_size
+
+    common_headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(file_size),
+        "Content-Type": "video/mp4",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Disposition": "inline",
+    }
+
+    # HEAD request — return metadata only (used by AirPlay to probe before streaming)
+    if request.method == "HEAD":
+        return Response(headers=common_headers)
+
+    range_header = request.headers.get("range")
+
+    if range_header:
+        range_spec = range_header.replace("bytes=", "")
+        parts = range_spec.split("-")
+        start = int(parts[0]) if parts[0] else 0
+        end = int(parts[1]) if parts[1] else file_size - 1
+        end = min(end, file_size - 1)
+        content_length = end - start + 1
+
+        def iter_range():
+            chunk_size = 64 * 1024
+            with open(video_path, "rb") as f:
+                f.seek(start)
+                remaining = content_length
+                while remaining > 0:
+                    read_size = min(chunk_size, remaining)
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        return StreamingResponse(
+            iter_range(),
+            status_code=206,
+            media_type="video/mp4",
+            headers={
+                **common_headers,
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(content_length),
+            },
+        )
+
+    return FileResponse(
+        path=video_path,
+        media_type="video/mp4",
+        headers={
+            **common_headers,
+            "Content-Length": str(file_size),
+        },
+    )
+
+
+@app.post("/api/stories/{short_id}/video")
+async def generate_story_video_endpoint(
+    short_id: str, user: User = Depends(get_current_user)
+):
+    """Trigger video generation for an illustrated story, or return cached URL."""
+    import uuid
+    from app.db.crud import get_story_by_short_id, create_job_state
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_short_id(db, short_id)
+        if not story:
+            raise HTTPException(status_code=404, detail="Story not found")
+        verify_story_ownership(story, user)
+
+        if not story.has_illustrations or not story.scene_data:
+            raise HTTPException(
+                status_code=400, detail="Story has no illustrations"
+            )
+
+        # If video already exists, return immediately
+        if story.video_path and Path(story.video_path).exists():
+            return {
+                "status": "complete",
+                "video_url": f"/api/permalink/{story.short_id}/video",
+            }
+
+        # Check for existing in-progress video generation job
+        existing = (
+            db.query(JobState)
+            .filter(
+                JobState.short_id == short_id,
+                JobState.status == "processing",
+                JobState.current_stage == "generating_video",
+            )
+            .first()
+        )
+        if existing:
+            return {"job_id": existing.job_id, "status": "processing"}
+
+        # Create job and enqueue
+        job_id = str(uuid.uuid4())
+        create_job_state(
+            db, job_id, ["generating_video"],
+            story_params={"user_id": user.id},
+        )
+
+        # Set short_id on the job so we can detect duplicates
+        job = db.query(JobState).filter(JobState.job_id == job_id).first()
+        if job:
+            job.short_id = short_id
+            db.commit()
+
+        from app.jobs.tasks import generate_video_task
+        generate_video_task(job_id, story.short_id, story.id)
+
+        return {"job_id": job_id, "status": "processing"}
+    finally:
+        db.close()
+
+
+@app.post("/api/admin/backfill-videos")
+async def backfill_videos(user: User = Depends(get_current_user)):
+    """Queue video generation for all illustrated stories that don't have video yet."""
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        stories = (
+            db.query(Story)
+            .filter(Story.has_illustrations == True, Story.scene_data.isnot(None))
+            .all()
+        )
+
+        candidates = [
+            s for s in stories
+            if not s.video_path or not Path(s.video_path).exists()
+        ]
+
+        from app.jobs.tasks import _maybe_enqueue_video
+        enqueued = sum(1 for s in candidates if _maybe_enqueue_video(s.id))
+
+        return {
+            "candidates": len(candidates),
+            "enqueued": enqueued,
+            "skipped": len(candidates) - enqueued,
+        }
+    finally:
+        db.close()
 
 
 # Library routes
@@ -352,6 +534,7 @@ async def list_all_stories(
                     art_style=story.art_style,
                     scenes=scenes,
                     cover_image_url=_get_cover_image_url(story),
+                    video_url=_get_video_url(story),
                 )
             )
         

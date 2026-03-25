@@ -18,7 +18,7 @@ Stories are age-adaptive (3-12 years), use multi-voice narration (narrator + cha
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS 4, framer-motion
 - **LLM**: Claude Haiku (default), also supports Groq and OpenAI (configurable via `LLM_PROVIDER` env var)
 - **TTS**: ElevenLabs with 4 pre-configured voices (narrator [Rachel/female], male, female, child)
-- **Audio processing**: pydub (requires ffmpeg) — stitches voice segments + mood-based background music
+- **Audio/Video processing**: pydub + ffmpeg — stitches voice segments + mood-based background music; on-demand MP4 video generation for AirPlay
 - **Fonts**: Google Fonts — Cinzel (display headings) + Inter (body text)
 
 ## Project Structure
@@ -36,7 +36,7 @@ taleweaver/
 │   │   ├── data/            # Genres, historical events, music
 │   │   └── prompts/         # Story generation prompts
 │   │   ├── services/        # External providers (illustration/Gemini)
-│   │   ├── utils/           # Storage helpers (illustrations, temp audio)
+│   │   ├── utils/           # Storage helpers (illustrations, temp audio, video transcoder)
 │   └── tests/               # 203 pytest tests
 ├── frontend/
 │   ├── src/
@@ -84,8 +84,10 @@ COMPOSE_PROFILES=test docker compose -f docker-compose.dev.yml run --rm backend-
 | `/api/stories/{short_id}` | DELETE | Delete story (DB record + audio file) |
 | `/api/stories/{short_id}` | PATCH | Update story title |
 | `/api/stories/{short_id}/regenerate-illustrations` | POST | Re-run illustration generation for failed/missing scenes |
+| `/api/stories/{short_id}/video` | POST | Trigger on-demand MP4 video generation (for AirPlay) |
 | `/s/{short_id}` | GET | Get story metadata by permalink (permanent) |
 | `/s/{short_id}/audio` | GET | Stream audio by permalink (permanent) |
+| `/s/{short_id}/video` | GET | Stream video by permalink (for AirPlay, permanent) |
 
 ## LangGraph Pipeline
 
@@ -115,6 +117,7 @@ Stories are permanently stored:
 ├── stories/
 │   ├── {uuid-1}/
 │   │   ├── audio.mp3          # Generated MP3 file
+│   │   ├── video.mp4          # Generated MP4 video for AirPlay (on-demand)
 │   │   ├── scene_0.png        # Illustration images (if art_style selected)
 │   │   ├── scene_1.png
 │   │   └── ...
@@ -129,6 +132,7 @@ Stories are permanently stored:
 - Transcript and duration
 - File path reference to audio MP3
 - Art style, illustration data (scene_data JSON with image URLs)
+- Video path (on-demand MP4 for AirPlay, generated lazily)
 - Creation timestamp
 
 **Permalinks:**

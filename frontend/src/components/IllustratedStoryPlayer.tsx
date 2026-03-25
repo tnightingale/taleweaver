@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useRef, useState, useEffect, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
 import { regenerateIllustrations, pollJobStatus } from "../api/client";
@@ -25,6 +25,7 @@ interface Props {
   onScenesUpdated?: (scenes: Scene[]) => void;
   offlineStatus?: ReactNode;
   readOnly?: boolean;
+  videoUrl?: string;
 }
 
 const formatTime = (seconds: number) => {
@@ -55,8 +56,10 @@ export default function IllustratedStoryPlayer({
   onScenesUpdated,
   offlineStatus,
   readOnly = false,
+  videoUrl: initialVideoUrl,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scenes, setScenes] = useState(initialScenes);
   const regenPollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
@@ -80,6 +83,9 @@ export default function IllustratedStoryPlayer({
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(containerRef);
   const { isAvailable: airPlayAvailable, isActive: airPlayActive, showPicker: showAirPlayPicker } = useAirPlay(audioRef);
+  const { isAvailable: videoAirPlayAvailable, isActive: videoAirPlayActive, showPicker: showVideoAirPlayPicker } = useAirPlay(videoRef);
+  const [videoUrl, setVideoUrl] = useState(initialVideoUrl);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
   const chromecast = useChromecast();
 
   const isCasting = chromecast.isConnected;
@@ -139,6 +145,102 @@ export default function IllustratedStoryPlayer({
       audioRef.current?.pause();
     }
   };
+
+  // Prepare video element for AirPlay: must be playing with real dimensions
+  // for WebKit to recognize it as an AirPlay source
+  const prepareVideoForAirPlay = useCallback(() => {
+    const video = videoRef.current;
+    const audio = audioRef.current;
+    if (!video || !audio) return;
+
+    // Sync video position to current audio position
+    video.currentTime = audio.currentTime;
+
+    // Pause audio — video will take over as primary player
+    audio.pause();
+
+    // Start video playback (required for AirPlay to pick it up)
+    video.play().then(() => {
+      showVideoAirPlayPicker();
+    }).catch(() => {
+      // If video play fails, fall back to audio AirPlay
+      audio.play().catch(() => {});
+      showAirPlayPicker();
+    });
+  }, [showVideoAirPlayPicker, showAirPlayPicker]);
+
+  // Show AirPlay picker once the video element is ready
+  const showPickerWhenReady = useCallback(() => {
+    const tryShow = () => {
+      if (videoRef.current && videoRef.current.readyState >= 1) {
+        prepareVideoForAirPlay();
+      } else if (videoRef.current) {
+        videoRef.current.addEventListener("loadedmetadata", () => prepareVideoForAirPlay(), { once: true });
+      } else {
+        // Video element not mounted yet — wait for React render
+        setTimeout(tryShow, 100);
+      }
+    };
+    tryShow();
+  }, [prepareVideoForAirPlay]);
+
+  // Handle AirPlay button: prefer video (shows illustrations on TV) over audio-only
+  const handleAirPlayClick = async () => {
+    if (videoUrl) {
+      // Video exists — use it for AirPlay with illustrations
+      showPickerWhenReady();
+    } else if (shortId && !generatingVideo) {
+      // Trigger on-demand video generation
+      setGeneratingVideo(true);
+      try {
+        const { generateVideo } = await import("../api/client");
+        const result = await generateVideo(shortId);
+        if (result.video_url) {
+          setVideoUrl(result.video_url);
+          showPickerWhenReady();
+        } else if (result.job_id) {
+          // Poll for completion
+          const { pollJobStatus } = await import("../api/client");
+          const poll = setInterval(async () => {
+            const status = await pollJobStatus(result.job_id!);
+            if (status.status === "complete") {
+              clearInterval(poll);
+              setGeneratingVideo(false);
+              setVideoUrl(`/api/permalink/${shortId}/video`);
+              showPickerWhenReady();
+            } else if (status.status === "failed") {
+              clearInterval(poll);
+              setGeneratingVideo(false);
+              // Fall back to audio-only AirPlay
+              showAirPlayPicker();
+            }
+          }, 2000);
+        }
+      } catch {
+        setGeneratingVideo(false);
+        // Fall back to audio-only AirPlay
+        showAirPlayPicker();
+      }
+    } else {
+      showAirPlayPicker();
+    }
+  };
+
+  // When video AirPlay activates/deactivates, sync playback
+  useEffect(() => {
+    if (videoAirPlayActive && audioRef.current) {
+      // Video is now casting — keep audio paused, video is primary
+      audioRef.current.pause();
+    } else if (!videoAirPlayActive && videoRef.current) {
+      // AirPlay disconnected — switch back to audio
+      const videoTime = videoRef.current.currentTime;
+      videoRef.current.pause();
+      if (audioRef.current && videoTime > 0) {
+        audioRef.current.currentTime = videoTime;
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [videoAirPlayActive]);
 
   // Sync scenes from props
   useEffect(() => { setScenes(initialScenes); }, [initialScenes]);
@@ -282,11 +384,13 @@ export default function IllustratedStoryPlayer({
       chromecast.playOrPause();
       return;
     }
-    if (!audioRef.current) return;
+    // When video AirPlay is active, control the video element
+    const activeElement = videoAirPlayActive && videoRef.current ? videoRef.current : audioRef.current;
+    if (!activeElement) return;
     if (isPlaying) {
-      audioRef.current.pause();
+      activeElement.pause();
     } else {
-      audioRef.current.play().catch((err) => {
+      activeElement.play().catch((err) => {
         console.error("Playback failed:", err);
         setIsPlaying(false);
       });
@@ -487,16 +591,32 @@ export default function IllustratedStoryPlayer({
   );
 
   const audioElement = (
-    <audio
-      ref={audioRef}
-      src={audioUrl}
-      x-webkit-airplay="allow"
-      onLoadedMetadata={handleLoadedMetadata}
-      onTimeUpdate={handleTimeUpdate}
-      onPlay={() => setIsPlaying(true)}
-      onPause={() => setIsPlaying(false)}
-      onEnded={() => setIsPlaying(false)}
-    />
+    <>
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        x-webkit-airplay="allow"
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+      />
+      {videoUrl && (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          preload="metadata"
+          playsInline
+          x-webkit-airplay="allow"
+          onTimeUpdate={handleTimeUpdate}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}
+        />
+      )}
+    </>
   );
 
   // ═══════════════════════════════════════════
@@ -586,16 +706,25 @@ export default function IllustratedStoryPlayer({
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
 
-            {airPlayAvailable && (
+            {(airPlayAvailable || videoAirPlayAvailable) && (
               <button
-                onClick={showAirPlayPicker}
+                onClick={handleAirPlayClick}
+                disabled={generatingVideo}
                 className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                          transition-all cursor-pointer
-                         ${airPlayActive
+                         ${airPlayActive || videoAirPlayActive
                            ? "text-purple-400 bg-purple-500/20"
-                           : "text-white/60 hover:text-white hover:bg-white/10"
+                           : generatingVideo
+                             ? "text-white/40 animate-pulse"
+                             : "text-white/60 hover:text-white hover:bg-white/10"
                          }`}
-                title={airPlayActive ? "AirPlay active" : "AirPlay"}
+                title={
+                  airPlayActive || videoAirPlayActive
+                    ? "AirPlay active"
+                    : generatingVideo
+                      ? "Preparing video..."
+                      : "AirPlay"
+                }
               >
                 {airPlayIcon}
               </button>
@@ -714,16 +843,25 @@ export default function IllustratedStoryPlayer({
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
 
-          {airPlayAvailable && (
+          {(airPlayAvailable || videoAirPlayAvailable) && (
             <button
-              onClick={showAirPlayPicker}
+              onClick={handleAirPlayClick}
+              disabled={generatingVideo}
               className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                        transition-all cursor-pointer
-                       ${airPlayActive
+                       ${airPlayActive || videoAirPlayActive
                          ? "text-purple-400 bg-purple-500/20"
-                         : "text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20"
+                         : generatingVideo
+                           ? "text-purple-300/40 animate-pulse"
+                           : "text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20"
                        }`}
-              title={airPlayActive ? "AirPlay active" : "AirPlay"}
+              title={
+                airPlayActive || videoAirPlayActive
+                  ? "AirPlay active"
+                  : generatingVideo
+                    ? "Preparing video..."
+                    : "AirPlay"
+              }
             >
               {airPlayIcon}
             </button>

@@ -65,6 +65,7 @@ class Story(Base):
     has_illustrations = Column(Boolean, default=False, nullable=False)
     scene_data = Column(JSON, nullable=True)  # Scene metadata with illustration info
     cover_image_path = Column(String, nullable=True)  # Path to dedicated cover image
+    video_path = Column(String, nullable=True)  # Path to generated MP4 video for AirPlay
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

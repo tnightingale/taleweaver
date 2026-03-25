@@ -186,6 +186,15 @@ export async function deleteStory(shortId: string): Promise<void> {
   }
 }
 
+export async function generateVideo(
+  shortId: string
+): Promise<{ job_id?: string; status: string; video_url?: string }> {
+  const res = await authFetch(`${BASE}/stories/${shortId}/video`, {
+    method: "POST",
+  });
+  return handleResponse(res);
+}
+
 export async function updateStoryTitle(
   shortId: string,
   newTitle: string

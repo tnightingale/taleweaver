@@ -7,11 +7,12 @@ interface AirPlayAPI {
 }
 
 // WebKit-specific types for AirPlay
-interface WebKitAudioElement extends HTMLAudioElement {
+interface WebKitMediaElement extends HTMLMediaElement {
   webkitShowPlaybackTargetPicker?: () => void;
+  webkitCurrentPlaybackTargetIsWireless?: boolean;
 }
 
-export function useAirPlay(audioRef: RefObject<HTMLAudioElement | null>): AirPlayAPI {
+export function useAirPlay(audioRef: RefObject<HTMLMediaElement | null>): AirPlayAPI {
   const [isAvailable, setIsAvailable] = useState(false);
   const [isActive, setIsActive] = useState(false);
 
@@ -30,10 +31,8 @@ export function useAirPlay(audioRef: RefObject<HTMLAudioElement | null>): AirPla
     const onTargetChanged = () => {
       // When the target changes, we're either casting or back to local
       // Safari fires this event when AirPlay connects/disconnects
-      const webkitAudio = audio as WebKitAudioElement & {
-        webkitCurrentPlaybackTargetIsWireless?: boolean;
-      };
-      setIsActive(webkitAudio.webkitCurrentPlaybackTargetIsWireless ?? false);
+      const webkitMedia = audio as WebKitMediaElement;
+      setIsActive(webkitMedia.webkitCurrentPlaybackTargetIsWireless ?? false);
     };
 
     audio.addEventListener(
@@ -58,8 +57,8 @@ export function useAirPlay(audioRef: RefObject<HTMLAudioElement | null>): AirPla
   }, [audioRef]);
 
   const showPicker = useCallback(() => {
-    const audio = audioRef.current as WebKitAudioElement | null;
-    audio?.webkitShowPlaybackTargetPicker?.();
+    const media = audioRef.current as WebKitMediaElement | null;
+    media?.webkitShowPlaybackTargetPicker?.();
   }, [audioRef]);
 
   return { isAvailable, isActive, showPicker };

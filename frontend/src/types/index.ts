@@ -81,6 +81,7 @@ export interface JobCompleteResponse {
   has_illustrations: boolean;
   art_style?: string;
   scenes?: Scene[];
+  video_url?: string;
   // Progress fields (may be present during generation)
   progress?: number;
   progress_detail?: string;
@@ -120,6 +121,7 @@ export interface StoryMetadata {
   art_style?: string;
   scenes?: Scene[];
   cover_image_url?: string;
+  video_url?: string;
 }
 
 export interface ArtStyle {

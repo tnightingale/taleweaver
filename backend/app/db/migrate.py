@@ -190,6 +190,16 @@ def run_migrations():
                     migrations_applied.append(f"assigned {orphaned} orphaned stories")
                     logger.info(f"✅ Assigned {orphaned} orphaned stories to first user")
 
+        # Migration 11: Add video_path to stories (2026-03-24)
+        # Re-read columns since they may have changed above
+        if stories_exists:
+            cursor.execute("PRAGMA table_info(stories)")
+            existing_columns = {row[1] for row in cursor.fetchall()}
+        if stories_exists and "video_path" not in existing_columns:
+            cursor.execute("ALTER TABLE stories ADD COLUMN video_path TEXT")
+            migrations_applied.append("stories.video_path")
+            logger.info("✅ Added column: stories.video_path")
+
         conn.commit()
         
         if migrations_applied:

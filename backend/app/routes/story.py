@@ -305,7 +305,7 @@ async def create_historical_story(request: HistoricalStoryRequest, user: User = 
 
 @router.get("/status/{job_id}")
 async def get_job_status(job_id: str, user: User = Depends(get_current_user)):
-    from app.db.crud import get_job_state
+    from app.db.crud import get_job_state, get_story_by_short_id
     from app.db.database import SessionLocal
 
     db = SessionLocal()
@@ -336,6 +336,13 @@ async def get_job_status(job_id: str, user: User = Depends(get_current_user)):
                     for s in scenes_data
                 ]
             
+            # Check if video exists for this story
+            video_url = None
+            if short_id:
+                story = get_story_by_short_id(db, short_id)
+                if story and getattr(story, "video_path", None) and Path(story.video_path).exists():
+                    video_url = f"/api/permalink/{short_id}/video"
+
             return JobCompleteResponse(
                 job_id=job_id,
                 status="complete",
@@ -348,6 +355,7 @@ async def get_job_status(job_id: str, user: User = Depends(get_current_user)):
                 has_illustrations=bool(job.scenes_json),
                 art_style=job.art_style,
                 scenes=scenes,
+                video_url=video_url,
             )
 
         # Parse partial progress if available
