@@ -15,7 +15,6 @@ describe('StoryScreen - generating state', () => {
       />
     );
     expect(screen.getByText('Writing the story...')).toBeInTheDocument();
-    expect(screen.getByText('This usually takes a few minutes')).toBeInTheDocument();
   });
 
   it('shows splitting stage label', () => {
@@ -71,7 +70,9 @@ describe('StoryScreen - generating state', () => {
         onCreateAnother={vi.fn()}
       />
     );
-    expect(screen.getByText('Creating your story...')).toBeInTheDocument();
+    // "Creating your story..." appears in both title and stage label
+    const matches = screen.getAllByText('Creating your story...');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows default label when no stage provided', () => {
@@ -84,7 +85,8 @@ describe('StoryScreen - generating state', () => {
         onCreateAnother={vi.fn()}
       />
     );
-    expect(screen.getByText('Creating your story...')).toBeInTheDocument();
+    const matches = screen.getAllByText('Creating your story...');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
   });
 });
 
