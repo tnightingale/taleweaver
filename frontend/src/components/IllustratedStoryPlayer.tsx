@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useRef, useState, useEffect, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Scene } from "../types";
 import { regenerateIllustrations, pollJobStatus } from "../api/client";
@@ -146,11 +146,26 @@ export default function IllustratedStoryPlayer({
     }
   };
 
+  // Show AirPlay picker once the video element is ready
+  const showPickerWhenReady = useCallback(() => {
+    const tryShow = () => {
+      if (videoRef.current && videoRef.current.readyState >= 1) {
+        showVideoAirPlayPicker();
+      } else if (videoRef.current) {
+        videoRef.current.addEventListener("loadedmetadata", () => showVideoAirPlayPicker(), { once: true });
+      } else {
+        // Video element not mounted yet — wait for React render
+        setTimeout(tryShow, 100);
+      }
+    };
+    tryShow();
+  }, [showVideoAirPlayPicker]);
+
   // Handle AirPlay button: prefer video (shows illustrations on TV) over audio-only
   const handleAirPlayClick = async () => {
     if (videoUrl) {
       // Video exists — use it for AirPlay with illustrations
-      showVideoAirPlayPicker();
+      showPickerWhenReady();
     } else if (shortId && !generatingVideo) {
       // Trigger on-demand video generation
       setGeneratingVideo(true);
@@ -159,8 +174,7 @@ export default function IllustratedStoryPlayer({
         const result = await generateVideo(shortId);
         if (result.video_url) {
           setVideoUrl(result.video_url);
-          // Brief delay for the video element to mount, then show picker
-          setTimeout(() => showVideoAirPlayPicker(), 300);
+          showPickerWhenReady();
         } else if (result.job_id) {
           // Poll for completion
           const { pollJobStatus } = await import("../api/client");
@@ -170,7 +184,7 @@ export default function IllustratedStoryPlayer({
               clearInterval(poll);
               setGeneratingVideo(false);
               setVideoUrl(`/api/permalink/${shortId}/video`);
-              setTimeout(() => showVideoAirPlayPicker(), 300);
+              showPickerWhenReady();
             } else if (status.status === "failed") {
               clearInterval(poll);
               setGeneratingVideo(false);
@@ -568,7 +582,7 @@ export default function IllustratedStoryPlayer({
         <video
           ref={videoRef}
           src={videoUrl}
-          preload="none"
+          preload="metadata"
           playsInline
           x-webkit-airplay="allow"
           style={{ position: "absolute", width: 0, height: 0, opacity: 0 }}
