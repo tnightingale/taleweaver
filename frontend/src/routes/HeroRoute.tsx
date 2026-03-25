@@ -11,7 +11,7 @@ export default function HeroRoute() {
   useEffect(() => {
     fetchRecentJobs()
       .then(data => {
-        setActiveJobCount(data.jobs.filter(j => j.status === "processing").length);
+        setActiveJobCount(data.jobs.filter(j => j.status === "processing" || j.status === "failed").length);
       })
       .catch(() => {});
   }, []);

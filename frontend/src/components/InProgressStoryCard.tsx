@@ -9,6 +9,7 @@ interface Props {
 
 export default function InProgressStoryCard({ job }: Props) {
   const navigate = useNavigate();
+  const isFailed = job.status === "failed";
 
   const displayTitle = job.title
     || (job.kid_name && job.genre
@@ -17,7 +18,9 @@ export default function InProgressStoryCard({ job }: Props) {
         ? `${job.kid_name}'s story`
         : "New story");
 
-  const stageLabel = STAGE_LABELS[job.current_stage] ?? "Creating your story...";
+  const stageLabel = isFailed
+    ? (job.error || "Generation failed")
+    : (STAGE_LABELS[job.current_stage] ?? "Creating your story...");
 
   return (
     <motion.div
@@ -26,8 +29,11 @@ export default function InProgressStoryCard({ job }: Props) {
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -4 }}
       onClick={() => navigate(`/story/${job.job_id}`)}
-      className="glass-card flex flex-col relative cursor-pointer
-                 hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all"
+      className={`glass-card flex flex-col relative cursor-pointer transition-all ${
+        isFailed
+          ? "hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] border border-red-500/20"
+          : "hover:shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+      }`}
     >
       {/* Cover area */}
       {job.cover_image_url ? (
@@ -35,19 +41,22 @@ export default function InProgressStoryCard({ job }: Props) {
           <motion.img
             src={job.cover_image_url}
             alt={displayTitle}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${isFailed ? "opacity-50 grayscale" : ""}`}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: isFailed ? 0.5 : 1 }}
             transition={{ duration: 0.5 }}
           />
         </div>
       ) : (
-        <div className="aspect-[3/2] w-full rounded-t-[1rem] overflow-hidden
-                        bg-gradient-to-br from-purple-900/40 to-abyss/60
-                        flex items-center justify-center relative">
-          <div className="absolute inset-0 shimmer-effect" />
-          <div className="text-4xl opacity-30 animate-pulse">
-            {job.art_style ? "🎨" : "✨"}
+        <div className={`aspect-[3/2] w-full rounded-t-[1rem] overflow-hidden
+                        flex items-center justify-center relative ${
+                          isFailed
+                            ? "bg-gradient-to-br from-red-900/30 to-abyss/60"
+                            : "bg-gradient-to-br from-purple-900/40 to-abyss/60"
+                        }`}>
+          {!isFailed && <div className="absolute inset-0 shimmer-effect" />}
+          <div className={`text-4xl ${isFailed ? "opacity-50" : "opacity-30 animate-pulse"}`}>
+            {isFailed ? "😔" : job.art_style ? "🎨" : "✨"}
           </div>
         </div>
       )}
@@ -57,8 +66,8 @@ export default function InProgressStoryCard({ job }: Props) {
           {displayTitle}
         </h3>
 
-        <p className="text-xs text-starlight/50">
-          {stageLabel} {Math.round(job.progress)}%
+        <p className={`text-xs line-clamp-2 ${isFailed ? "text-red-400/80" : "text-starlight/50"}`}>
+          {isFailed ? stageLabel : `${stageLabel} ${Math.round(job.progress)}%`}
         </p>
 
         <div className="flex items-center gap-1.5 text-xs text-starlight/40">
@@ -77,15 +86,21 @@ export default function InProgressStoryCard({ job }: Props) {
           )}
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-1 bg-starlight/10 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-            initial={{ width: 0 }}
-            animate={{ width: `${job.progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-        </div>
+        {/* Progress bar or failed indicator */}
+        {isFailed ? (
+          <div className="text-xs text-red-400/60 font-medium">
+            Tap to retry
+          </div>
+        ) : (
+          <div className="w-full h-1 bg-starlight/10 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${job.progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+        )}
       </div>
 
       <style>{`

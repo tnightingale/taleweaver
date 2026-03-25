@@ -31,13 +31,13 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
     const poll = async () => {
       try {
         const data = await fetchRecentJobs();
-        const processing = data.jobs.filter(j => j.status === "processing");
-        setInProgressJobs(processing);
+        const active = data.jobs.filter(j => j.status === "processing" || j.status === "failed");
+        setInProgressJobs(active);
 
-        // If a job just completed, refresh story list
-        const currentIds = processing.map(j => j.job_id);
-        const justCompleted = prevJobIdsRef.current.some(id => !currentIds.includes(id));
-        prevJobIdsRef.current = currentIds;
+        // If a processing job just completed, refresh story list
+        const processingIds = data.jobs.filter(j => j.status === "processing").map(j => j.job_id);
+        const justCompleted = prevJobIdsRef.current.some(id => !processingIds.includes(id));
+        prevJobIdsRef.current = processingIds;
         if (justCompleted) {
           loadStories(true);
         }
