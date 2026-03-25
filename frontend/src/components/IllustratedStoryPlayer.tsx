@@ -146,20 +146,43 @@ export default function IllustratedStoryPlayer({
     }
   };
 
+  // Prepare video element for AirPlay: must be playing with real dimensions
+  // for WebKit to recognize it as an AirPlay source
+  const prepareVideoForAirPlay = useCallback(() => {
+    const video = videoRef.current;
+    const audio = audioRef.current;
+    if (!video || !audio) return;
+
+    // Sync video position to current audio position
+    video.currentTime = audio.currentTime;
+
+    // Pause audio — video will take over as primary player
+    audio.pause();
+
+    // Start video playback (required for AirPlay to pick it up)
+    video.play().then(() => {
+      showVideoAirPlayPicker();
+    }).catch(() => {
+      // If video play fails, fall back to audio AirPlay
+      audio.play().catch(() => {});
+      showAirPlayPicker();
+    });
+  }, [showVideoAirPlayPicker, showAirPlayPicker]);
+
   // Show AirPlay picker once the video element is ready
   const showPickerWhenReady = useCallback(() => {
     const tryShow = () => {
       if (videoRef.current && videoRef.current.readyState >= 1) {
-        showVideoAirPlayPicker();
+        prepareVideoForAirPlay();
       } else if (videoRef.current) {
-        videoRef.current.addEventListener("loadedmetadata", () => showVideoAirPlayPicker(), { once: true });
+        videoRef.current.addEventListener("loadedmetadata", () => prepareVideoForAirPlay(), { once: true });
       } else {
         // Video element not mounted yet — wait for React render
         setTimeout(tryShow, 100);
       }
     };
     tryShow();
-  }, [showVideoAirPlayPicker]);
+  }, [prepareVideoForAirPlay]);
 
   // Handle AirPlay button: prefer video (shows illustrations on TV) over audio-only
   const handleAirPlayClick = async () => {
@@ -203,19 +226,18 @@ export default function IllustratedStoryPlayer({
     }
   };
 
-  // When video AirPlay activates, pause local audio and sync from video
+  // When video AirPlay activates/deactivates, sync playback
   useEffect(() => {
     if (videoAirPlayActive && audioRef.current) {
+      // Video is now casting — keep audio paused, video is primary
       audioRef.current.pause();
-      if (videoRef.current) {
-        videoRef.current.currentTime = audioRef.current.currentTime;
-        videoRef.current.play().catch(() => {});
-      }
     } else if (!videoAirPlayActive && videoRef.current) {
+      // AirPlay disconnected — switch back to audio
+      const videoTime = videoRef.current.currentTime;
       videoRef.current.pause();
-      // Resume local audio from video position
-      if (audioRef.current && videoRef.current.currentTime > 0) {
-        audioRef.current.currentTime = videoRef.current.currentTime;
+      if (audioRef.current && videoTime > 0) {
+        audioRef.current.currentTime = videoTime;
+        audioRef.current.play().catch(() => {});
       }
     }
   }, [videoAirPlayActive]);
@@ -362,11 +384,13 @@ export default function IllustratedStoryPlayer({
       chromecast.playOrPause();
       return;
     }
-    if (!audioRef.current) return;
+    // When video AirPlay is active, control the video element
+    const activeElement = videoAirPlayActive && videoRef.current ? videoRef.current : audioRef.current;
+    if (!activeElement) return;
     if (isPlaying) {
-      audioRef.current.pause();
+      activeElement.pause();
     } else {
-      audioRef.current.play().catch((err) => {
+      activeElement.play().catch((err) => {
         console.error("Playback failed:", err);
         setIsPlaying(false);
       });
@@ -585,7 +609,11 @@ export default function IllustratedStoryPlayer({
           preload="metadata"
           playsInline
           x-webkit-airplay="allow"
-          style={{ position: "absolute", width: 0, height: 0, opacity: 0 }}
+          onTimeUpdate={handleTimeUpdate}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}
         />
       )}
     </>
