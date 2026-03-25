@@ -13,23 +13,6 @@ if [ ! "$(ls -A /storage/music)" ]; then
     cp -r /app/default-music/* /storage/music/
 fi
 
-# Start Caddy web server in background
-echo "🌐 Starting Caddy web server on port 80..."
-caddy start --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 || {
-    echo "❌ Failed to start Caddy. Checking logs..."
-    cat /var/log/caddy/* 2>/dev/null || echo "No Caddy logs available"
-    exit 1
-}
-
-# Give Caddy a moment to start
-sleep 3
-
-# Verify Caddy is running
-if ! caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
-    echo "❌ Caddy config validation failed"
-    exit 1
-fi
-
 # Start huey background worker (processes story generation jobs)
 # -k process: isolated process per task (memory doesn't leak into API)
 # -w 1: one concurrent story at a time (controls peak memory)
@@ -43,14 +26,14 @@ huey_consumer app.jobs.huey_app.huey \
   &
 HUEY_PID=$!
 
-# Start gunicorn API server
-# Gunicorn is API-only now — no background tasks, so more workers are safe.
+# Start gunicorn (serves API + frontend static assets on port 80)
+# No background tasks in gunicorn — those run in huey above.
 # Timeout 120s is plenty for API requests (no long-running generation).
-echo "🚀 Starting FastAPI backend on port 8000..."
+echo "🚀 Starting Gunicorn on port 80..."
 gunicorn app.main:app \
   --workers ${GUNICORN_WORKERS:-4} \
   --worker-class uvicorn.workers.UvicornWorker \
-  --bind 0.0.0.0:8000 \
+  --bind 0.0.0.0:80 \
   --timeout 120 \
   --access-logfile - \
   --error-logfile - \

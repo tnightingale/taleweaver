@@ -10,6 +10,8 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from fastapi import Depends
 
@@ -26,7 +28,7 @@ app = FastAPI(title="Taleweaver")
 # CORS: when credentials are used (cookie-based auth), origins must be explicit.
 # Set CORS_ORIGINS env var to a comma-separated list of allowed origins.
 # Without it, CORS is disabled (same-origin only, which is the production default
-# since Caddy serves both frontend and API on the same origin).
+# since Gunicorn serves both frontend and API on the same origin).
 from app.config import settings as _settings
 _cors_origins = [o.strip() for o in _settings.cors_origins.split(",") if o.strip()] if _settings.cors_origins else []
 if _cors_origins:
@@ -37,6 +39,32 @@ if _cors_origins:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+
+class CacheHeaderMiddleware(BaseHTTPMiddleware):
+    """Set Cache-Control headers for static assets based on request path."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+
+        if path.startswith("/assets/"):
+            # Vite hashed bundles — immutable forever
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path.startswith("/storage/stories/") and path.endswith(".png"):
+            # Illustration PNGs — cache but revalidate (may be regenerated)
+            response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+        elif path.startswith("/storage/"):
+            # Other storage files
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path.endswith("/sw.js") or path == "/index.html" or path == "/":
+            # Service worker and SPA entry — always revalidate
+            response.headers["Cache-Control"] = "no-cache"
+
+        return response
+
+
+app.add_middleware(CacheHeaderMiddleware)
 
 app.include_router(auth_router)
 app.include_router(config_router)
@@ -756,3 +784,34 @@ async def regenerate_illustrations_endpoint(
         }
     finally:
         db.close()
+
+
+# Static file mounts — MUST come after all API route registrations.
+# Conditional on directory existence so tests/dev work without a frontend build.
+_storage_dir = Path(_settings.storage_path)
+_frontend_dir = Path("/app/frontend/dist")
+
+
+class SPAStaticFiles(StaticFiles):
+    """StaticFiles with SPA fallback: serves index.html for unknown paths.
+
+    Unlike html=True mode, this doesn't redirect to add trailing slashes —
+    it serves index.html directly for any path that doesn't match a file,
+    replicating Caddy's `try_files {path} /index.html` behavior.
+    """
+
+    async def get_response(self, path: str, scope):
+        from starlette.exceptions import HTTPException as StarletteHTTPException
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as e:
+            if e.status_code == 404:
+                return await super().get_response("index.html", scope)
+            raise
+
+
+if _storage_dir.is_dir():
+    app.mount("/storage", StaticFiles(directory=str(_storage_dir)), name="storage")
+
+if _frontend_dir.is_dir():
+    app.mount("/", SPAStaticFiles(directory=str(_frontend_dir)), name="spa")
