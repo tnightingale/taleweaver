@@ -36,6 +36,7 @@ def build_state_from_params(job_id: str, params: dict) -> dict:
         "length": params.get("length"),
         "art_style": params.get("art_style"),
         "custom_art_style_prompt": params.get("custom_art_style_prompt"),
+        "user_id": params.get("user_id"),
         # Pipeline output placeholders
         "story_text": "",
         "title": "",
