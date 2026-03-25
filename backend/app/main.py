@@ -317,14 +317,13 @@ async def get_story_video_permalink(short_id: str):
     if not video_path.exists():
         raise HTTPException(status_code=404, detail="Video file not found")
 
-    safe_filename = "".join(c for c in story.title if c.isalnum() or c in (' ', '-', '_')).strip()
-    safe_filename = safe_filename or "story"
-
     return FileResponse(
         path=video_path,
         media_type="video/mp4",
-        filename=f"{safe_filename}.mp4",
-        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Disposition": "inline",
+        },
     )
 
 
