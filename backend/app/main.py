@@ -45,7 +45,7 @@ app.include_router(story_router)
 # Jobs endpoint (at /api/jobs/recent, not under /api/story)
 from datetime import datetime, timedelta
 from app.db.database import SessionLocal
-from app.db.models import JobState
+from app.db.models import JobState, Story
 
 _last_orphan_check: Optional[datetime] = None
 
@@ -385,6 +385,36 @@ async def generate_story_video_endpoint(
         generate_video_task(job_id, story.short_id, story.id)
 
         return {"job_id": job_id, "status": "processing"}
+    finally:
+        db.close()
+
+
+@app.post("/api/admin/backfill-videos")
+async def backfill_videos(user: User = Depends(get_current_user)):
+    """Queue video generation for all illustrated stories that don't have video yet."""
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        stories = (
+            db.query(Story)
+            .filter(Story.has_illustrations == True, Story.scene_data.isnot(None))
+            .all()
+        )
+
+        candidates = [
+            s for s in stories
+            if not s.video_path or not Path(s.video_path).exists()
+        ]
+
+        from app.jobs.tasks import _maybe_enqueue_video
+        enqueued = sum(1 for s in candidates if _maybe_enqueue_video(s.id))
+
+        return {
+            "candidates": len(candidates),
+            "enqueued": enqueued,
+            "skipped": len(candidates) - enqueued,
+        }
     finally:
         db.close()
 

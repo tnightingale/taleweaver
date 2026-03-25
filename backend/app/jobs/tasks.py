@@ -50,6 +50,69 @@ def build_state_from_params(job_id: str, params: dict) -> dict:
     }
 
 
+def _maybe_enqueue_video(story_id: str) -> bool:
+    """
+    Enqueue video generation if the story is illustrated and has no video yet.
+
+    Checks all preconditions (illustrations, audio, no existing video, no
+    in-progress job) before enqueuing. Safe to call multiple times.
+
+    Returns True if a video job was enqueued, False otherwise.
+    """
+    import uuid
+    from pathlib import Path
+
+    from app.db.crud import get_story_by_id, create_job_state
+    from app.db.database import SessionLocal
+    from app.db.models import JobState
+
+    db = SessionLocal()
+    try:
+        story = get_story_by_id(db, story_id)
+        if not story:
+            return False
+
+        if not story.has_illustrations or not story.scene_data:
+            return False
+        if not story.scene_data.get("scenes"):
+            return False
+        if not story.audio_path or not Path(story.audio_path).exists():
+            return False
+
+        # Already has video
+        if story.video_path and Path(story.video_path).exists():
+            return False
+
+        # Check for in-progress video job
+        existing = (
+            db.query(JobState)
+            .filter(
+                JobState.short_id == story.short_id,
+                JobState.status == "processing",
+                JobState.current_stage == "generating_video",
+            )
+            .first()
+        )
+        if existing:
+            return False
+
+        video_job_id = str(uuid.uuid4())
+        create_job_state(db, video_job_id, ["generating_video"])
+        job_record = db.query(JobState).filter(JobState.job_id == video_job_id).first()
+        if job_record:
+            job_record.short_id = story.short_id
+            db.commit()
+
+        generate_video_task(video_job_id, story.short_id, story.id)
+        logger.info(f"[{story_id}] Auto-enqueued video generation as job {video_job_id}")
+        return True
+    except Exception as e:
+        logger.error(f"[{story_id}] Failed to auto-enqueue video: {e}")
+        return False
+    finally:
+        db.close()
+
+
 @huey.task(retries=2, retry_delay=60)
 def generate_story_task(job_id: str, story_params: dict):
     """
@@ -64,6 +127,9 @@ def generate_story_task(job_id: str, story_params: dict):
     state = build_state_from_params(job_id, story_params)
     asyncio.run(run_pipeline(job_id, state))
     logger.info(f"[{job_id}] huey worker pipeline complete")
+
+    # Auto-enqueue video generation for illustrated stories
+    _maybe_enqueue_video(job_id)
 
 
 @huey.task(retries=1, retry_delay=30)
@@ -357,6 +423,9 @@ async def _run_add_illustrations(
                 short_id=short_id,
             )
             logger.info(f"[{job_id}] Add illustrations complete: {succeeded}/{len(scenes)} succeeded")
+
+            # Auto-enqueue video generation now that illustrations exist
+            _maybe_enqueue_video(story_id)
         else:
             mark_job_failed(db, job_id, "All illustration generation attempts failed")
 
