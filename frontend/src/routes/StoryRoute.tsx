@@ -34,13 +34,14 @@ export default function StoryRoute() {
     pollingRef.current = setInterval(async () => {
       try {
         const status = await pollJobStatus(id);
-        if (status.status === "complete" && "title" in status) {
+        if (status.status === "complete" && "audio_url" in status) {
           clearInterval(pollingRef.current);
-          setStoryTitle(status.title);
-          setStoryDuration(status.duration_seconds);
-          setAudioUrl(status.audio_url);
-          setTranscript(status.transcript);
-          setStoryData(status);
+          const complete = status as import("../types").JobCompleteResponse;
+          setStoryTitle(complete.title);
+          setStoryDuration(complete.duration_seconds);
+          setAudioUrl(complete.audio_url);
+          setTranscript(complete.transcript);
+          setStoryData(complete);
           setIsGenerating(false);
         } else if (status.status === "failed") {
           clearInterval(pollingRef.current);

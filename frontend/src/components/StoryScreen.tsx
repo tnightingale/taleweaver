@@ -44,7 +44,8 @@ export default function StoryScreen({
   isGenerating,
   currentStage,
   progress = 0,
-  progressDetail = "",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  progressDetail: _progressDetail = "",
   title,
   audioUrl,
   durationSeconds,
@@ -58,7 +59,8 @@ export default function StoryScreen({
   partialTranscript,
   completedIllustrations = [],
   progressData,
-  coverImageUrl,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  coverImageUrl: _coverImageUrl,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
