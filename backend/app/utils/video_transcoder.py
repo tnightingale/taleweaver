@@ -9,11 +9,12 @@ import logging
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # Black placeholder for scenes with missing images
-_BLACK_FRAME_CACHE: Path | None = None
+_BLACK_FRAME_CACHE: Optional[Path] = None
 
 
 def _ensure_black_frame(tmp_dir: Path) -> Path:
@@ -39,7 +40,7 @@ def _ensure_black_frame(tmp_dir: Path) -> Path:
 
 def _generate_video_sync(
     story_dir: Path,
-    scenes: list[dict],
+    scenes: List[Dict],
     audio_path: Path,
     output_path: Path,
 ) -> Path:
@@ -53,7 +54,7 @@ def _generate_video_sync(
 
     try:
         # Build concat demuxer file
-        lines: list[str] = []
+        lines: List[str] = []
         for scene in scenes:
             duration = scene["timestamp_end"] - scene["timestamp_start"]
             if duration <= 0:
@@ -114,7 +115,7 @@ def _generate_video_sync(
 
 async def generate_story_video(
     story_dir: Path,
-    scenes: list[dict],
+    scenes: List[Dict],
     audio_path: Path,
     output_path: Path,
 ) -> Path:
