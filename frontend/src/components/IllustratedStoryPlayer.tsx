@@ -510,15 +510,15 @@ export default function IllustratedStoryPlayer({
         className={seekBarClass}
         style={seekBarStyle}
       />
-      {scenes.map((scene, i) => (
+      {scenes.map((scene, i) => i === 0 ? null : (
         <button
           key={i}
           onClick={() => jumpToScene(i)}
-          className="absolute w-1.5 h-1.5 bg-purple-300 rounded-full cursor-pointer"
+          className="absolute w-[2px] h-full bg-white/40 cursor-pointer hover:bg-white/70 transition-colors"
           style={{
             left: `calc(8px + (100% - 16px) * ${scene.timestamp_start / duration})`,
-            top: "calc(100% + 4px)",
-            transform: "translate(-50%, 0)",
+            top: 0,
+            transform: "translateX(-50%)",
           }}
         />
       ))}
