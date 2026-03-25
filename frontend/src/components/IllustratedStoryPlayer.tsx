@@ -475,7 +475,7 @@ export default function IllustratedStoryPlayer({
   const currentScene = scenes[currentSceneIndex];
 
   // Shared seek bar classes
-  const seekBarClass = `w-full h-1.5 sm:h-2 bg-starlight/10 rounded-lg appearance-none cursor-pointer
+  const seekBarClass = `w-full h-1.5 sm:h-2 m-0 bg-starlight/10 rounded-lg appearance-none cursor-pointer
     [&::-webkit-slider-thumb]:appearance-none
     [&::-webkit-slider-thumb]:w-4
     [&::-webkit-slider-thumb]:h-4
