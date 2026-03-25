@@ -23,6 +23,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
   const [offset, setOffset] = useState(0);
   const { isOffline } = useOfflineStatus();
   const limit = 20;
+  const [jobsLoading, setJobsLoading] = useState(true);
   const jobPollRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const prevJobIdsRef = useRef<string[]>([]);
 
@@ -33,6 +34,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
         const data = await fetchRecentJobs();
         const active = data.jobs.filter(j => j.status === "processing" || j.status === "failed");
         setInProgressJobs(active);
+        setJobsLoading(false);
 
         // If a processing job just completed, refresh story list
         const processingIds = data.jobs.filter(j => j.status === "processing").map(j => j.job_id);
@@ -184,10 +186,13 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
             </button>
           </div>
 
-          <div className="ml-auto text-sm text-starlight/60">
+          <div className="ml-auto text-sm text-starlight/60 flex items-center gap-2">
+            {(loading || jobsLoading) && (
+              <div className="w-3 h-3 rounded-full border border-purple-500/30 border-t-purple-500 animate-spin" />
+            )}
             {total} {total === 1 ? "story" : "stories"}
             {inProgressJobs.length > 0 && (
-              <span className="ml-2 text-purple-400">
+              <span className="text-purple-400">
                 + {inProgressJobs.length} generating
               </span>
             )}

@@ -23,55 +23,68 @@ export default function StoryRoute() {
   const [completedIllustrations, setCompletedIllustrations] = useState<string[]>([]);
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const progressHighWater = useRef(0);
+
+  const handleStatusUpdate = useCallback((status: import("../types").JobStatusResponse | import("../types").JobCompleteResponse) => {
+    if (status.status === "complete" && "audio_url" in status) {
+      clearInterval(pollingRef.current);
+      const complete = status as import("../types").JobCompleteResponse;
+      setStoryTitle(complete.title);
+      setStoryDuration(complete.duration_seconds);
+      setAudioUrl(complete.audio_url);
+      setTranscript(complete.transcript);
+      setStoryData(complete);
+      setIsGenerating(false);
+    } else if (status.status === "failed") {
+      clearInterval(pollingRef.current);
+      const errorMsg = "error" in status ? status.error : "Story generation failed";
+      setError(errorMsg || "Story generation failed");
+      setIsGenerating(false);
+    } else {
+      const stage = "current_stage" in status ? status.current_stage : "writing";
+      setCurrentStage(stage || "writing");
+      const newProgress = status.progress || 0;
+      if (newProgress >= progressHighWater.current) {
+        progressHighWater.current = newProgress;
+        setProgress(newProgress);
+      }
+      setProgressDetail(status.progress_detail || "");
+
+      if ("title" in status && status.title) setPartialTitle(status.title);
+      if ("transcript" in status && status.transcript) setPartialTranscript(status.transcript);
+      if ("completed_illustrations" in status && status.completed_illustrations) setCompletedIllustrations(status.completed_illustrations);
+      if ("progress_data" in status && status.progress_data) setProgressData(status.progress_data);
+      if ("cover_image_url" in status && status.cover_image_url) setCoverImageUrl(status.cover_image_url);
+    }
+  }, []);
 
   const startPolling = useCallback((id: string) => {
     setIsGenerating(true);
     setCurrentStage("writing");
     progressHighWater.current = 0;
 
+    // Immediate first poll to avoid showing stale 0% state
+    pollJobStatus(id)
+      .then(status => handleStatusUpdate(status))
+      .catch(err => {
+        setError(err instanceof Error ? err.message : "Failed to check story status");
+        setIsGenerating(false);
+      })
+      .finally(() => setInitialLoading(false));
+
     pollingRef.current = setInterval(async () => {
       try {
         const status = await pollJobStatus(id);
-        if (status.status === "complete" && "audio_url" in status) {
-          clearInterval(pollingRef.current);
-          const complete = status as import("../types").JobCompleteResponse;
-          setStoryTitle(complete.title);
-          setStoryDuration(complete.duration_seconds);
-          setAudioUrl(complete.audio_url);
-          setTranscript(complete.transcript);
-          setStoryData(complete);
-          setIsGenerating(false);
-        } else if (status.status === "failed") {
-          clearInterval(pollingRef.current);
-          const errorMsg = "error" in status ? status.error : "Story generation failed";
-          setError(errorMsg || "Story generation failed");
-          setIsGenerating(false);
-        } else {
-          const stage = "current_stage" in status ? status.current_stage : "writing";
-          setCurrentStage(stage || "writing");
-          const newProgress = status.progress || 0;
-          if (newProgress >= progressHighWater.current) {
-            progressHighWater.current = newProgress;
-            setProgress(newProgress);
-          }
-          setProgressDetail(status.progress_detail || "");
-
-          // Capture partial results as they arrive
-          if ("title" in status && status.title) setPartialTitle(status.title);
-          if ("transcript" in status && status.transcript) setPartialTranscript(status.transcript);
-          if ("completed_illustrations" in status && status.completed_illustrations) setCompletedIllustrations(status.completed_illustrations);
-          if ("progress_data" in status && status.progress_data) setProgressData(status.progress_data);
-          if ("cover_image_url" in status && status.cover_image_url) setCoverImageUrl(status.cover_image_url);
-        }
+        handleStatusUpdate(status);
       } catch (err) {
         clearInterval(pollingRef.current);
         setError(err instanceof Error ? err.message : "Failed to check story status");
         setIsGenerating(false);
       }
     }, 2000);
-  }, []);
+  }, [handleStatusUpdate]);
 
   useEffect(() => {
     if (!jobId) {
@@ -206,6 +219,7 @@ export default function StoryRoute() {
       completedIllustrations={completedIllustrations}
       progressData={progressData}
       coverImageUrl={coverImageUrl}
+      initialLoading={initialLoading}
     />
   );
 }

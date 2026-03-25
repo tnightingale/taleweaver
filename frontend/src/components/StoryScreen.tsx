@@ -32,6 +32,7 @@ interface Props {
   completedIllustrations?: string[];
   progressData?: ProgressData | null;
   coverImageUrl?: string | null;
+  initialLoading?: boolean;
 }
 
 const formatTime = (seconds: number) => {
@@ -61,6 +62,7 @@ export default function StoryScreen({
   progressData,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   coverImageUrl: _coverImageUrl,
+  initialLoading = false,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -184,7 +186,19 @@ export default function StoryScreen({
   return (
     <div ref={playerRef} className={`flex flex-col items-center justify-center min-h-[60vh] ${isFullscreen ? "bg-void h-screen" : ""} ${storyData?.has_illustrations && storyData?.scenes ? "sm:px-4" : "px-4"}`}>
       <AnimatePresence mode="wait">
-        {isGenerating ? (
+        {isGenerating && initialLoading ? (
+          /* ─── Loading spinner while fetching current state ─── */
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center space-y-4"
+          >
+            <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+            <p className="text-sm text-starlight/40">Loading story...</p>
+          </motion.div>
+        ) : isGenerating ? (
           /* ─── Progressive Generation View ─── */
           <motion.div
             key="generating"
