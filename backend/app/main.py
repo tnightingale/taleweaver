@@ -297,11 +297,12 @@ async def get_story_audio_permalink(short_id: str):
     )
 
 
+@app.head("/api/permalink/{short_id}/video")
 @app.get("/api/permalink/{short_id}/video")
 async def get_story_video_permalink(short_id: str, request: Request):
     """Stream video by compact short ID (for AirPlay).
 
-    Supports HTTP Range requests (required by AirPlay/Apple TV).
+    Supports HTTP HEAD and Range requests (required by AirPlay/Apple TV).
     """
     from app.db.crud import get_story_by_short_id
     from app.db.database import SessionLocal
@@ -321,13 +322,20 @@ async def get_story_video_permalink(short_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Video file not found")
 
     file_size = video_path.stat().st_size
-    range_header = request.headers.get("range")
 
     common_headers = {
         "Accept-Ranges": "bytes",
+        "Content-Length": str(file_size),
+        "Content-Type": "video/mp4",
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Disposition": "inline",
     }
+
+    # HEAD request — return metadata only (used by AirPlay to probe before streaming)
+    if request.method == "HEAD":
+        return Response(headers=common_headers)
+
+    range_header = request.headers.get("range")
 
     if range_header:
         range_spec = range_header.replace("bytes=", "")
