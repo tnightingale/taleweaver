@@ -7,6 +7,7 @@ import { useFullscreen } from "../hooks/useFullscreen";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useAirPlay } from "../hooks/useAirPlay";
 import { useChromecast } from "../hooks/useChromecast";
+import { useWakeLock } from "../hooks/useWakeLock";
 import CastButton from "./CastButton";
 
 const STAGE_LABELS: Record<string, string> = {
@@ -60,6 +61,7 @@ export default function StoryScreen({
   const playerRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, toggleFullscreen, isSupported: fullscreenSupported } = useFullscreen(playerRef);
   const [isPlaying, setIsPlaying] = useState(false);
+  useWakeLock(isPlaying);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds);
   const [isSeeking, setIsSeeking] = useState(false);
