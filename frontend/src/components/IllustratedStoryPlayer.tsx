@@ -1023,12 +1023,14 @@ export default function IllustratedStoryPlayer({
           )}
         </div>
 
-        {/* Seek bar row */}
-        <div className="flex items-center gap-3 mt-2">
+        {/* Seek bar */}
+        <div className="mt-2">
           {seekBar}
-          <span className="text-xs text-starlight/50 font-mono shrink-0">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
+          <div className="text-right mt-1">
+            <span className="text-xs text-starlight/50 font-mono">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
         </div>
       </div>
 
