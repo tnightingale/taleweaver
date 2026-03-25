@@ -267,3 +267,28 @@ async function notifyClients(type: string, url: string) {
     client.postMessage({ type, url });
   }
 }
+
+// ============================================================================
+// Push notifications
+// ============================================================================
+
+self.addEventListener('push', (event: PushEvent) => {
+  const data = event.data?.json() ?? {};
+  const options: NotificationOptions = {
+    body: data.type === 'story_complete'
+      ? `"${data.title}" is ready to play!`
+      : 'Story generation failed. Tap to retry.',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    data: { url: data.url ?? '/library' },
+    tag: data.short_id ?? data.job_id,
+  };
+  event.waitUntil(self.registration.showNotification('Taleweaver', options));
+});
+
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.openWindow(event.notification.data?.url ?? '/library')
+  );
+});

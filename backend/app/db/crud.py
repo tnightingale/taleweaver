@@ -415,6 +415,39 @@ def update_job_progress(db: Session, job_id: str, progress: float, detail: str):
             db.commit()
 
 
+def update_job_progress_data(db: Session, job_id: str, progress: float, data: dict):
+    """
+    Update job progress with structured JSON data using merge semantics.
+
+    Merges new keys into the existing progress_detail JSON rather than
+    overwriting it, so parallel nodes (voice_synthesizer + illustration_generator)
+    don't clobber each other's fields. The monotonic progress guard is preserved.
+
+    Args:
+        db: SQLAlchemy database session
+        job_id: Job UUID
+        progress: Progress percentage (0-100)
+        data: Structured progress data dict to merge
+    """
+    job = get_job_state(db, job_id)
+    if job:
+        current = job.progress or 0
+        if progress >= current:
+            job.progress = progress
+
+        # Merge into existing structured data
+        existing = {}
+        if job.progress_detail:
+            try:
+                existing = json.loads(job.progress_detail)
+            except (json.JSONDecodeError, TypeError):
+                existing = {}
+        existing.update(data)
+        job.progress_detail = json.dumps(existing)
+        job.updated_at = datetime.utcnow()
+        db.commit()
+
+
 def mark_job_complete(
     db: Session,
     job_id: str,

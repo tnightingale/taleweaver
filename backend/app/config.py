@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     mailer_from_address: str = ""
     
+    # Web Push (VAPID)
+    vapid_private_key: str = ""
+    vapid_public_key: str = ""
+    vapid_contact_email: str = "mailto:admin@taleweaver.app"
+
     # Storage Paths
     storage_path: Path = Path(os.environ.get("STORAGE_PATH", "/storage"))
     jobs_path: Path = Path(os.environ.get("JOBS_PATH", "/storage/jobs"))

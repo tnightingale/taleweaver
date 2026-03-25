@@ -33,12 +33,10 @@ fi
 # Start huey background worker (processes story generation jobs)
 # -k process: isolated process per task (memory doesn't leak into API)
 # -w 1: one concurrent story at a time (controls peak memory)
-# -n: no periodic task scheduler needed
 echo "⚙️ Starting huey background worker..."
 huey_consumer app.jobs.huey_app.huey \
   -k process \
   -w ${HUEY_WORKERS:-1} \
-  -n \
   --logfile /dev/stdout \
   &
 HUEY_PID=$!

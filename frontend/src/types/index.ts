@@ -47,6 +47,14 @@ export interface PartialProgress {
   checkpoint_node?: string;
 }
 
+export interface ProgressData {
+  message?: string;
+  voice?: { completed: number; total: number };
+  illustrations?: { completed: number; total: number; urls?: string[] };
+  cover_url?: string;
+  scene_count?: number;
+}
+
 export interface JobStatusResponse {
   job_id: string;
   status: string;
@@ -58,6 +66,16 @@ export interface JobStatusResponse {
   resumable: boolean;
   partial_progress?: PartialProgress;
   retry_count: number;
+  title?: string;
+  transcript?: string;
+  kid_name?: string;
+  kid_age?: number;
+  genre?: string;
+  mood?: string;
+  art_style?: string;
+  cover_image_url?: string;
+  completed_illustrations?: string[];
+  progress_data?: ProgressData;
 }
 
 export interface Scene {

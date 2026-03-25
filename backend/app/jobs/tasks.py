@@ -9,6 +9,7 @@ import asyncio
 import logging
 import time
 
+from huey import crontab
 from app.jobs.huey_app import huey
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ def build_state_from_params(job_id: str, params: dict) -> dict:
         "length": params.get("length"),
         "art_style": params.get("art_style"),
         "custom_art_style_prompt": params.get("custom_art_style_prompt"),
+        "user_id": params.get("user_id"),
         # Pipeline output placeholders
         "story_text": "",
         "title": "",
@@ -48,6 +50,39 @@ def build_state_from_params(job_id: str, params: dict) -> dict:
         "scenes": None,
         "character_description": None,
     }
+
+
+@huey.periodic_task(crontab(minute="*/5"))
+def backfill_missing_videos():
+    """
+    Periodic task: find illustrated stories without videos and generate them.
+
+    Runs every 5 minutes. Uses _maybe_enqueue_video which checks all
+    preconditions (illustrations exist, no in-progress job, etc.).
+    """
+    from pathlib import Path
+    from app.db.database import SessionLocal
+    from app.db.models import Story
+
+    db = SessionLocal()
+    try:
+        stories = (
+            db.query(Story)
+            .filter(Story.has_illustrations == True, Story.scene_data.isnot(None))
+            .all()
+        )
+        candidates = [
+            s for s in stories
+            if not s.video_path or not Path(s.video_path).exists()
+        ]
+        if candidates:
+            enqueued = sum(1 for s in candidates if _maybe_enqueue_video(s.id))
+            if enqueued:
+                logger.info(f"Video backfill: enqueued {enqueued}/{len(candidates)} stories")
+    except Exception as e:
+        logger.error(f"Video backfill failed: {e}")
+    finally:
+        db.close()
 
 
 def _maybe_enqueue_video(story_id: str) -> bool:

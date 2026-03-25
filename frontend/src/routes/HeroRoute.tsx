@@ -1,13 +1,22 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import HeroScreen from "../components/HeroScreen";
-import InProgressJobs from "../components/InProgressJobs";
+import { fetchRecentJobs } from "../api/client";
 import type { KidProfile, StoryType } from "../types";
 
 export default function HeroRoute() {
   const navigate = useNavigate();
+  const [activeJobCount, setActiveJobCount] = useState(0);
+
+  useEffect(() => {
+    fetchRecentJobs()
+      .then(data => {
+        setActiveJobCount(data.jobs.filter(j => j.status === "processing" || j.status === "failed").length);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (profile: KidProfile, type: StoryType) => {
-    // Save profile and type to session storage for use in craft
     sessionStorage.setItem(
       "taleweaver_craft_data",
       JSON.stringify({ profile, type })
@@ -20,9 +29,10 @@ export default function HeroRoute() {
   };
 
   return (
-    <>
-      <InProgressJobs />
-      <HeroScreen onSubmit={handleSubmit} onViewLibrary={handleViewLibrary} />
-    </>
+    <HeroScreen
+      onSubmit={handleSubmit}
+      onViewLibrary={handleViewLibrary}
+      activeJobCount={activeJobCount}
+    />
   );
 }

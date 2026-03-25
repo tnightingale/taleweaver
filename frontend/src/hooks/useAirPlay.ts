@@ -12,12 +12,23 @@ interface WebKitMediaElement extends HTMLMediaElement {
   webkitCurrentPlaybackTargetIsWireless?: boolean;
 }
 
+function isIOSDevice(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 export function useAirPlay(audioRef: RefObject<HTMLMediaElement | null>): AirPlayAPI {
   const [isAvailable, setIsAvailable] = useState(false);
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    // Check if AirPlay is supported (Safari/WebKit only)
+    // On iOS, all browsers use WebKit and can AirPlay.
+    // Chrome iOS doesn't reliably fire webkitplaybacktargetavailabilitychanged,
+    // so we optimistically show the button on all iOS devices.
+    if (isIOSDevice()) {
+      setIsAvailable(true);
+    }
+
     if (!("WebKitPlaybackTargetAvailabilityEvent" in window)) return;
 
     const audio = audioRef.current;

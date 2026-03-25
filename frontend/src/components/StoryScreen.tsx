@@ -9,16 +9,9 @@ import { useAirPlay } from "../hooks/useAirPlay";
 import { useChromecast } from "../hooks/useChromecast";
 import { useWakeLock } from "../hooks/useWakeLock";
 import CastButton from "./CastButton";
-
-const STAGE_LABELS: Record<string, string> = {
-  writing: "Writing the story...",
-  analyzing_scenes: "Analyzing story structure...",
-  splitting: "Preparing character voices...",
-  synthesizing: "Generating audio...",
-  generating_illustrations: "Creating illustrations...",
-  stitching: "Mixing the final track...",
-  finalizing: "Adding final touches...",
-};
+import { STAGE_LABELS } from "../constants/stages";
+import NotificationPrompt from "./NotificationPrompt";
+import type { ProgressData } from "../types";
 
 interface Props {
   isGenerating: boolean;
@@ -34,6 +27,12 @@ interface Props {
   onBackToLibrary?: () => void;
   offlineStatus?: ReactNode;
   readOnly?: boolean;
+  partialTitle?: string | null;
+  partialTranscript?: string | null;
+  completedIllustrations?: string[];
+  progressData?: ProgressData | null;
+  coverImageUrl?: string | null;
+  initialLoading?: boolean;
 }
 
 const formatTime = (seconds: number) => {
@@ -46,7 +45,8 @@ export default function StoryScreen({
   isGenerating,
   currentStage,
   progress = 0,
-  progressDetail = "",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  progressDetail: _progressDetail = "",
   title,
   audioUrl,
   durationSeconds,
@@ -56,6 +56,13 @@ export default function StoryScreen({
   onBackToLibrary,
   offlineStatus,
   readOnly = false,
+  partialTitle,
+  partialTranscript,
+  completedIllustrations = [],
+  progressData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  coverImageUrl: _coverImageUrl,
+  initialLoading = false,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -179,44 +186,80 @@ export default function StoryScreen({
   return (
     <div ref={playerRef} className={`flex flex-col items-center justify-center min-h-[60vh] ${isFullscreen ? "bg-void h-screen" : ""} ${storyData?.has_illustrations && storyData?.scenes ? "sm:px-4" : "px-4"}`}>
       <AnimatePresence mode="wait">
-        {isGenerating ? (
-          /* ─── Phase 1: Generation Animation ─── */
+        {isGenerating && initialLoading ? (
+          /* ─── Loading spinner while fetching current state ─── */
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center space-y-4"
+          >
+            <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+            <p className="text-sm text-starlight/40">Loading story...</p>
+          </motion.div>
+        ) : isGenerating ? (
+          /* ─── Progressive Generation View ─── */
           <motion.div
             key="generating"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col items-center space-y-8"
-            >
-              {/* Progress ring with pulsing orb */}
+            className="flex flex-col items-center space-y-6 w-full max-w-2xl px-4"
+          >
+            {/* Title — real when available, placeholder before */}
+            <AnimatePresence mode="wait">
+              <motion.h2
+                key={partialTitle || "placeholder"}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-2xl md:text-3xl font-display text-glow text-center leading-snug"
+              >
+                {partialTitle || "Creating your story..."}
+              </motion.h2>
+            </AnimatePresence>
+
+            {/* Progress ring (smaller) + percentage + stage */}
+            <div className="flex flex-col items-center space-y-3">
               <ProgressRing progress={progress}>
                 <motion.div
-                  className="w-32 h-32 rounded-full orb-color-cycle"
-                  animate={{
-                    scale: [1, 1.15, 1],
-                    opacity: [0.8, 1, 0.8],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
+                  className="w-20 h-20 rounded-full orb-color-cycle"
+                  animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 />
               </ProgressRing>
-              
-              {/* Progress percentage */}
-              <motion.p
-                className="text-2xl font-mono text-glow"
-                key={Math.round(progress)}
-                initial={{ scale: 1.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {Math.round(progress)}%
-              </motion.p>
-              
-              <style>{`
+
+              <div className="text-center space-y-1">
+                <motion.p
+                  className="text-xl font-mono text-glow"
+                  key={Math.round(progress)}
+                  initial={{ scale: 1.1, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {Math.round(progress)}%
+                </motion.p>
+                <p className="text-sm text-ethereal">
+                  {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
+                </p>
+              </div>
+
+              {/* Structured progress detail */}
+              {progressData && (
+                <div className="flex gap-4 text-xs text-starlight/50">
+                  {progressData.voice && (
+                    <span>Voices: {progressData.voice.completed}/{progressData.voice.total}</span>
+                  )}
+                  {progressData.illustrations && (
+                    <span>Illustrations: {progressData.illustrations.completed}/{progressData.illustrations.total}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <style>{`
               @keyframes orbColorCycle {
                 0%   { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
                        box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
@@ -234,26 +277,61 @@ export default function StoryScreen({
               }
             `}</style>
 
-              {/* Stage Label */}
-              <p className="text-xl font-display text-glow text-ethereal">
-                {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
-              </p>
+            {/* Illustration gallery — images fade in as they arrive */}
+            {completedIllustrations.length > 0 && (
+              <div className="w-full">
+                <p className="text-xs text-starlight/40 mb-2">Illustrations</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {completedIllustrations.map((url, i) => (
+                    <motion.img
+                      key={url}
+                      src={url}
+                      alt={`Scene ${i + 1}`}
+                      className="w-full aspect-[3/2] object-cover rounded-lg"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, delay: i * 0.1 }}
+                    />
+                  ))}
+                  {progressData?.illustrations && Array.from(
+                    { length: Math.max(0, progressData.illustrations.total - completedIllustrations.length) },
+                    (_, i) => (
+                      <div
+                        key={`placeholder-${i}`}
+                        className="w-full aspect-[3/2] rounded-lg bg-gradient-to-br from-purple-900/30 to-abyss/40 animate-pulse"
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+            )}
 
-              {/* Detailed progress message or subtitle */}
-              {progressDetail ? (
-                <motion.p
-                  className="text-sm text-starlight/60 max-w-md text-center"
-                  key={progressDetail}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  {progressDetail}
-                </motion.p>
-              ) : (
-                <p className="text-sm text-starlight/40">
-                  This usually takes a few minutes
-                </p>
-              )}
+            {/* Transcript preview */}
+            {partialTranscript && (
+              <details className="w-full glass-card">
+                <summary className="px-4 py-3 cursor-pointer text-sm text-starlight/60 hover:text-starlight/80 transition-colors">
+                  Read the story (preview)
+                </summary>
+                <div className="px-4 pb-4 max-h-48 overflow-y-auto">
+                  <p className="text-sm text-starlight/70 leading-relaxed whitespace-pre-line">
+                    {partialTranscript}
+                  </p>
+                </div>
+              </details>
+            )}
+
+            {/* Push notification prompt */}
+            <NotificationPrompt />
+
+            {/* Back to Library */}
+            {onBackToLibrary && (
+              <button
+                onClick={onBackToLibrary}
+                className="text-sm text-starlight/40 hover:text-starlight/70 transition-colors"
+              >
+                ← Back to Library
+              </button>
+            )}
           </motion.div>
         ) : (
           audioUrl && (

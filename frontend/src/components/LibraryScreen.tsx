@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StoryMetadata, LibraryView } from "../types";
-import { listStories, deleteStory, updateStoryTitle } from "../api/client";
+import { listStories, deleteStory, updateStoryTitle, fetchRecentJobs, type RecentJob } from "../api/client";
 import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import StoryCard from "./StoryCard";
+import InProgressStoryCard from "./InProgressStoryCard";
 
 interface Props {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function LibraryScreen({ onClose, onPlayStory }: Props) {
   const [stories, setStories] = useState<StoryMetadata[]>([]);
+  const [inProgressJobs, setInProgressJobs] = useState<RecentJob[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,39 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
   const [offset, setOffset] = useState(0);
   const { isOffline } = useOfflineStatus();
   const limit = 20;
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const jobPollRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const prevJobIdsRef = useRef<string[]>([]);
+
+  // Poll for in-progress jobs
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const data = await fetchRecentJobs();
+        const active = data.jobs.filter(j => j.status === "processing" || j.status === "failed");
+        setInProgressJobs(active);
+        setJobsLoading(false);
+
+        // If a processing job just completed, refresh story list
+        const processingIds = data.jobs.filter(j => j.status === "processing").map(j => j.job_id);
+        const justCompleted = prevJobIdsRef.current.some(id => !processingIds.includes(id));
+        prevJobIdsRef.current = processingIds;
+        if (justCompleted) {
+          // Evict SW story cache so we get the fresh list with the new story
+          if ("caches" in window) {
+            caches.open("library-stories").then(c => c.keys().then(keys =>
+              Promise.all(keys.map(k => c.delete(k)))
+            )).catch(() => {});
+          }
+          loadStories(true);
+        }
+      } catch { /* ignore */ }
+    };
+
+    poll();
+    jobPollRef.current = setInterval(poll, 5000);
+    return () => { if (jobPollRef.current) clearInterval(jobPollRef.current); };
+  }, []);
 
   const loadStories = async (reset: boolean = false) => {
     setLoading(true);
@@ -151,8 +186,16 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
             </button>
           </div>
 
-          <div className="ml-auto text-sm text-starlight/60">
+          <div className="ml-auto text-sm text-starlight/60 flex items-center gap-2">
+            {(loading || jobsLoading) && (
+              <div className="w-3 h-3 rounded-full border border-purple-500/30 border-t-purple-500 animate-spin" />
+            )}
             {total} {total === 1 ? "story" : "stories"}
+            {inProgressJobs.length > 0 && (
+              <span className="text-purple-400">
+                + {inProgressJobs.length} generating
+              </span>
+            )}
           </div>
         </div>
       </motion.div>
@@ -189,7 +232,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               </button>
             )}
           </motion.div>
-        ) : stories.length === 0 ? (
+        ) : stories.length === 0 && inProgressJobs.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -207,9 +250,20 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               Create Your First Story
             </button>
           </motion.div>
+        ) : stories.length === 0 && inProgressJobs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {inProgressJobs.map((job) => (
+                <InProgressStoryCard key={`ip-${job.job_id}`} job={job} />
+              ))}
+            </AnimatePresence>
+          </div>
         ) : view === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
+              {inProgressJobs.map((job) => (
+                <InProgressStoryCard key={`ip-${job.job_id}`} job={job} />
+              ))}
               {stories.map((story) => (
                 <StoryCard
                   key={story.short_id}
@@ -224,6 +278,18 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
           </div>
         ) : view === "grouped" ? (
           <div className="space-y-6">
+            {inProgressJobs.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-display text-glow mb-4">
+                  Generating ({inProgressJobs.length})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {inProgressJobs.map(job => (
+                    <InProgressStoryCard key={`ip-${job.job_id}`} job={job} />
+                  ))}
+                </div>
+              </div>
+            )}
             {uniqueKids.map(kidName => {
               const kidStories = stories.filter(s => s.kid_name === kidName);
               return (
@@ -269,6 +335,18 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
 
               return (
                 <>
+                  {inProgressJobs.length > 0 && (
+                    <div>
+                      <h2 className="text-2xl font-display text-glow mb-4">
+                        Generating ({inProgressJobs.length})
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {inProgressJobs.map(job => (
+                          <InProgressStoryCard key={`ip-${job.job_id}`} job={job} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {today.length > 0 && (
                     <div>
                       <h2 className="text-2xl font-display text-glow mb-4">Today ({today.length})</h2>

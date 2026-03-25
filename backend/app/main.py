@@ -1,3 +1,4 @@
+import json
 import logging
 
 logging.basicConfig(
@@ -16,6 +17,7 @@ from fastapi import Depends
 from app.routes.config import router as config_router
 from app.routes.story import router as story_router
 from app.routes.auth import router as auth_router
+from app.routes.push import router as push_router
 from app.models.responses import StoryResponse, StoriesListResponse
 from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrationsRequest
 from app.auth.dependencies import get_current_user, verify_story_ownership
@@ -41,6 +43,7 @@ if _cors_origins:
 app.include_router(auth_router)
 app.include_router(config_router)
 app.include_router(story_router)
+app.include_router(push_router)
 
 # Jobs endpoint (at /api/jobs/recent, not under /api/story)
 from datetime import datetime, timedelta
@@ -75,6 +78,22 @@ async def get_recent_jobs(user: User = Depends(get_current_user)):
             JobState.user_id == user.id,
         ).order_by(JobState.created_at.desc()).limit(20).all()
 
+        def _job_params(job):
+            if not job.story_params_json:
+                return {}
+            try:
+                return json.loads(job.story_params_json)
+            except (ValueError, TypeError):
+                return {}
+
+        def _cover_url(job):
+            if not job.progress_detail:
+                return None
+            try:
+                return json.loads(job.progress_detail).get("cover_url")
+            except (ValueError, TypeError):
+                return None
+
         return {
             "jobs": [
                 {
@@ -84,7 +103,13 @@ async def get_recent_jobs(user: User = Depends(get_current_user)):
                     "progress": job.progress or 0,
                     "title": job.title,
                     "created_at": job.created_at.isoformat() + 'Z',
-                    "error": job.error_message if job.status == "failed" else None
+                    "error": job.error_message if job.status == "failed" else None,
+                    "kid_name": _job_params(job).get("kid_name"),
+                    "kid_age": _job_params(job).get("kid_age"),
+                    "genre": _job_params(job).get("genre"),
+                    "mood": _job_params(job).get("mood"),
+                    "art_style": _job_params(job).get("art_style"),
+                    "cover_image_url": _cover_url(job),
                 }
                 for job in jobs
             ]
