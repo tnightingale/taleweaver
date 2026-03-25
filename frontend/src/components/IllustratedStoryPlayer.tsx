@@ -496,7 +496,7 @@ export default function IllustratedStoryPlayer({
 
   // Shared seek bar with scene markers
   const seekBar = (
-    <div className="flex-1 relative">
+    <div className="flex-1 relative h-4 flex items-center">
       <input
         type="range"
         min={0}
@@ -510,7 +510,7 @@ export default function IllustratedStoryPlayer({
         className={seekBarClass}
         style={seekBarStyle}
       />
-      {/* Scene marker dots — match the full input height so 50% aligns with the track center */}
+      {/* Scene marker dots — wrapper matches thumb height so 50% = track center */}
       <div className="absolute inset-0 pointer-events-none">
         {scenes.map((scene, i) => i === 0 ? null : (
           <button
