@@ -176,7 +176,7 @@ stories.yourdomain.com {
 
 Pull requests are automatically built and published to ghcr.io with `pr-N` tags. On a LAN server running Once, you can deploy any PR as a preview instance with its own subdomain and database.
 
-**Prerequisites:** Wildcard DNS (`*.taleweaver.lan`) and mkcert TLS configured on the server. See the [taleweaver-deploy](../taleweaver-deploy/) repo for setup instructions.
+**Prerequisites:** Wildcard DNS (`*.taleweaver.lan`) and mkcert TLS configured on the server.
 
 **Deploy a PR:**
 
