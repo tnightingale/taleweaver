@@ -59,9 +59,17 @@ class CacheHeaderMiddleware(BaseHTTPMiddleware):
         elif path.startswith("/storage/"):
             # Other storage files
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif path.endswith("/sw.js") or path == "/index.html" or path == "/":
-            # Service worker and SPA entry — always revalidate
+        elif path.endswith("/sw.js"):
+            # Service worker — always revalidate
             response.headers["Cache-Control"] = "no-cache"
+        elif (
+            response.headers.get("content-type", "").startswith("text/html")
+            and not path.startswith("/api/")
+        ):
+            # SPA HTML shell (/, /index.html, and SPA fallback routes like /library)
+            # Short max-age lets the browser HTTP cache serve as an offline fallback
+            # when the SW cold-starts too slowly (common on iOS).
+            response.headers["Cache-Control"] = "public, max-age=300"
 
         return response
 
