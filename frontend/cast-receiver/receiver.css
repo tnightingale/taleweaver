@@ -7,8 +7,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400&display=swap');
 
 body {
-  background: #0a0a1a;
-  color: #e2e0ff;
+  background: #0a1a0f;
+  color: #f0fff4;
   font-family: 'Inter', sans-serif;
   overflow: hidden;
   width: 100vw;
@@ -104,7 +104,7 @@ body {
 #progress-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: linear-gradient(90deg, #22c55e, #6ee7a0);
   transition: width 0.5s linear;
 }
 
@@ -119,7 +119,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: radial-gradient(ellipse at center, #1a1040 0%, #0a0a1a 70%);
+  background: radial-gradient(ellipse at center, #0a2e1a 0%, #0a1a0f 70%);
   transition: opacity 0.5s ease;
 }
 
@@ -132,7 +132,7 @@ body {
   font-family: 'Cinzel', serif;
   font-size: 48px;
   font-weight: 700;
-  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  background: linear-gradient(135deg, #6ee7a0, #22c55e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

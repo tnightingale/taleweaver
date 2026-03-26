@@ -47,7 +47,7 @@ export default function InstallPrompt() {
           transition={{ type: "spring", damping: 25 }}
           className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-40 max-w-sm mx-auto"
         >
-          <div className="glass-card p-4 shadow-xl border border-purple-500/20">
+          <div className="glass-card p-4 shadow-xl border border-mystic/20">
             <div className="flex items-start gap-3">
               <div className="text-2xl shrink-0">📖</div>
               <div className="flex-1 min-w-0">
@@ -57,7 +57,7 @@ export default function InstallPrompt() {
                 <p className="text-xs text-starlight/60 mt-1">
                   {isIOS
                     ? "Tap the share button, then \"Add to Home Screen\" for fullscreen stories."
-                    : "Install Taleweaver for fullscreen stories and offline playback."}
+                    : "Install Story Spring for fullscreen stories and offline playback."}
                 </p>
               </div>
               <button

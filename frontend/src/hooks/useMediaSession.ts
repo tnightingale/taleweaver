@@ -14,7 +14,7 @@ interface MediaSessionOptions {
 
 export function useMediaSession({
   title,
-  artist = "Taleweaver",
+  artist = "Story Spring",
   artwork,
   isPlaying,
   duration,

@@ -25,7 +25,7 @@ from app.models.requests import UpdateStoryTitleRequest, RegenerateIllustrations
 from app.auth.dependencies import get_current_user, verify_story_ownership
 from app.db.models import User
 
-app = FastAPI(title="Taleweaver")
+app = FastAPI(title="Story Spring")
 
 # CORS: when credentials are used (cookie-based auth), origins must be explicit.
 # Set CORS_ORIGINS env var to a comma-separated list of allowed origins.
@@ -157,7 +157,7 @@ async def startup_event():
     
     logger = logging.getLogger(__name__)
     logger.info("=" * 60)
-    logger.info("Taleweaver Starting")
+    logger.info("Story Spring Starting")
     logger.info("=" * 60)
     
     # Initialize database

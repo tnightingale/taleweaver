@@ -283,7 +283,7 @@ self.addEventListener('push', (event: PushEvent) => {
     data: { url: data.url ?? '/library' },
     tag: data.short_id ?? data.job_id,
   };
-  event.waitUntil(self.registration.showNotification('Taleweaver', options));
+  event.waitUntil(self.registration.showNotification('Story Spring', options));
 });
 
 self.addEventListener('notificationclick', (event: NotificationEvent) => {

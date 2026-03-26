@@ -63,7 +63,7 @@ export default function InProgressJobs() {
             <motion.button
               key={job.job_id}
               onClick={() => navigate(`/story/${job.job_id}`)}
-              className="w-full glass-card p-4 text-left hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all cursor-pointer"
+              className="w-full glass-card p-4 text-left hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -82,7 +82,7 @@ export default function InProgressJobs() {
               {/* Progress bar */}
               <div className="mt-3 w-full h-1 bg-starlight/10 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                  className="h-full bg-gradient-to-r from-mystic to-blue-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${job.progress}%` }}
                   transition={{ duration: 0.3 }}

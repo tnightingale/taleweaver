@@ -42,10 +42,10 @@ export default function App() {
                 className="text-4xl md:text-5xl font-bold tracking-wide text-ethereal"
                 style={{
                   fontFamily: "var(--font-display)",
-                  textShadow: "0 0 20px rgba(167, 139, 250, 0.5), 0 0 40px rgba(167, 139, 250, 0.2)",
+                  textShadow: "0 0 20px rgba(110, 231, 160, 0.5), 0 0 40px rgba(110, 231, 160, 0.2)",
                 }}
               >
-                Taleweaver
+                Story Spring
               </h1>
             </Link>
             <p className="text-starlight/40 mt-2 text-sm tracking-widest uppercase">

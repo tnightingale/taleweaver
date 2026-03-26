@@ -1,4 +1,4 @@
-name: taleweaver-dev
+name: storyspring-dev
 
 services:
   # Production-like deployment (matches Once deployment)
@@ -10,14 +10,14 @@ services:
     ports:
       - "80:80"
     volumes:
-      - taleweaver-storage:/storage
+      - storyspring-storage:/storage
     environment:
       - LLM_PROVIDER=${LLM_PROVIDER:-anthropic}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
     networks:
-      - taleweaver-dev
+      - storyspring-dev
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/up"]
       interval: 30s
@@ -47,7 +47,7 @@ services:
       - "8000:8000"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
-      - taleweaver-dev
+      - storyspring-dev
 
   # Test runner for backend (on-demand)
   # Uses backend-base stage: ffmpeg + pip deps are pre-installed, no setup delay.
@@ -65,7 +65,7 @@ services:
       - SECRET_KEY_BASE=test-secret-key-for-jwt-signing
     command: python -m pytest tests/ -v
     networks:
-      - taleweaver-dev
+      - storyspring-dev
     profiles:
       - test
 
@@ -107,12 +107,12 @@ services:
     depends_on:
       - backend-dev
     networks:
-      - taleweaver-dev
+      - storyspring-dev
 
 networks:
-  taleweaver-dev:
+  storyspring-dev:
     driver: bridge
 
 volumes:
-  taleweaver-storage:
+  storyspring-storage:
   frontend-node-modules:

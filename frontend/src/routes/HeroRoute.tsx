@@ -18,7 +18,7 @@ export default function HeroRoute() {
 
   const handleSubmit = (profile: KidProfile, type: StoryType) => {
     sessionStorage.setItem(
-      "taleweaver_craft_data",
+      "storyspring_craft_data",
       JSON.stringify({ profile, type })
     );
     navigate("/craft");
