@@ -67,9 +67,11 @@ class CacheHeaderMiddleware(BaseHTTPMiddleware):
             and not path.startswith("/api/")
         ):
             # SPA HTML shell (/, /index.html, and SPA fallback routes like /library)
-            # Short max-age lets the browser HTTP cache serve as an offline fallback
-            # when the SW cold-starts too slowly (common on iOS).
-            response.headers["Cache-Control"] = "public, max-age=300"
+            # Long max-age lets the browser HTTP cache serve as an offline fallback
+            # when Safari doesn't engage the SW for new-tab navigations.
+            # The SW bypasses this cache (cache: 'no-cache') so online users
+            # always get fresh HTML despite the long max-age.
+            response.headers["Cache-Control"] = "public, max-age=86400"
 
         return response
 
