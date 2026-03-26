@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   timeout: 30_000,
   retries: 1,
   workers: 1, // Serial — tests share the app container state

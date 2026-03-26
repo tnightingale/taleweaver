@@ -76,6 +76,21 @@ self.addEventListener('fetch', (event) => {
      !url.pathname.startsWith('/api/'));
 
   if (isNavigation) {
+    const fromCache = () =>
+      caches.match('/index.html')
+        .then((r) => r || caches.match('/'))
+        .then((r) => r || new Response('<h1>Offline</h1>', {
+          status: 503,
+          headers: { 'Content-Type': 'text/html' },
+        }));
+
+    // Offline: serve from cache immediately — skip the network fetch whose
+    // TCP timeout can hang for seconds on iOS, showing a blank white page.
+    if (!navigator.onLine) {
+      event.respondWith(fromCache());
+      return;
+    }
+
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -85,15 +100,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() =>
-          caches.match(request)
-            .then((r) => r || caches.match('/index.html'))
-            .then((r) => r || caches.match('/'))
-            .then((r) => r || new Response('<h1>Offline</h1>', {
-              status: 503,
-              headers: { 'Content-Type': 'text/html' },
-            }))
-        )
+        .catch(() => fromCache())
     );
     return;
   }

@@ -18,19 +18,29 @@ let _refreshing: Promise<boolean> | null = null;
  * Fetch wrapper that handles 401 by refreshing the access token and retrying.
  */
 async function authFetch(url: string, options?: RequestInit): Promise<Response> {
-  let res = options ? await fetch(url, options) : await fetch(url);
+  let res: Response;
+  try {
+    res = options ? await fetch(url, options) : await fetch(url);
+  } catch (err) {
+    // Network error (e.g., offline) — let the caller handle it
+    throw err;
+  }
   if (res.status === 401) {
     // Deduplicate concurrent refresh attempts
     if (!_refreshing) {
       _refreshing = fetch(`${BASE}/auth/refresh`, { method: "POST" })
         .then((r) => r.ok)
+        .catch(() => false)
         .finally(() => { _refreshing = null; });
     }
     const refreshed = await _refreshing;
     if (refreshed) {
       res = options ? await fetch(url, options) : await fetch(url);
+    } else if (!navigator.onLine) {
+      // Offline — don't redirect, let the component show an offline message
+      throw new Error("You're offline");
     } else {
-      // Refresh failed — redirect to login
+      // Online but refresh failed — session expired
       window.location.href = "/login";
     }
   }

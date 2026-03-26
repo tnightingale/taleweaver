@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchGenres,
   fetchHistoricalEvents,
@@ -107,5 +107,41 @@ describe('pollJobStatus', () => {
 describe('getAudioUrl', () => {
   it('returns correct URL', () => {
     expect(getAudioUrl('abc-123')).toBe('/api/story/audio/abc-123');
+  });
+});
+
+describe('authFetch offline behavior', () => {
+  let originalOnLine: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+  });
+
+  afterEach(() => {
+    if (originalOnLine) {
+      Object.defineProperty(navigator, 'onLine', originalOnLine);
+    } else {
+      Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    }
+  });
+
+  it('throws instead of redirecting to /login when offline and refresh fails', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+
+    // First call returns 401
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 401 });
+    // Refresh attempt fails (network error)
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    await expect(fetchGenres()).rejects.toThrow("You're offline");
+    // Should NOT have triggered a redirect (window.location.href = '/login')
+  });
+
+  it('re-throws network errors without attempting refresh', async () => {
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    await expect(fetchGenres()).rejects.toThrow('Failed to fetch');
+    // Only one fetch call — no refresh attempt
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
