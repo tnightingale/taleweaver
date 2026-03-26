@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-void: #0a1a0f;
-  --color-abyss: #0a2e1a;
-  --color-deep: #064e3b;
-  --color-accent: #16a34a;
-  --color-mystic: #22c55e;
-  --color-ethereal: #6ee7a0;
-  --color-glow: #bbf7d0;
-  --color-gold: #f59e0b;
-  --color-gold-light: #fbbf24;
-  --color-starlight: #f0fff4;
+  --color-void: #0a130a;
+  --color-abyss: #1a2e12;
+  --color-deep: #14532d;
+  --color-accent: #15803d;
+  --color-mystic: #16a34a;
+  --color-ethereal: #4ade80;
+  --color-glow: #86efac;
+  --color-gold: #f97316;
+  --color-gold-light: #fb923c;
+  --color-starlight: #f5f5eb;
   --color-mist: rgba(255, 255, 255, 0.06);
   --color-glass: rgba(255, 255, 255, 0.08);
   --color-glass-border: rgba(255, 255, 255, 0.12);
@@ -33,11 +33,11 @@ body {
 
 /* Glowing text */
 .text-glow {
-  text-shadow: 0 0 20px rgba(110, 231, 160, 0.5), 0 0 40px rgba(110, 231, 160, 0.2);
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.5), 0 0 40px rgba(74, 222, 128, 0.2);
 }
 
 .text-glow-gold {
-  text-shadow: 0 0 20px rgba(245, 158, 11, 0.5), 0 0 40px rgba(245, 158, 11, 0.2);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.5), 0 0 40px rgba(249, 115, 22, 0.2);
 }
 
 /* Glass card */
@@ -50,7 +50,7 @@ body {
 
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(110, 231, 160, 0.3);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 
 /* Glowing input */
@@ -66,11 +66,11 @@ body {
 .glow-input:focus {
   outline: none;
   border-color: var(--color-ethereal);
-  box-shadow: 0 0 15px rgba(110, 231, 160, 0.3), 0 0 30px rgba(110, 231, 160, 0.1);
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3), 0 0 30px rgba(74, 222, 128, 0.1);
 }
 
 .glow-input::placeholder {
-  color: rgba(240, 255, 244, 0.3);
+  color: rgba(245, 245, 235, 0.3);
 }
 
 /* Primary button with glow */
@@ -85,7 +85,7 @@ body {
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(22, 163, 74, 0.2);
   transform: translateY(-1px);
 }
 

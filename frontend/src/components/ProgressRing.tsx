@@ -48,14 +48,14 @@ export default function ProgressRing({
           transition={{ duration: 0.3, ease: "easeOut" }}
           strokeLinecap="round"
           style={{
-            filter: "drop-shadow(0 0 8px rgba(34,197,94,0.6))",
+            filter: "drop-shadow(0 0 8px rgba(22,163,74,0.6))",
           }}
         />
 
         {/* Gradient definition */}
         <defs>
           <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgb(34,197,94)" />
+            <stop offset="0%" stopColor="rgb(22,163,74)" />
             <stop offset="100%" stopColor="rgb(59,130,246)" />
           </linearGradient>
         </defs>

@@ -63,7 +63,7 @@ export default function InProgressJobs() {
             <motion.button
               key={job.job_id}
               onClick={() => navigate(`/story/${job.job_id}`)}
-              className="w-full glass-card p-4 text-left hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all cursor-pointer"
+              className="w-full glass-card p-4 text-left hover:shadow-[0_0_20px_rgba(22,163,74,0.4)] transition-all cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

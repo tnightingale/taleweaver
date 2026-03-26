@@ -66,12 +66,12 @@ export default function ParticleBackground() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(187, 247, 208, ${alpha})`;
+        ctx.fillStyle = `rgba(134, 239, 172, ${alpha})`;
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(110, 231, 160, ${alpha * 0.15})`;
+        ctx.fillStyle = `rgba(74, 222, 128, ${alpha * 0.15})`;
         ctx.fill();
       }
 

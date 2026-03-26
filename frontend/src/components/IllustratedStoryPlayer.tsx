@@ -482,7 +482,7 @@ export default function IllustratedStoryPlayer({
     [&::-webkit-slider-thumb]:rounded-full
     [&::-webkit-slider-thumb]:bg-mystic
     [&::-webkit-slider-thumb]:cursor-pointer
-    [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(34,197,94,0.6)]
+    [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(22,163,74,0.6)]
     [&::-moz-range-thumb]:w-4
     [&::-moz-range-thumb]:h-4
     [&::-moz-range-thumb]:rounded-full
@@ -491,7 +491,7 @@ export default function IllustratedStoryPlayer({
     [&::-moz-range-thumb]:border-0`;
 
   const seekBarStyle = {
-    background: `linear-gradient(to right, rgb(34 197 94) 0%, rgb(34 197 94) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
+    background: `linear-gradient(to right, rgb(22 163 74) 0%, rgb(22 163 74) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
   };
 
   // Shared seek bar with scene markers
@@ -813,7 +813,7 @@ export default function IllustratedStoryPlayer({
               onClick={togglePlay}
               className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
                        flex items-center justify-center text-white
-                       shadow-[0_0_12px_rgba(34,197,94,0.3)]
+                       shadow-[0_0_12px_rgba(22,163,74,0.3)]
                        transition-all cursor-pointer"
             >
               {playPauseIcon}
@@ -967,7 +967,7 @@ export default function IllustratedStoryPlayer({
             onClick={togglePlay}
             className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
                      flex items-center justify-center text-white
-                     shadow-[0_0_12px_rgba(34,197,94,0.3)]
+                     shadow-[0_0_12px_rgba(22,163,74,0.3)]
                      transition-all cursor-pointer"
           >
             {playPauseIcon}

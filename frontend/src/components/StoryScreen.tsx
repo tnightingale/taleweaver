@@ -261,16 +261,16 @@ export default function StoryScreen({
 
             <style>{`
               @keyframes orbColorCycle {
-                0%   { background: radial-gradient(circle, #6ee7a0 0%, #22c55e 50%, #064e3b 100%);
-                       box-shadow: 0 0 40px rgba(34,197,94,0.6), 0 0 80px rgba(34,197,94,0.3); }
+                0%   { background: radial-gradient(circle, #4ade80 0%, #16a34a 50%, #14532d 100%);
+                       box-shadow: 0 0 40px rgba(22,163,74,0.6), 0 0 80px rgba(22,163,74,0.3); }
                 25%  { background: radial-gradient(circle, #93c5fd 0%, #3b82f6 50%, #1e3a8a 100%);
                        box-shadow: 0 0 40px rgba(59,130,246,0.6), 0 0 80px rgba(59,130,246,0.3); }
-                50%  { background: radial-gradient(circle, #fbbf24 0%, #f59e0b 50%, #78350f 100%);
-                       box-shadow: 0 0 40px rgba(245,158,11,0.6), 0 0 80px rgba(245,158,11,0.3); }
+                50%  { background: radial-gradient(circle, #fb923c 0%, #f97316 50%, #7c2d12 100%);
+                       box-shadow: 0 0 40px rgba(249,115,22,0.6), 0 0 80px rgba(249,115,22,0.3); }
                 75%  { background: radial-gradient(circle, #6ee7b7 0%, #10b981 50%, #064e3b 100%);
                        box-shadow: 0 0 40px rgba(16,185,129,0.6), 0 0 80px rgba(16,185,129,0.3); }
-                100% { background: radial-gradient(circle, #6ee7a0 0%, #22c55e 50%, #064e3b 100%);
-                       box-shadow: 0 0 40px rgba(34,197,94,0.6), 0 0 80px rgba(34,197,94,0.3); }
+                100% { background: radial-gradient(circle, #4ade80 0%, #16a34a 50%, #14532d 100%);
+                       box-shadow: 0 0 40px rgba(22,163,74,0.6), 0 0 80px rgba(22,163,74,0.3); }
               }
               .orb-color-cycle {
                 animation: orbColorCycle 8s ease-in-out infinite;
@@ -393,14 +393,14 @@ export default function StoryScreen({
                         [&::-webkit-slider-thumb]:h-4
                         [&::-webkit-slider-thumb]:rounded-full
                         [&::-webkit-slider-thumb]:bg-mystic
-                        [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(34,197,94,0.6)]
+                        [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(22,163,74,0.6)]
                         [&::-webkit-slider-runnable-track]:rounded-full
                         [&::-moz-range-thumb]:w-4
                         [&::-moz-range-thumb]:h-4
                         [&::-moz-range-thumb]:rounded-full
                         [&::-moz-range-thumb]:bg-mystic
                         [&::-moz-range-thumb]:border-none
-                        [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(34,197,94,0.6)]
+                        [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(22,163,74,0.6)]
                         accent-mystic"
                     />
 
@@ -417,14 +417,14 @@ export default function StoryScreen({
                         whileTap={{ scale: 0.9 }}
                         whileHover={{
                           boxShadow:
-                            "0 0 30px rgba(34, 197, 94, 0.6), 0 0 60px rgba(34, 197, 94, 0.3)",
+                            "0 0 30px rgba(22, 163, 74, 0.6), 0 0 60px rgba(22, 163, 74, 0.3)",
                         }}
                         className="w-20 h-20 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer"
                         style={{
                           background:
-                            "linear-gradient(135deg, #22c55e, #16a34a)",
+                            "linear-gradient(135deg, #16a34a, #15803d)",
                           boxShadow:
-                            "0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.15)",
+                            "0 0 20px rgba(22, 163, 74, 0.4), 0 0 40px rgba(22, 163, 74, 0.15)",
                         }}
                       >
                         {isPlaying ? "⏸" : "▶"}

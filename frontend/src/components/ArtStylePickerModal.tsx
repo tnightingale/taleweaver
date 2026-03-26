@@ -62,7 +62,7 @@ export default function ArtStylePickerModal({
                     onClick={() => setSelected(style.id)}
                     className={`p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                       selected === style.id
-                        ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                        ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                         : "border-starlight/20 hover:border-starlight/40"
                     }`}
                   >

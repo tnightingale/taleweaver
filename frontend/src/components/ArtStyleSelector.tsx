@@ -46,7 +46,7 @@ export default function ArtStyleSelector({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full glass-card p-4 flex items-center justify-between hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all"
+        className="w-full glass-card p-4 flex items-center justify-between hover:shadow-[0_0_20px_rgba(22,163,74,0.3)] transition-all"
       >
         <div className="flex items-center gap-3">
           <span className="text-2xl">🎨</span>
@@ -87,7 +87,7 @@ export default function ArtStyleSelector({
                 onClick={() => onSelect(null)}
                 className={`w-full p-4 rounded-lg border-2 transition-all ${
                   selectedStyle === null
-                    ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                    ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                     : "border-starlight/20 hover:border-starlight/40"
                 }`}
                 whileHover={{ scale: 1.02 }}
@@ -114,7 +114,7 @@ export default function ArtStyleSelector({
                       onClick={() => onSelect(style.id)}
                       className={`p-4 rounded-lg border-2 transition-all text-left ${
                         selectedStyle === style.id
-                          ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                          ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                           : "border-starlight/20 hover:border-starlight/40"
                       }`}
                       whileHover={{ scale: 1.05 }}

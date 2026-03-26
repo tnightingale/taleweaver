@@ -32,7 +32,7 @@ export default function InProgressStoryCard({ job }: Props) {
       className={`glass-card flex flex-col relative cursor-pointer transition-all ${
         isFailed
           ? "hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] border border-red-500/20"
-          : "hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+          : "hover:shadow-[0_0_20px_rgba(22,163,74,0.4)]"
       }`}
     >
       {/* Cover area */}
