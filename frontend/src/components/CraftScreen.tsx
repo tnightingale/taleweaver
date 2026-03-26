@@ -136,7 +136,7 @@ export default function CraftScreen({
           onClick={() => onTypeChange("custom")}
           className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 ${
             storyType === "custom"
-              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(22,163,74,0.5)]"
+              ? "bg-[var(--color-gold)] text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]"
               : "glass-card text-[var(--color-ethereal)] hover:text-white"
           }`}
         >
@@ -146,7 +146,7 @@ export default function CraftScreen({
           onClick={() => onTypeChange("historical")}
           className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 ${
             storyType === "historical"
-              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(22,163,74,0.5)]"
+              ? "bg-[var(--color-gold)] text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]"
               : "glass-card text-[var(--color-ethereal)] hover:text-white"
           }`}
         >
@@ -282,7 +282,7 @@ export default function CraftScreen({
                   }
                   className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
                     length === l.value
-                      ? "bg-[var(--color-mystic)] text-white shadow-[0_0_15px_rgba(22,163,74,0.4)]"
+                      ? "bg-[var(--color-gold)] text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]"
                       : "glass-card text-[var(--color-ethereal)] hover:text-white cursor-pointer"
                   }`}
                 >

@@ -480,18 +480,18 @@ export default function IllustratedStoryPlayer({
     [&::-webkit-slider-thumb]:w-4
     [&::-webkit-slider-thumb]:h-4
     [&::-webkit-slider-thumb]:rounded-full
-    [&::-webkit-slider-thumb]:bg-mystic
+    [&::-webkit-slider-thumb]:bg-gold
     [&::-webkit-slider-thumb]:cursor-pointer
     [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(22,163,74,0.6)]
     [&::-moz-range-thumb]:w-4
     [&::-moz-range-thumb]:h-4
     [&::-moz-range-thumb]:rounded-full
-    [&::-moz-range-thumb]:bg-mystic
+    [&::-moz-range-thumb]:bg-gold
     [&::-moz-range-thumb]:cursor-pointer
     [&::-moz-range-thumb]:border-0`;
 
   const seekBarStyle = {
-    background: `linear-gradient(to right, rgb(22 163 74) 0%, rgb(22 163 74) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
+    background: `linear-gradient(to right, rgb(249 115 22) 0%, rgb(249 115 22) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
   };
 
   // Shared seek bar with scene markers
@@ -811,9 +811,9 @@ export default function IllustratedStoryPlayer({
             </button>
             <button
               onClick={togglePlay}
-              className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
+              className="w-12 h-12 shrink-0 rounded-full bg-gold/90 hover:bg-gold
                        flex items-center justify-center text-white
-                       shadow-[0_0_12px_rgba(22,163,74,0.3)]
+                       shadow-[0_0_12px_rgba(249,115,22,0.3)]
                        transition-all cursor-pointer"
             >
               {playPauseIcon}
@@ -1055,8 +1055,8 @@ export default function IllustratedStoryPlayer({
         <button
           onClick={onCreateAnother}
           className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                   bg-mystic/20 border border-mystic/30 text-glow
-                   hover:bg-mystic/30 transition-all cursor-pointer"
+                   bg-gold/20 border border-gold/30 text-glow
+                   hover:bg-gold/30 transition-all cursor-pointer"
         >
           <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>

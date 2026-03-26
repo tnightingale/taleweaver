@@ -97,7 +97,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
               onClick={() => setAge(a)}
               className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 age === a
-                  ? "bg-mystic text-white shadow-[0_0_18px_rgba(22,163,74,0.6)]"
+                  ? "bg-gold text-white shadow-[0_0_18px_rgba(249,115,22,0.6)]"
                   : "bg-white/5 text-starlight/70 hover:bg-white/10"
               }`}
             >
@@ -185,7 +185,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
                       onClick={() => setPersonality(personality === p ? "" : p)}
                       className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
                         personality === p
-                          ? "bg-mystic text-white shadow-[0_0_12px_rgba(22,163,74,0.5)]"
+                          ? "bg-gold text-white shadow-[0_0_12px_rgba(249,115,22,0.5)]"
                           : "bg-white/5 text-starlight/60 hover:bg-white/10"
                       }`}
                     >
@@ -256,7 +256,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
             📚 View Your Library
             {activeJobCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center w-5 h-5
-                             bg-mystic text-white text-[10px] font-bold rounded-full
+                             bg-gold text-white text-[10px] font-bold rounded-full
                              animate-pulse">
                 {activeJobCount}
               </span>

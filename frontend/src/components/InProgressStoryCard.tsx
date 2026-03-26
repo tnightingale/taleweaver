@@ -94,7 +94,7 @@ export default function InProgressStoryCard({ job }: Props) {
         ) : (
           <div className="w-full h-1 bg-starlight/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-mystic to-blue-500"
+              className="h-full bg-gradient-to-r from-gold to-gold-light"
               initial={{ width: 0 }}
               animate={{ width: `${job.progress}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}

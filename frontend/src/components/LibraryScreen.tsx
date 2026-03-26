@@ -158,7 +158,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("grid")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grid"
-                  ? "bg-accent text-white"
+                  ? "bg-gold text-white"
                   : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >
@@ -168,7 +168,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("grouped")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grouped"
-                  ? "bg-accent text-white"
+                  ? "bg-gold text-white"
                   : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >
@@ -178,7 +178,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("timeline")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "timeline"
-                  ? "bg-accent text-white"
+                  ? "bg-gold text-white"
                   : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >

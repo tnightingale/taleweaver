@@ -57,7 +57,7 @@ export default function NotificationPrompt() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={handleEnable}
-            className="px-4 py-2 bg-accent hover:bg-mystic rounded text-white text-sm font-medium transition-all"
+            className="px-4 py-2 bg-gold hover:bg-gold-light rounded text-white text-sm font-medium transition-all"
           >
             Enable
           </button>
