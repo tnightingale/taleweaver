@@ -33,7 +33,8 @@ export async function login(email: string, password: string): Promise<User> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Login failed: ${res.status}`);
+    const detail = typeof err.detail === "string" ? err.detail : `Login failed: ${res.status}`;
+    throw new Error(detail);
   }
   return res.json();
 }
