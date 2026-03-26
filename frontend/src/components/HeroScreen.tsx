@@ -249,8 +249,8 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onViewLibrary}
-            className="px-6 py-3 bg-black/40 border border-mystic/40 rounded-lg
-                       text-ethereal hover:text-glow hover:border-ethereal/60
+            className="px-6 py-3 bg-black/40 border border-gold/40 rounded-lg
+                       text-gold-light hover:text-gold hover:border-gold/60
                        transition-all text-sm font-medium"
           >
             📚 View Your Library

@@ -224,8 +224,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
           {/* Offline badge */}
           {cachedOffline && (
             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
-                            bg-deep/80 text-glow text-[9px] backdrop-blur-sm
-                            border border-mystic/20">
+                            bg-deep/80 text-gold-light text-[9px] backdrop-blur-sm
+                            border border-gold/20">
               Offline
             </div>
           )}
@@ -248,8 +248,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
           </div>
           {cachedOffline && (
             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
-                            bg-deep/80 text-glow text-[9px] backdrop-blur-sm
-                            border border-mystic/20">
+                            bg-deep/80 text-gold-light text-[9px] backdrop-blur-sm
+                            border border-gold/20">
               Offline
             </div>
           )}

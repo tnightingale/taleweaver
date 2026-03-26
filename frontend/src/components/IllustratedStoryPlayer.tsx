@@ -1043,8 +1043,8 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={onBackToLibrary}
             className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                     bg-white/5 border border-mystic/20 text-glow
-                     hover:bg-mystic/20 transition-all cursor-pointer"
+                     bg-white/5 border border-gold/20 text-glow
+                     hover:bg-gold/20 transition-all cursor-pointer"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M3 4h6v6H3V4zm0 8h6v4H3v-4zm8-8h6v4h-6V4zm0 6h6v6h-6v-6z"/>
@@ -1068,8 +1068,8 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-medium
-                       bg-white/5 border border-mystic/20 text-glow
-                       hover:bg-mystic/20 transition-all cursor-pointer"
+                       bg-white/5 border border-gold/20 text-glow
+                       hover:bg-gold/20 transition-all cursor-pointer"
               title="More options"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
