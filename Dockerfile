@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Multi-stage build for Taleweaver - Once-compatible deployment
-# Serves frontend + backend on port 80 via Caddy reverse proxy
+# Serves frontend + backend on port 80 via Gunicorn (FastAPI serves static assets directly)
 
 # ============================================================================
 # Stage 1a: Frontend base (Node + npm deps installed)
@@ -44,22 +44,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ============================================================================
 FROM backend-base AS production
 
-# Install Caddy dependencies + Caddy (not needed for tests)
+# Install curl for health check (not needed for tests)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates \
-        debian-keyring \
-        debian-archive-keyring \
-        apt-transport-https \
-        gnupg && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Caddy web server
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list && \
-    apt-get update && \
-    apt-get install -y caddy && \
+    apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy backend application
@@ -75,34 +62,6 @@ RUN mkdir -p /storage/jobs /storage/music
 # Copy default background music to storage
 # This serves as the default; can be overridden by mounting custom music
 COPY backend/app/data/music /app/default-music
-
-# Create Caddyfile for reverse proxy
-# - /up and /api/* go to backend
-# - /storage/* serves static files (illustrations, audio)
-# - /s/* goes to frontend SPA (React Router handles it)
-# - Everything else to frontend SPA
-RUN printf ':80 {\n\
-    handle /up {\n\
-        reverse_proxy localhost:8000\n\
-    }\n\
-    \n\
-    handle /api/* {\n\
-        reverse_proxy localhost:8000\n\
-    }\n\
-    \n\
-    handle /storage/* {\n\
-        root * /\n\
-        header /storage/stories/*.png Cache-Control "public, max-age=3600, must-revalidate"\n\
-        header Cache-Control "public, max-age=31536000, immutable"\n\
-        file_server\n\
-    }\n\
-    \n\
-    handle {\n\
-        root * /app/frontend/dist\n\
-        try_files {path} /index.html\n\
-        file_server\n\
-    }\n\
-}\n' > /etc/caddy/Caddyfile
 
 # Copy entrypoint and hook scripts
 COPY docker-entrypoint.sh /docker-entrypoint.sh

@@ -2,7 +2,7 @@ name: taleweaver-dev
 
 services:
   # Production-like deployment (matches Once deployment)
-  # Single container with Caddy + FastAPI, exactly like production
+  # Single container: Gunicorn serves API + frontend static assets on port 80
   app:
     build:
       context: .
