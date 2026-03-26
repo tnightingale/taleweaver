@@ -943,45 +943,53 @@ export default function IllustratedStoryPlayer({
         className="glass-card mx-2 sm:mx-0 rounded-2xl border border-white/10 backdrop-blur-xl px-4 py-3 mt-3"
         style={{ WebkitBackdropFilter: "blur(20px)" }}
       >
-        {/* Buttons row */}
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={restartFromBeginning}
-            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
-                     transition-all cursor-pointer"
-            title="Start from beginning"
-          >
-            {restartIcon}
-          </button>
-          <button
-            onClick={() => skipBy(-15)}
-            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
-                     transition-all cursor-pointer"
-            title="Skip back 15 seconds"
-          >
-            {skipBackIcon}
-          </button>
-          <button
-            onClick={togglePlay}
-            className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
-                     flex items-center justify-center text-white
-                     shadow-[0_0_12px_rgba(22,163,74,0.3)]
-                     transition-all cursor-pointer"
-          >
-            {playPauseIcon}
-          </button>
-          <button
-            onClick={() => skipBy(15)}
-            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
-                     transition-all cursor-pointer"
-            title="Skip forward 15 seconds"
-          >
-            {skipForwardIcon}
-          </button>
+        {/* Buttons row — core controls centered, extras on right */}
+        <div className="flex items-center gap-2">
+          {/* Left spacer — matches width of right extras to keep core centered */}
+          <div className="flex items-center gap-2 min-w-[36px]" />
 
+          {/* Core playback controls — always centered */}
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <button
+              onClick={restartFromBeginning}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       text-gold-light/60 hover:text-gold-light hover:bg-gold/20
+                       transition-all cursor-pointer"
+              title="Start from beginning"
+            >
+              {restartIcon}
+            </button>
+            <button
+              onClick={() => skipBy(-15)}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       text-gold-light/60 hover:text-gold-light hover:bg-gold/20
+                       transition-all cursor-pointer"
+              title="Skip back 15 seconds"
+            >
+              {skipBackIcon}
+            </button>
+            <button
+              onClick={togglePlay}
+              className="w-12 h-12 shrink-0 rounded-full bg-gold/90 hover:bg-gold
+                       flex items-center justify-center text-white
+                       shadow-[0_0_12px_rgba(249,115,22,0.3)]
+                       transition-all cursor-pointer"
+            >
+              {playPauseIcon}
+            </button>
+            <button
+              onClick={() => skipBy(15)}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
+                       text-gold-light/60 hover:text-gold-light hover:bg-gold/20
+                       transition-all cursor-pointer"
+              title="Skip forward 15 seconds"
+            >
+              {skipForwardIcon}
+            </button>
+          </div>
+
+          {/* Right extras — airplay, cast, fullscreen */}
+          <div className="flex items-center gap-2 min-w-[36px]">
           {(airPlayAvailable || videoAirPlayAvailable) && (
             <button
               onClick={handleAirPlayClick}
@@ -1024,6 +1032,7 @@ export default function IllustratedStoryPlayer({
               {fullscreenIcon(!isFullscreen)}
             </button>
           )}
+          </div>
         </div>
 
         {/* Seek bar */}
@@ -1043,7 +1052,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={onBackToLibrary}
             className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                     bg-white/5 border border-gold/20 text-glow
+                     bg-white/5 border border-gold/20 text-gold-light
                      hover:bg-gold/20 transition-all cursor-pointer"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
@@ -1055,7 +1064,7 @@ export default function IllustratedStoryPlayer({
         <button
           onClick={onCreateAnother}
           className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                   bg-gold/20 border border-gold/30 text-glow
+                   bg-gold/20 border border-gold/30 text-gold-light
                    hover:bg-gold/30 transition-all cursor-pointer"
         >
           <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
@@ -1068,7 +1077,7 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-medium
-                       bg-white/5 border border-gold/20 text-glow
+                       bg-white/5 border border-gold/20 text-gold-light
                        hover:bg-gold/20 transition-all cursor-pointer"
               title="More options"
             >
