@@ -129,7 +129,7 @@ export function useChromecast(): ChromecastAPI {
 
       const metadata = new chrome.cast.media.GenericMediaMetadata();
       metadata.title = options.title;
-      metadata.subtitle = "Taleweaver";
+      metadata.subtitle = "Story Spring";
       if (options.artwork) {
         metadata.images = [{ url: options.artwork }];
       }

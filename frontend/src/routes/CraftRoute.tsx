@@ -15,7 +15,7 @@ export default function CraftRoute() {
   const [customArtStylePrompt, setCustomArtStylePrompt] = useState<string>("");
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("taleweaver_craft_data");
+    const saved = sessionStorage.getItem("storyspring_craft_data");
     if (saved) {
       setCraftData(JSON.parse(saved));
     } else {
@@ -63,7 +63,7 @@ export default function CraftRoute() {
   };
 
   const handleBack = () => {
-    sessionStorage.removeItem("taleweaver_craft_data");
+    sessionStorage.removeItem("storyspring_craft_data");
     navigate("/");
   };
 
@@ -88,7 +88,7 @@ export default function CraftRoute() {
       onTypeChange={(type) => {
         setCraftData({ ...craftData, type });
         sessionStorage.setItem(
-          "taleweaver_craft_data",
+          "storyspring_craft_data",
           JSON.stringify({ ...craftData, type })
         );
       }}

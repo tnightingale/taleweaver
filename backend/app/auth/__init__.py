@@ -1,1 +1,1 @@
-"""Authentication package for Taleweaver"""
+"""Authentication package for Story Spring"""

@@ -195,7 +195,7 @@ export default function StoryScreen({
             exit={{ opacity: 0 }}
             className="flex flex-col items-center space-y-4"
           >
-            <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+            <div className="w-12 h-12 rounded-full border-2 border-mystic/30 border-t-mystic animate-spin" />
             <p className="text-sm text-starlight/40">Loading story...</p>
           </motion.div>
         ) : isGenerating ? (
@@ -241,7 +241,7 @@ export default function StoryScreen({
                 >
                   {Math.round(progress)}%
                 </motion.p>
-                <p className="text-sm text-ethereal">
+                <p className="text-sm text-gold-light">
                   {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
                 </p>
               </div>
@@ -261,16 +261,16 @@ export default function StoryScreen({
 
             <style>{`
               @keyframes orbColorCycle {
-                0%   { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
-                       box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
+                0%   { background: radial-gradient(circle, #4ade80 0%, #16a34a 50%, #14532d 100%);
+                       box-shadow: 0 0 40px rgba(249,115,22,0.6), 0 0 80px rgba(22,163,74,0.3); }
                 25%  { background: radial-gradient(circle, #93c5fd 0%, #3b82f6 50%, #1e3a8a 100%);
                        box-shadow: 0 0 40px rgba(59,130,246,0.6), 0 0 80px rgba(59,130,246,0.3); }
-                50%  { background: radial-gradient(circle, #6ee7b7 0%, #10b981 50%, #064e3b 100%);
+                50%  { background: radial-gradient(circle, #fb923c 0%, #f97316 50%, #7c2d12 100%);
+                       box-shadow: 0 0 40px rgba(249,115,22,0.6), 0 0 80px rgba(249,115,22,0.3); }
+                75%  { background: radial-gradient(circle, #6ee7b7 0%, #10b981 50%, #064e3b 100%);
                        box-shadow: 0 0 40px rgba(16,185,129,0.6), 0 0 80px rgba(16,185,129,0.3); }
-                75%  { background: radial-gradient(circle, #fda4af 0%, #e11d48 50%, #881337 100%);
-                       box-shadow: 0 0 40px rgba(225,29,72,0.6), 0 0 80px rgba(225,29,72,0.3); }
-                100% { background: radial-gradient(circle, #a78bfa 0%, #7c3aed 50%, #4c1d95 100%);
-                       box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(124,58,237,0.3); }
+                100% { background: radial-gradient(circle, #4ade80 0%, #16a34a 50%, #14532d 100%);
+                       box-shadow: 0 0 40px rgba(249,115,22,0.6), 0 0 80px rgba(22,163,74,0.3); }
               }
               .orb-color-cycle {
                 animation: orbColorCycle 8s ease-in-out infinite;
@@ -298,7 +298,7 @@ export default function StoryScreen({
                     (_, i) => (
                       <div
                         key={`placeholder-${i}`}
-                        className="w-full aspect-[3/2] rounded-lg bg-gradient-to-br from-purple-900/30 to-abyss/40 animate-pulse"
+                        className="w-full aspect-[3/2] rounded-lg bg-gradient-to-br from-deep/30 to-abyss/40 animate-pulse"
                       />
                     )
                   )}
@@ -392,16 +392,16 @@ export default function StoryScreen({
                         [&::-webkit-slider-thumb]:w-4
                         [&::-webkit-slider-thumb]:h-4
                         [&::-webkit-slider-thumb]:rounded-full
-                        [&::-webkit-slider-thumb]:bg-mystic
-                        [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(124,58,237,0.6)]
+                        [&::-webkit-slider-thumb]:bg-gold
+                        [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(249,115,22,0.6)]
                         [&::-webkit-slider-runnable-track]:rounded-full
                         [&::-moz-range-thumb]:w-4
                         [&::-moz-range-thumb]:h-4
                         [&::-moz-range-thumb]:rounded-full
-                        [&::-moz-range-thumb]:bg-mystic
+                        [&::-moz-range-thumb]:bg-gold
                         [&::-moz-range-thumb]:border-none
-                        [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(124,58,237,0.6)]
-                        accent-mystic"
+                        [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(249,115,22,0.6)]
+                        accent-gold"
                     />
 
                     {/* Time Display */}
@@ -417,14 +417,14 @@ export default function StoryScreen({
                         whileTap={{ scale: 0.9 }}
                         whileHover={{
                           boxShadow:
-                            "0 0 30px rgba(124, 58, 237, 0.6), 0 0 60px rgba(124, 58, 237, 0.3)",
+                            "0 0 30px rgba(249, 115, 22, 0.6), 0 0 60px rgba(249, 115, 22, 0.3)",
                         }}
                         className="w-20 h-20 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer"
                         style={{
                           background:
-                            "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                            "linear-gradient(135deg, #f97316, #ea580c)",
                           boxShadow:
-                            "0 0 20px rgba(124, 58, 237, 0.4), 0 0 40px rgba(124, 58, 237, 0.15)",
+                            "0 0 20px rgba(249, 115, 22, 0.4), 0 0 40px rgba(249, 115, 22, 0.15)",
                         }}
                       >
                         {isPlaying ? "⏸" : "▶"}
@@ -527,7 +527,7 @@ export default function StoryScreen({
               {/* Permalink Share Section */}
               {storyData?.short_id && (
                 <div className="w-full glass-card p-4">
-                  <p className="text-purple-300 text-sm mb-3 font-medium">
+                  <p className="text-gold-light text-sm mb-3 font-medium">
                     Share this story:
                   </p>
                   <div className="flex items-center gap-2">
@@ -535,8 +535,8 @@ export default function StoryScreen({
                       type="text"
                       readOnly
                       value={`${window.location.origin}/s/${storyData.short_id}`}
-                      className="flex-1 px-3 py-2 bg-black/50 border border-purple-500/50 
-                                 rounded text-purple-100 text-sm font-mono"
+                      className="flex-1 px-3 py-2 bg-black/50 border border-mystic/50
+                                 rounded text-starlight text-sm font-mono"
                       onClick={(e) => e.currentTarget.select()}
                     />
                     <button
@@ -547,9 +547,9 @@ export default function StoryScreen({
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded 
+                      className="px-4 py-2 bg-gold hover:bg-gold-light rounded
                                  text-white text-sm font-semibold transition-all
-                                 hover:shadow-lg hover:shadow-purple-500/50"
+                                 hover:shadow-lg hover:shadow-mystic/50"
                     >
                       {copied ? "Copied!" : "Copy Link"}
                     </button>

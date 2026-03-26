@@ -139,7 +139,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
     // Clear sessionStorage so StoryRoute fetches fresh data on next visit
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key?.startsWith('taleweaver_story_') && key.includes(story.id)) {
+      if (key?.startsWith('storyspring_story_') && key.includes(story.id)) {
         sessionStorage.removeItem(key);
       }
     }
@@ -224,8 +224,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
           {/* Offline badge */}
           {cachedOffline && (
             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
-                            bg-purple-900/80 text-purple-200 text-[9px] backdrop-blur-sm
-                            border border-purple-500/20">
+                            bg-deep/80 text-gold-light text-[9px] backdrop-blur-sm
+                            border border-gold/20">
               Offline
             </div>
           )}
@@ -233,7 +233,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
       ) : (
         <div
           className="aspect-[3/2] w-full flex items-center justify-center cursor-pointer relative group
-                     bg-gradient-to-br from-purple-900/40 to-abyss/60 rounded-t-[1rem]"
+                     bg-gradient-to-br from-deep/40 to-abyss/60 rounded-t-[1rem]"
           onClick={onPlay}
         >
           <span className="text-4xl opacity-40">
@@ -248,8 +248,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
           </div>
           {cachedOffline && (
             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full
-                            bg-purple-900/80 text-purple-200 text-[9px] backdrop-blur-sm
-                            border border-purple-500/20">
+                            bg-deep/80 text-gold-light text-[9px] backdrop-blur-sm
+                            border border-gold/20">
               Offline
             </div>
           )}
@@ -269,8 +269,8 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
                 onKeyDown={handleKeyDown}
                 autoFocus
                 disabled={isSaving}
-                className="text-base font-display text-glow bg-black/50 border border-purple-500/50
-                           rounded px-2 py-1 text-white focus:outline-none focus:border-purple-400 w-full
+                className="text-base font-display text-glow bg-black/50 border border-mystic/50
+                           rounded px-2 py-1 text-white focus:outline-none focus:border-ethereal w-full
                            disabled:opacity-50"
                 placeholder="Story title"
               />
@@ -368,7 +368,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
 
         {/* Regeneration status */}
         {regenStatus && (
-          <div className="text-[11px] text-purple-300/80 animate-pulse">
+          <div className="text-[11px] text-ethereal/80 animate-pulse">
             {regenStatus}
           </div>
         )}
@@ -386,7 +386,7 @@ export default function StoryCard({ story, onPlay, onDelete, onUpdateTitle, onRe
             <>
               <span>·</span>
               <span title="AirPlay ready">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 inline text-purple-400">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 inline text-ethereal">
                   <path d="M6 22h12l-6-6-6 6zM21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v-2H3V5h18v12h-4v2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
                 </svg>
               </span>

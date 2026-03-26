@@ -20,8 +20,8 @@ export default function CastButton({
                transition-all cursor-pointer relative group
                ${
                  isConnected
-                   ? "text-purple-400 bg-purple-500/20"
-                   : "text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20"
+                   ? "text-gold-light bg-gold/20"
+                   : "text-gold-light/60 hover:text-gold-light hover:bg-gold/20"
                }`}
       title={
         isConnected ? `Casting to ${deviceName ?? "device"}` : "Cast"

@@ -39,7 +39,7 @@ export default function SignupRoute() {
         <p className="text-starlight/50 mb-8">
           You need an invite link to create an account. Ask someone who already has access to send you one.
         </p>
-        <Link to="/login" className="text-ethereal hover:text-ethereal/80 transition-colors">
+        <Link to="/login" className="text-gold-light hover:text-gold-light/80 transition-colors">
           Already have an account? Sign in
         </Link>
       </motion.div>
@@ -164,7 +164,7 @@ export default function SignupRoute() {
 
       <motion.p variants={item} className="mt-8 text-center text-starlight/40 text-sm">
         Already have an account?{" "}
-        <Link to="/login" className="text-ethereal hover:text-ethereal/80 transition-colors">
+        <Link to="/login" className="text-gold-light hover:text-gold-light/80 transition-colors">
           Sign in
         </Link>
       </motion.p>

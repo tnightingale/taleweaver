@@ -46,7 +46,7 @@ beforeEach(() => {
 describe('App', () => {
   it('renders hero screen by default', () => {
     render(<MemoryRouter><App /></MemoryRouter>);
-    expect(screen.getByText('Taleweaver')).toBeInTheDocument();
+    expect(screen.getByText('Story Spring')).toBeInTheDocument();
     expect(screen.getByText("Who's the hero?")).toBeInTheDocument();
   });
 

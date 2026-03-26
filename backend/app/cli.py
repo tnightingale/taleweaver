@@ -1,4 +1,4 @@
-"""CLI management commands for Taleweaver.
+"""CLI management commands for Story Spring.
 
 Usage:
     python -m app.cli create-invite           # Generate a new invite code
@@ -32,7 +32,7 @@ def create_invite(base_url: str = "http://localhost"):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Taleweaver CLI")
+    parser = argparse.ArgumentParser(description="Story Spring CLI")
     subparsers = parser.add_subparsers(dest="command")
 
     invite_parser = subparsers.add_parser("create-invite", help="Generate a new invite code")

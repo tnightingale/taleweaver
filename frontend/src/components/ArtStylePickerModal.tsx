@@ -62,7 +62,7 @@ export default function ArtStylePickerModal({
                     onClick={() => setSelected(style.id)}
                     className={`p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                       selected === style.id
-                        ? "border-purple-500 bg-purple-500/10 shadow-[0_0_15px_rgba(124,58,237,0.4)]"
+                        ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                         : "border-starlight/20 hover:border-starlight/40"
                     }`}
                   >
@@ -76,7 +76,7 @@ export default function ArtStylePickerModal({
               onClick={() => setSelected("custom")}
               className={`w-full p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                 selected === "custom"
-                  ? "border-purple-500 bg-purple-500/10"
+                  ? "border-mystic bg-mystic/10"
                   : "border-starlight/20 hover:border-starlight/40"
               }`}
             >
@@ -91,7 +91,7 @@ export default function ArtStylePickerModal({
                 placeholder="Example: oil painting style, impressionist, vibrant colors..."
                 className="w-full px-4 py-3 bg-starlight/5 border border-starlight/20 rounded-lg
                          text-starlight placeholder-starlight/40 focus:outline-none
-                         focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none text-sm"
+                         focus:border-mystic focus:ring-2 focus:ring-mystic/20 resize-none text-sm"
                 rows={3}
                 maxLength={200}
               />
@@ -114,7 +114,7 @@ export default function ArtStylePickerModal({
               }
             }}
             disabled={!canConfirm}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 hover:bg-purple-500
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-gold hover:bg-gold-light
                      text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Confirm

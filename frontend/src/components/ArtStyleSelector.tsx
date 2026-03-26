@@ -46,7 +46,7 @@ export default function ArtStyleSelector({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full glass-card p-4 flex items-center justify-between hover:shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all"
+        className="w-full glass-card p-4 flex items-center justify-between hover:shadow-[0_0_20px_rgba(22,163,74,0.3)] transition-all"
       >
         <div className="flex items-center gap-3">
           <span className="text-2xl">🎨</span>
@@ -87,7 +87,7 @@ export default function ArtStyleSelector({
                 onClick={() => onSelect(null)}
                 className={`w-full p-4 rounded-lg border-2 transition-all ${
                   selectedStyle === null
-                    ? "border-purple-500 bg-purple-500/10 shadow-[0_0_15px_rgba(124,58,237,0.4)]"
+                    ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                     : "border-starlight/20 hover:border-starlight/40"
                 }`}
                 whileHover={{ scale: 1.02 }}
@@ -114,7 +114,7 @@ export default function ArtStyleSelector({
                       onClick={() => onSelect(style.id)}
                       className={`p-4 rounded-lg border-2 transition-all text-left ${
                         selectedStyle === style.id
-                          ? "border-purple-500 bg-purple-500/10 shadow-[0_0_15px_rgba(124,58,237,0.4)]"
+                          ? "border-mystic bg-mystic/10 shadow-[0_0_15px_rgba(22,163,74,0.4)]"
                           : "border-starlight/20 hover:border-starlight/40"
                       }`}
                       whileHover={{ scale: 1.05 }}
@@ -127,7 +127,7 @@ export default function ArtStyleSelector({
                         {style.description}
                       </div>
                       {selectedStyle === style.id && (
-                        <div className="mt-2 text-purple-400 text-sm">✓ Selected</div>
+                        <div className="mt-2 text-ethereal text-sm">✓ Selected</div>
                       )}
                     </motion.button>
                   ))}
@@ -140,7 +140,7 @@ export default function ArtStyleSelector({
                   onClick={() => onSelect("custom")}
                   className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
                     selectedStyle === "custom"
-                      ? "border-purple-500 bg-purple-500/10"
+                      ? "border-mystic bg-mystic/10"
                       : "border-starlight/20 hover:border-starlight/40"
                   }`}
                   whileHover={{ scale: 1.02 }}
@@ -166,7 +166,7 @@ export default function ArtStyleSelector({
                       placeholder="Example: oil painting style, impressionist, vibrant colors..."
                       className="w-full px-4 py-3 bg-starlight/5 border border-starlight/20 rounded-lg
                                text-starlight placeholder-starlight/40 focus:outline-none
-                               focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20
+                               focus:border-mystic focus:ring-2 focus:ring-mystic/20
                                resize-none"
                       rows={3}
                       maxLength={200}

@@ -32,7 +32,7 @@ export default function InProgressStoryCard({ job }: Props) {
       className={`glass-card flex flex-col relative cursor-pointer transition-all ${
         isFailed
           ? "hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] border border-red-500/20"
-          : "hover:shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+          : "hover:shadow-[0_0_20px_rgba(22,163,74,0.4)]"
       }`}
     >
       {/* Cover area */}
@@ -52,7 +52,7 @@ export default function InProgressStoryCard({ job }: Props) {
                         flex items-center justify-center relative ${
                           isFailed
                             ? "bg-gradient-to-br from-red-900/30 to-abyss/60"
-                            : "bg-gradient-to-br from-purple-900/40 to-abyss/60"
+                            : "bg-gradient-to-br from-deep/40 to-abyss/60"
                         }`}>
           {!isFailed && <div className="absolute inset-0 shimmer-effect" />}
           <div className={`text-4xl ${isFailed ? "opacity-50" : "opacity-30 animate-pulse"}`}>
@@ -94,7 +94,7 @@ export default function InProgressStoryCard({ job }: Props) {
         ) : (
           <div className="w-full h-1 bg-starlight/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+              className="h-full bg-gradient-to-r from-gold to-gold-light"
               initial={{ width: 0 }}
               animate={{ width: `${job.progress}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build for Taleweaver - Once-compatible deployment
+# Multi-stage build for Story Spring - Once-compatible deployment
 # Serves frontend + backend on port 80 via Gunicorn (FastAPI serves static assets directly)
 
 # ============================================================================

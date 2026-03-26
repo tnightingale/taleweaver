@@ -1,4 +1,4 @@
-// Taleweaver Custom Chromecast Receiver
+// Story Spring Custom Chromecast Receiver
 // Displays scene illustrations fullscreen, synced to audio playback
 
 interface SceneData {

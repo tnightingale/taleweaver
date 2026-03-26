@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 
-const SESSION_KEY = "taleweaver_notif_prompt_dismissed";
+const SESSION_KEY = "storyspring_notif_prompt_dismissed";
 
 export default function NotificationPrompt() {
   const { isSupported, permission, isSubscribed, loading, subscribe } = usePushNotifications();
@@ -57,7 +57,7 @@ export default function NotificationPrompt() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={handleEnable}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium transition-all"
+            className="px-4 py-2 bg-gold hover:bg-gold-light rounded text-white text-sm font-medium transition-all"
           >
             Enable
           </button>
