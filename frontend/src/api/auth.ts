@@ -74,6 +74,10 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
+  // Offline: skip the network fetch (hangs on iOS waiting for TCP timeout)
+  // and return the cached identity immediately.
+  if (!navigator.onLine) return getCachedUser();
+
   const res = await fetch(`${BASE}/me`);
   if (res.status === 401) return null;
   if (!res.ok) return null;
