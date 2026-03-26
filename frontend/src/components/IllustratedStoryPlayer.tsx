@@ -480,18 +480,18 @@ export default function IllustratedStoryPlayer({
     [&::-webkit-slider-thumb]:w-4
     [&::-webkit-slider-thumb]:h-4
     [&::-webkit-slider-thumb]:rounded-full
-    [&::-webkit-slider-thumb]:bg-purple-500
+    [&::-webkit-slider-thumb]:bg-mystic
     [&::-webkit-slider-thumb]:cursor-pointer
-    [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.6)]
+    [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(34,197,94,0.6)]
     [&::-moz-range-thumb]:w-4
     [&::-moz-range-thumb]:h-4
     [&::-moz-range-thumb]:rounded-full
-    [&::-moz-range-thumb]:bg-purple-500
+    [&::-moz-range-thumb]:bg-mystic
     [&::-moz-range-thumb]:cursor-pointer
     [&::-moz-range-thumb]:border-0`;
 
   const seekBarStyle = {
-    background: `linear-gradient(to right, rgb(168 85 247) 0%, rgb(168 85 247) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
+    background: `linear-gradient(to right, rgb(34 197 94) 0%, rgb(34 197 94) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.1) 100%)`,
   };
 
   // Shared seek bar with scene markers
@@ -649,7 +649,7 @@ export default function IllustratedStoryPlayer({
             }
           />
         ) : (
-          <div className={`w-full bg-gradient-to-br from-purple-900/40 to-abyss/80 ${landscape ? "h-full" : "aspect-[4/3]"}`} />
+          <div className={`w-full bg-gradient-to-br from-deep/40 to-abyss/80 ${landscape ? "h-full" : "aspect-[4/3]"}`} />
         )}
       </motion.div>
     </AnimatePresence>
@@ -811,9 +811,9 @@ export default function IllustratedStoryPlayer({
             </button>
             <button
               onClick={togglePlay}
-              className="w-12 h-12 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
+              className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
                        flex items-center justify-center text-white
-                       shadow-[0_0_12px_rgba(168,85,247,0.3)]
+                       shadow-[0_0_12px_rgba(34,197,94,0.3)]
                        transition-all cursor-pointer"
             >
               {playPauseIcon}
@@ -841,7 +841,7 @@ export default function IllustratedStoryPlayer({
                 className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                          transition-all cursor-pointer
                          ${airPlayActive || videoAirPlayActive
-                           ? "text-purple-400 bg-purple-500/20"
+                           ? "text-ethereal bg-mystic/20"
                            : generatingVideo
                              ? "text-white/40 animate-pulse"
                              : "text-white/60 hover:text-white hover:bg-white/10"
@@ -948,7 +948,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={restartFromBeginning}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
                      transition-all cursor-pointer"
             title="Start from beginning"
           >
@@ -957,7 +957,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={() => skipBy(-15)}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
                      transition-all cursor-pointer"
             title="Skip back 15 seconds"
           >
@@ -965,9 +965,9 @@ export default function IllustratedStoryPlayer({
           </button>
           <button
             onClick={togglePlay}
-            className="w-12 h-12 shrink-0 rounded-full bg-purple-500/90 hover:bg-purple-500
+            className="w-12 h-12 shrink-0 rounded-full bg-mystic/90 hover:bg-mystic
                      flex items-center justify-center text-white
-                     shadow-[0_0_12px_rgba(168,85,247,0.3)]
+                     shadow-[0_0_12px_rgba(34,197,94,0.3)]
                      transition-all cursor-pointer"
           >
             {playPauseIcon}
@@ -975,7 +975,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={() => skipBy(15)}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
                      transition-all cursor-pointer"
             title="Skip forward 15 seconds"
           >
@@ -989,10 +989,10 @@ export default function IllustratedStoryPlayer({
               className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                        transition-all cursor-pointer
                        ${airPlayActive || videoAirPlayActive
-                         ? "text-purple-400 bg-purple-500/20"
+                         ? "text-ethereal bg-mystic/20"
                          : generatingVideo
-                           ? "text-purple-300/40 animate-pulse"
-                           : "text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20"
+                           ? "text-ethereal/40 animate-pulse"
+                           : "text-ethereal/60 hover:text-glow hover:bg-mystic/20"
                        }`}
               title={
                 airPlayActive || videoAirPlayActive
@@ -1017,7 +1017,7 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={toggleFullscreen}
               className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                       text-purple-300/60 hover:text-purple-200 hover:bg-purple-500/20
+                       text-ethereal/60 hover:text-glow hover:bg-mystic/20
                        transition-all cursor-pointer"
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
@@ -1043,8 +1043,8 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={onBackToLibrary}
             className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                     bg-white/5 border border-purple-500/20 text-purple-200
-                     hover:bg-purple-500/20 transition-all cursor-pointer"
+                     bg-white/5 border border-mystic/20 text-glow
+                     hover:bg-mystic/20 transition-all cursor-pointer"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M3 4h6v6H3V4zm0 8h6v4H3v-4zm8-8h6v4h-6V4zm0 6h6v6h-6v-6z"/>
@@ -1055,8 +1055,8 @@ export default function IllustratedStoryPlayer({
         <button
           onClick={onCreateAnother}
           className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium
-                   bg-purple-500/20 border border-purple-500/30 text-purple-200
-                   hover:bg-purple-500/30 transition-all cursor-pointer"
+                   bg-mystic/20 border border-mystic/30 text-glow
+                   hover:bg-mystic/30 transition-all cursor-pointer"
         >
           <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
@@ -1068,8 +1068,8 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-medium
-                       bg-white/5 border border-purple-500/20 text-purple-200
-                       hover:bg-purple-500/20 transition-all cursor-pointer"
+                       bg-white/5 border border-mystic/20 text-glow
+                       hover:bg-mystic/20 transition-all cursor-pointer"
               title="More options"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -1118,7 +1118,7 @@ export default function IllustratedStoryPlayer({
       {/* Regeneration status */}
       {regenStatus && (
         <div className="text-center pb-2">
-          <span className="text-[11px] text-purple-300/80 animate-pulse">{regenStatus}</span>
+          <span className="text-[11px] text-ethereal/80 animate-pulse">{regenStatus}</span>
         </div>
       )}
 
@@ -1174,7 +1174,7 @@ export default function IllustratedStoryPlayer({
                     />
                   </div>
                 ) : (
-                  <div className="max-w-md mx-auto aspect-[4/3] rounded-lg bg-gradient-to-br from-purple-900/20 to-abyss/40
+                  <div className="max-w-md mx-auto aspect-[4/3] rounded-lg bg-gradient-to-br from-deep/20 to-abyss/40
                                flex items-center justify-center text-starlight/30 text-sm">
                     No image
                   </div>

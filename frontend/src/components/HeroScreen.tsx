@@ -97,7 +97,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
               onClick={() => setAge(a)}
               className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 age === a
-                  ? "bg-mystic text-white shadow-[0_0_18px_rgba(124,58,237,0.6)]"
+                  ? "bg-mystic text-white shadow-[0_0_18px_rgba(34,197,94,0.6)]"
                   : "bg-white/5 text-starlight/70 hover:bg-white/10"
               }`}
             >
@@ -185,7 +185,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
                       onClick={() => setPersonality(personality === p ? "" : p)}
                       className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
                         personality === p
-                          ? "bg-mystic text-white shadow-[0_0_12px_rgba(124,58,237,0.5)]"
+                          ? "bg-mystic text-white shadow-[0_0_12px_rgba(34,197,94,0.5)]"
                           : "bg-white/5 text-starlight/60 hover:bg-white/10"
                       }`}
                     >
@@ -212,7 +212,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
             whileTap={{ scale: 0.97 }}
             disabled={!isValid}
             onClick={() => handleSubmit("custom")}
-            className="glass-card p-6 text-left transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(124,58,237,0.25)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="glass-card p-6 text-left transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(34,197,94,0.25)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <span className="text-3xl mb-3 block">✨</span>
             <h3 className="font-display text-lg text-starlight mb-1">
@@ -230,7 +230,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
             whileTap={{ scale: 0.97 }}
             disabled={!isValid}
             onClick={() => handleSubmit("historical")}
-            className="glass-card p-6 text-left transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(124,58,237,0.25)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="glass-card p-6 text-left transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(34,197,94,0.25)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <span className="text-3xl mb-3 block">🏛️</span>
             <h3 className="font-display text-lg text-starlight mb-1">
@@ -249,14 +249,14 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onViewLibrary}
-            className="px-6 py-3 bg-black/40 border border-purple-500/40 rounded-lg 
-                       text-purple-300 hover:text-purple-200 hover:border-purple-400/60
+            className="px-6 py-3 bg-black/40 border border-mystic/40 rounded-lg
+                       text-ethereal hover:text-glow hover:border-ethereal/60
                        transition-all text-sm font-medium"
           >
             📚 View Your Library
             {activeJobCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center w-5 h-5
-                             bg-purple-500 text-white text-[10px] font-bold rounded-full
+                             bg-mystic text-white text-[10px] font-bold rounded-full
                              animate-pulse">
                 {activeJobCount}
               </span>

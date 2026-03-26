@@ -1,4 +1,4 @@
-# Audio Story Creator for Kids — Taleweaver
+# Audio Story Creator for Kids — Story Spring
 
 > **For developers/agents:** See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete development standards, workflows, and processes. Follow those guidelines for all development work.
 >

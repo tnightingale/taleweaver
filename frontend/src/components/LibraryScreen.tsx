@@ -144,8 +144,8 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
           <select
             value={filterKid}
             onChange={(e) => setFilterKid(e.target.value)}
-            className="px-4 py-2 bg-black/50 border border-purple-500/50 rounded 
-                       text-purple-100 focus:outline-none focus:border-purple-400"
+            className="px-4 py-2 bg-black/50 border border-mystic/50 rounded
+                       text-starlight focus:outline-none focus:border-ethereal"
           >
             <option value="">All Kids</option>
             {uniqueKids.map(kid => (
@@ -158,8 +158,8 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("grid")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grid"
-                  ? "bg-purple-600 text-white"
-                  : "bg-black/30 text-purple-300 border border-purple-500/30"
+                  ? "bg-accent text-white"
+                  : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >
               Grid
@@ -168,8 +168,8 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("grouped")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grouped"
-                  ? "bg-purple-600 text-white"
-                  : "bg-black/30 text-purple-300 border border-purple-500/30"
+                  ? "bg-accent text-white"
+                  : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >
               By Kid
@@ -178,8 +178,8 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               onClick={() => setView("timeline")}
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "timeline"
-                  ? "bg-purple-600 text-white"
-                  : "bg-black/30 text-purple-300 border border-purple-500/30"
+                  ? "bg-accent text-white"
+                  : "bg-black/30 text-ethereal border border-mystic/30"
               }`}
             >
               📅 Timeline
@@ -188,11 +188,11 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
 
           <div className="ml-auto text-sm text-starlight/60 flex items-center gap-2">
             {(loading || jobsLoading) && (
-              <div className="w-3 h-3 rounded-full border border-purple-500/30 border-t-purple-500 animate-spin" />
+              <div className="w-3 h-3 rounded-full border border-mystic/30 border-t-mystic animate-spin" />
             )}
             {total} {total === 1 ? "story" : "stories"}
             {inProgressJobs.length > 0 && (
-              <span className="text-purple-400">
+              <span className="text-ethereal">
                 + {inProgressJobs.length} generating
               </span>
             )}

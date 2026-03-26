@@ -105,7 +105,7 @@ export default function CraftScreen({
       {/* Library Icon (top-right) */}
       <motion.button
         onClick={onViewLibrary}
-        className="absolute top-4 right-4 p-3 glass-card hover:shadow-[0_0_20px_rgba(124,58,237,0.3)]
+        className="absolute top-4 right-4 p-3 glass-card hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]
                    transition-all text-2xl"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -136,7 +136,7 @@ export default function CraftScreen({
           onClick={() => onTypeChange("custom")}
           className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 ${
             storyType === "custom"
-              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(124,58,237,0.5)]"
+              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(34,197,94,0.5)]"
               : "glass-card text-[var(--color-ethereal)] hover:text-white"
           }`}
         >
@@ -146,7 +146,7 @@ export default function CraftScreen({
           onClick={() => onTypeChange("historical")}
           className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 ${
             storyType === "historical"
-              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(124,58,237,0.5)]"
+              ? "bg-[var(--color-mystic)] text-white shadow-[0_0_20px_rgba(34,197,94,0.5)]"
               : "glass-card text-[var(--color-ethereal)] hover:text-white"
           }`}
         >
@@ -187,19 +187,19 @@ export default function CraftScreen({
                   key={genre.id}
                   type="button"
                   variants={itemVariants}
-                  whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(124,58,237,0.3)" }}
+                  whileHover={{ scale: 1.04, boxShadow: "0 0 20px rgba(34,197,94,0.3)" }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() =>
                     setSelectedGenre(selectedGenre === genre.id ? "" : genre.id)
                   }
                   className={`glass-card p-4 text-left transition-all duration-300 cursor-pointer ${
                     selectedGenre === genre.id
-                      ? "border-[var(--color-mystic)] shadow-[0_0_20px_rgba(124,58,237,0.4)] !border-[var(--color-mystic)]"
+                      ? "border-[var(--color-mystic)] shadow-[0_0_20px_rgba(34,197,94,0.4)] !border-[var(--color-mystic)]"
                       : ""
                   }`}
                   style={
                     selectedGenre === genre.id
-                      ? { borderColor: "var(--color-mystic)", boxShadow: "0 0 20px rgba(124,58,237,0.4)" }
+                      ? { borderColor: "var(--color-mystic)", boxShadow: "0 0 20px rgba(34,197,94,0.4)" }
                       : {}
                   }
                 >
@@ -243,7 +243,7 @@ export default function CraftScreen({
                 <motion.button
                   key={m.value}
                   type="button"
-                  whileHover={{ scale: 1.04, boxShadow: "0 0 15px rgba(124,58,237,0.25)" }}
+                  whileHover={{ scale: 1.04, boxShadow: "0 0 15px rgba(34,197,94,0.25)" }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() =>
                     onMoodChange(mood === m.value ? undefined : m.value)
@@ -253,7 +253,7 @@ export default function CraftScreen({
                   }`}
                   style={
                     mood === m.value
-                      ? { borderColor: "var(--color-mystic)", boxShadow: "0 0 18px rgba(124,58,237,0.4)" }
+                      ? { borderColor: "var(--color-mystic)", boxShadow: "0 0 18px rgba(34,197,94,0.4)" }
                       : {}
                   }
                 >
@@ -282,7 +282,7 @@ export default function CraftScreen({
                   }
                   className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
                     length === l.value
-                      ? "bg-[var(--color-mystic)] text-white shadow-[0_0_15px_rgba(124,58,237,0.4)]"
+                      ? "bg-[var(--color-mystic)] text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                       : "glass-card text-[var(--color-ethereal)] hover:text-white cursor-pointer"
                   }`}
                 >
@@ -361,7 +361,7 @@ export default function CraftScreen({
               <motion.button
                 key={event.id}
                 variants={itemVariants}
-                whileHover={{ scale: 1.03, boxShadow: "0 0 25px rgba(124,58,237,0.3)" }}
+                whileHover={{ scale: 1.03, boxShadow: "0 0 25px rgba(34,197,94,0.3)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onSubmitHistorical(event.id)}
                 className="glass-card p-5 text-left transition-all duration-300 cursor-pointer"

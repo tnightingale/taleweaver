@@ -1,9 +1,9 @@
 {
-  "name": "Taleweaver",
-  "short_name": "Taleweaver",
+  "name": "Story Spring",
+  "short_name": "Story Spring",
   "description": "Where stories come alive",
-  "theme_color": "#0a0a1a",
-  "background_color": "#0a0a1a",
+  "theme_color": "#0a1a0f",
+  "background_color": "#0a1a0f",
   "display": "standalone",
   "start_url": "/",
   "scope": "/",

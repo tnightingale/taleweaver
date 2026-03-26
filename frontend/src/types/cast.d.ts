@@ -1,4 +1,4 @@
-// Ambient type declarations for the Google Cast SDK (subset used by Taleweaver)
+// Ambient type declarations for the Google Cast SDK (subset used by Story Spring)
 // Full SDK loaded externally via <script> tag
 
 declare namespace cast {

@@ -93,7 +93,7 @@ export default function StoryRoute() {
     }
 
     // Check if story already completed (from session)
-    const saved = sessionStorage.getItem(`taleweaver_story_${jobId}`);
+    const saved = sessionStorage.getItem(`storyspring_story_${jobId}`);
     if (saved) {
       const data = JSON.parse(saved);
       if (data.status === "complete") {
@@ -120,13 +120,13 @@ export default function StoryRoute() {
   // Save completed story to session for refresh persistence
   useEffect(() => {
     if (storyData && jobId) {
-      sessionStorage.setItem(`taleweaver_story_${jobId}`, JSON.stringify(storyData));
+      sessionStorage.setItem(`storyspring_story_${jobId}`, JSON.stringify(storyData));
     }
   }, [storyData, jobId]);
 
   const handleCreateAnother = () => {
     if (jobId) {
-      sessionStorage.removeItem(`taleweaver_story_${jobId}`);
+      sessionStorage.removeItem(`storyspring_story_${jobId}`);
     }
     navigate("/craft");
   };

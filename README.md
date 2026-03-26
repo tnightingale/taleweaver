@@ -1,8 +1,8 @@
-# Taleweaver
+# Story Spring
 
 Personalized audio stories for kids, powered by AI.
 
-Parents enter their child's name, age, and interests. Taleweaver writes a story with their kid as the protagonist, voices it with multiple characters, and delivers a downloadable MP3 with a **permanent shareable link** - all in about 2-3 minutes.
+Parents enter their child's name, age, and interests. Story Spring writes a story with their kid as the protagonist, voices it with multiple characters, and delivers a downloadable MP3 with a **permanent shareable link** - all in about 2-3 minutes.
 
 **Two modes:**
 - **Custom Story** - pick a genre, describe your idea, and the kid is the hero
@@ -22,7 +22,7 @@ Parents enter their child's name, age, and interests. Taleweaver writes a story 
 
 ### Production Deployment with Once
 
-Taleweaver is fully compatible with [Basecamp Once](https://github.com/basecamp/once) for easy self-hosting with automatic SSL, backups, and updates.
+Story Spring is fully compatible with [Basecamp Once](https://github.com/basecamp/once) for easy self-hosting with automatic SSL, backups, and updates.
 
 ```bash
 # On your server
@@ -92,7 +92,7 @@ Open http://localhost:5173 (or your LAN IP if you chose WiFi access).
 
 ## WiFi Access (phones and tablets)
 
-During setup, choose option 2 ("Local WiFi") to make Taleweaver accessible from any device on your network. The setup script auto-detects your local IP and configures everything.
+During setup, choose option 2 ("Local WiFi") to make Story Spring accessible from any device on your network. The setup script auto-detects your local IP and configures everything.
 
 Other devices can then open `http://<your-ip>:5173` in their browser.
 
@@ -199,7 +199,7 @@ Voice IDs come pre-configured with good defaults from the ElevenLabs voice libra
 
 ## Illustrations Feature (Optional)
 
-Taleweaver can generate AI-illustrated storybooks synchronized with audio playback!
+Story Spring can generate AI-illustrated storybooks synchronized with audio playback!
 
 **How it works:**
 1. During story creation, choose from 7 curated art styles or write your own

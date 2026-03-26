@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-void: #0a0a1a;
-  --color-abyss: #1a0a2e;
-  --color-mystic: #7c3aed;
-  --color-ethereal: #a78bfa;
-  --color-glow: #c4b5fd;
+  --color-void: #0a1a0f;
+  --color-abyss: #0a2e1a;
+  --color-deep: #064e3b;
+  --color-accent: #16a34a;
+  --color-mystic: #22c55e;
+  --color-ethereal: #6ee7a0;
+  --color-glow: #bbf7d0;
   --color-gold: #f59e0b;
   --color-gold-light: #fbbf24;
-  --color-starlight: #f0f0ff;
+  --color-starlight: #f0fff4;
   --color-mist: rgba(255, 255, 255, 0.06);
   --color-glass: rgba(255, 255, 255, 0.08);
   --color-glass-border: rgba(255, 255, 255, 0.12);
@@ -31,7 +33,7 @@ body {
 
 /* Glowing text */
 .text-glow {
-  text-shadow: 0 0 20px rgba(167, 139, 250, 0.5), 0 0 40px rgba(167, 139, 250, 0.2);
+  text-shadow: 0 0 20px rgba(110, 231, 160, 0.5), 0 0 40px rgba(110, 231, 160, 0.2);
 }
 
 .text-glow-gold {
@@ -48,7 +50,7 @@ body {
 
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: rgba(110, 231, 160, 0.3);
 }
 
 /* Glowing input */
@@ -64,16 +66,16 @@ body {
 .glow-input:focus {
   outline: none;
   border-color: var(--color-ethereal);
-  box-shadow: 0 0 15px rgba(167, 139, 250, 0.3), 0 0 30px rgba(167, 139, 250, 0.1);
+  box-shadow: 0 0 15px rgba(110, 231, 160, 0.3), 0 0 30px rgba(110, 231, 160, 0.1);
 }
 
 .glow-input::placeholder {
-  color: rgba(240, 240, 255, 0.3);
+  color: rgba(240, 255, 244, 0.3);
 }
 
 /* Primary button with glow */
 .btn-glow {
-  background: linear-gradient(135deg, var(--color-mystic), #6d28d9);
+  background: linear-gradient(135deg, var(--color-mystic), var(--color-accent));
   color: white;
   font-weight: 600;
   padding: 0.75rem 2rem;
@@ -83,7 +85,7 @@ body {
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.2);
   transform: translateY(-1px);
 }
 
