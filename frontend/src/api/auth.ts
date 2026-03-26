@@ -54,6 +54,23 @@ export async function refreshToken(): Promise<boolean> {
   return res.ok;
 }
 
+export async function updateAccount(data: {
+  display_name?: string;
+  current_password?: string;
+  new_password?: string;
+}): Promise<User> {
+  const res = await fetch(`${BASE}/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Update failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export function getGoogleAuthUrl(inviteCode?: string): string {
   const params = inviteCode ? `?invite=${encodeURIComponent(inviteCode)}` : "";
   return `${BASE}/google${params}`;

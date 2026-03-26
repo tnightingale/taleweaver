@@ -18,8 +18,12 @@ from app.db.auth_crud import (
     get_invite_by_code,
     get_user_by_email,
     get_user_by_google_id,
+    get_user_by_id,
     redeem_invite,
+    update_user_display_name,
+    update_user_password,
 )
+import app.db.database as _db_module
 from app.db.database import SessionLocal
 from app.db.models import User
 
@@ -45,6 +49,12 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class UpdateAccountRequest(BaseModel):
+    display_name: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
 
 
 # ── Cookie helpers ──
@@ -163,8 +173,6 @@ async def refresh(request: Request):
     # Verify user still exists
     db = SessionLocal()
     try:
-        from app.db.auth_crud import get_user_by_id
-
         user = get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -189,6 +197,37 @@ async def refresh(request: Request):
 @router.get("/me")
 async def me(user: User = Depends(get_current_user)):
     return _user_response(user)
+
+
+@router.patch("/me")
+async def update_account(request: UpdateAccountRequest, user: User = Depends(get_current_user)):
+    if request.new_password is not None:
+        if not request.current_password:
+            raise HTTPException(status_code=400, detail="Current password is required")
+        if len(request.new_password) < 8:
+            raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    db = _db_module.SessionLocal()
+    try:
+        db_user = get_user_by_id(db, user.id)
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if request.new_password is not None:
+            if not db_user.password_hash or not verify_password(request.current_password, db_user.password_hash):
+                raise HTTPException(status_code=400, detail="Current password is incorrect")
+            update_user_password(db, user.id, hash_password(request.new_password))
+
+        if request.display_name is not None:
+            if not request.display_name.strip():
+                raise HTTPException(status_code=400, detail="Display name cannot be empty")
+            db_user = update_user_display_name(db, user.id, request.display_name)
+
+        # Re-fetch to get latest state
+        db_user = get_user_by_id(db, user.id)
+        return _user_response(db_user)
+    finally:
+        db.close()
 
 
 # ── Google OAuth ──

@@ -20,6 +20,11 @@ interface AuthContextType {
     inviteCode: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (data: {
+    display_name?: string;
+    current_password?: string;
+    new_password?: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -58,8 +63,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback(
+    async (data: {
+      display_name?: string;
+      current_password?: string;
+      new_password?: string;
+    }) => {
+      const u = await authApi.updateAccount(data);
+      setUser(u);
+    },
+    [],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
