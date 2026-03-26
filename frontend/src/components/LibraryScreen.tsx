@@ -159,7 +159,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grid"
                   ? "bg-gold text-white"
-                  : "bg-black/30 text-ethereal border border-mystic/30"
+                  : "bg-black/30 text-gold-light border border-gold/30"
               }`}
             >
               Grid
@@ -169,7 +169,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "grouped"
                   ? "bg-gold text-white"
-                  : "bg-black/30 text-ethereal border border-mystic/30"
+                  : "bg-black/30 text-gold-light border border-gold/30"
               }`}
             >
               By Kid
@@ -179,7 +179,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
               className={`px-3 py-2 rounded text-sm transition-all ${
                 view === "timeline"
                   ? "bg-gold text-white"
-                  : "bg-black/30 text-ethereal border border-mystic/30"
+                  : "bg-black/30 text-gold-light border border-gold/30"
               }`}
             >
               📅 Timeline
@@ -192,7 +192,7 @@ export default function LibraryScreen({ onClose, onPlayStory }: Props) {
             )}
             {total} {total === 1 ? "story" : "stories"}
             {inProgressJobs.length > 0 && (
-              <span className="text-ethereal">
+              <span className="text-gold-light">
                 + {inProgressJobs.length} generating
               </span>
             )}

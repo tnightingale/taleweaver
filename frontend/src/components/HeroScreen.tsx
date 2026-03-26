@@ -112,7 +112,7 @@ export default function HeroScreen({ onSubmit, onViewLibrary, activeJobCount = 0
         <button
           type="button"
           onClick={() => setShowPersonalize((v) => !v)}
-          className="mx-auto flex items-center gap-2 text-ethereal/80 hover:text-ethereal transition-colors text-sm cursor-pointer"
+          className="mx-auto flex items-center gap-2 text-gold-light/80 hover:text-gold-light transition-colors text-sm cursor-pointer"
         >
           <motion.span
             animate={{ rotate: showPersonalize ? 90 : 0 }}

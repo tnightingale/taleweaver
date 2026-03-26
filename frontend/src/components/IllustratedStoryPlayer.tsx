@@ -841,7 +841,7 @@ export default function IllustratedStoryPlayer({
                 className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                          transition-all cursor-pointer
                          ${airPlayActive || videoAirPlayActive
-                           ? "text-ethereal bg-mystic/20"
+                           ? "text-gold-light bg-gold/20"
                            : generatingVideo
                              ? "text-white/40 animate-pulse"
                              : "text-white/60 hover:text-white hover:bg-white/10"
@@ -948,7 +948,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={restartFromBeginning}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
+                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
                      transition-all cursor-pointer"
             title="Start from beginning"
           >
@@ -957,7 +957,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={() => skipBy(-15)}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
+                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
                      transition-all cursor-pointer"
             title="Skip back 15 seconds"
           >
@@ -975,7 +975,7 @@ export default function IllustratedStoryPlayer({
           <button
             onClick={() => skipBy(15)}
             className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                     text-ethereal/60 hover:text-glow hover:bg-mystic/20
+                     text-gold-light/60 hover:text-gold-light hover:bg-gold/20
                      transition-all cursor-pointer"
             title="Skip forward 15 seconds"
           >
@@ -989,10 +989,10 @@ export default function IllustratedStoryPlayer({
               className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center
                        transition-all cursor-pointer
                        ${airPlayActive || videoAirPlayActive
-                         ? "text-ethereal bg-mystic/20"
+                         ? "text-gold-light bg-gold/20"
                          : generatingVideo
-                           ? "text-ethereal/40 animate-pulse"
-                           : "text-ethereal/60 hover:text-glow hover:bg-mystic/20"
+                           ? "text-gold-light/40 animate-pulse"
+                           : "text-gold-light/60 hover:text-gold-light hover:bg-gold/20"
                        }`}
               title={
                 airPlayActive || videoAirPlayActive
@@ -1017,7 +1017,7 @@ export default function IllustratedStoryPlayer({
             <button
               onClick={toggleFullscreen}
               className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center
-                       text-ethereal/60 hover:text-glow hover:bg-mystic/20
+                       text-gold-light/60 hover:text-gold-light hover:bg-gold/20
                        transition-all cursor-pointer"
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >

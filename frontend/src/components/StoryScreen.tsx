@@ -241,7 +241,7 @@ export default function StoryScreen({
                 >
                   {Math.round(progress)}%
                 </motion.p>
-                <p className="text-sm text-ethereal">
+                <p className="text-sm text-gold-light">
                   {currentStage ? (STAGE_LABELS[currentStage] ?? "Creating your story...") : "Creating your story..."}
                 </p>
               </div>
@@ -527,7 +527,7 @@ export default function StoryScreen({
               {/* Permalink Share Section */}
               {storyData?.short_id && (
                 <div className="w-full glass-card p-4">
-                  <p className="text-ethereal text-sm mb-3 font-medium">
+                  <p className="text-gold-light text-sm mb-3 font-medium">
                     Share this story:
                   </p>
                   <div className="flex items-center gap-2">

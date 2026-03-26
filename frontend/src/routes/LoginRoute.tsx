@@ -123,7 +123,7 @@ export default function LoginRoute() {
 
       <motion.p variants={item} className="mt-8 text-center text-starlight/40 text-sm">
         Don't have an account?{" "}
-        <Link to="/signup" className="text-ethereal hover:text-ethereal/80 transition-colors">
+        <Link to="/signup" className="text-gold-light hover:text-gold-light/80 transition-colors">
           Sign up
         </Link>
       </motion.p>
