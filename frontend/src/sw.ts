@@ -23,10 +23,7 @@ const EXPECTED_CACHES = new Set([
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE).then((cache) =>
-      // cache: 'reload' bypasses the HTTP cache so the install always gets
-      // fresh HTML from the server, even when the HTTP cache has a long max-age
-      // (which we set for the Safari-tab offline fallback).
-      cache.addAll(['/', '/index.html'].map((u) => new Request(u, { cache: 'reload' })))
+      cache.addAll(['/', '/index.html'])
     )
   );
   self.skipWaiting();
@@ -95,9 +92,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-      // cache: 'no-cache' forces revalidation with the server, bypassing the
-      // HTTP cache's long max-age (set for the Safari-tab offline fallback).
-      fetch(request, { cache: 'no-cache' })
+      fetch(request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
