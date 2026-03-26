@@ -1,6 +1,32 @@
 import type { User } from "../types";
 
 const BASE = "/api/auth";
+const USER_STORAGE_KEY = "tw-user";
+
+function cacheUser(user: User): void {
+  try {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
+  }
+}
+
+function clearCachedUser(): void {
+  try {
+    localStorage.removeItem(USER_STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
+}
+
+export function getCachedUser(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function signup(
   email: string,
@@ -22,7 +48,9 @@ export async function signup(
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Signup failed: ${res.status}`);
   }
-  return res.json();
+  const user: User = await res.json();
+  cacheUser(user);
+  return user;
 }
 
 export async function login(email: string, password: string): Promise<User> {
@@ -35,18 +63,23 @@ export async function login(email: string, password: string): Promise<User> {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Login failed: ${res.status}`);
   }
-  return res.json();
+  const user: User = await res.json();
+  cacheUser(user);
+  return user;
 }
 
 export async function logout(): Promise<void> {
   await fetch(`${BASE}/logout`, { method: "POST" });
+  clearCachedUser();
 }
 
 export async function getCurrentUser(): Promise<User | null> {
   const res = await fetch(`${BASE}/me`);
   if (res.status === 401) return null;
   if (!res.ok) return null;
-  return res.json();
+  const user: User = await res.json();
+  cacheUser(user);
+  return user;
 }
 
 export async function refreshToken(): Promise<boolean> {

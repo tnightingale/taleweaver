@@ -32,6 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authApi
       .getCurrentUser()
       .then(setUser)
+      .catch(() => {
+        // Network error (e.g., offline) — fall back to cached user identity
+        if (!navigator.onLine) {
+          setUser(authApi.getCachedUser());
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
