@@ -74,16 +74,25 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  // Offline: skip the network fetch (hangs on iOS waiting for TCP timeout)
-  // and return the cached identity immediately.
+  // navigator.onLine is unreliable on iOS (can return true in airplane mode),
+  // so we also enforce a 3-second timeout to prevent the auth spinner from
+  // hanging when the fetch can't complete.
   if (!navigator.onLine) return getCachedUser();
 
-  const res = await fetch(`${BASE}/me`);
-  if (res.status === 401) return null;
-  if (!res.ok) return null;
-  const user: User = await res.json();
-  cacheUser(user);
-  return user;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${BASE}/me`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.status === 401) return null;
+    if (!res.ok) return null;
+    const user: User = await res.json();
+    cacheUser(user);
+    return user;
+  } catch {
+    // Network error or timeout — fall back to cached identity
+    return getCachedUser();
+  }
 }
 
 export async function refreshToken(): Promise<boolean> {

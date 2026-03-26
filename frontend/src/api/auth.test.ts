@@ -123,4 +123,22 @@ describe('getCurrentUser offline behavior', () => {
     expect(user).toEqual(testUser);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
+
+  it('falls back to cached user on network error even if navigator.onLine is true', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    storageMap.set('tw-user', JSON.stringify(testUser));
+    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    const user = await getCurrentUser();
+    expect(user).toEqual(testUser);
+  });
+
+  it('falls back to cached user on fetch abort (timeout)', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    storageMap.set('tw-user', JSON.stringify(testUser));
+    mockFetch.mockRejectedValueOnce(new DOMException('The operation was aborted', 'AbortError'));
+
+    const user = await getCurrentUser();
+    expect(user).toEqual(testUser);
+  });
 });
