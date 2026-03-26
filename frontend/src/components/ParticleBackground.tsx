@@ -9,6 +9,7 @@ interface Particle {
   opacity: number;
   twinkleSpeed: number;
   twinkleOffset: number;
+  isEmber: boolean;
 }
 
 export default function ParticleBackground() {
@@ -39,6 +40,7 @@ export default function ParticleBackground() {
       opacity: Math.random() * 0.6 + 0.2,
       twinkleSpeed: Math.random() * 0.02 + 0.01,
       twinkleOffset: Math.random() * Math.PI * 2,
+      isEmber: Math.random() < 0.2,
     });
 
     const init = () => {
@@ -66,12 +68,16 @@ export default function ParticleBackground() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(134, 239, 172, ${alpha})`;
+        ctx.fillStyle = p.isEmber
+          ? `rgba(251, 146, 60, ${alpha})`
+          : `rgba(134, 239, 172, ${alpha})`;
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(74, 222, 128, ${alpha * 0.15})`;
+        ctx.fillStyle = p.isEmber
+          ? `rgba(249, 115, 22, ${alpha * 0.15})`
+          : `rgba(74, 222, 128, ${alpha * 0.15})`;
         ctx.fill();
       }
 

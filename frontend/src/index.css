@@ -31,9 +31,9 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-/* Glowing text */
+/* Glowing text — warm orange-green blend for Fern & Ember */
 .text-glow {
-  text-shadow: 0 0 20px rgba(74, 222, 128, 0.5), 0 0 40px rgba(74, 222, 128, 0.2);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 0 40px rgba(74, 222, 128, 0.2);
 }
 
 .text-glow-gold {
@@ -50,7 +50,7 @@ body {
 
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(74, 222, 128, 0.3);
+  border-color: rgba(249, 115, 22, 0.25);
 }
 
 /* Glowing input */
@@ -65,17 +65,17 @@ body {
 
 .glow-input:focus {
   outline: none;
-  border-color: var(--color-ethereal);
-  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3), 0 0 30px rgba(74, 222, 128, 0.1);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.3), 0 0 30px rgba(249, 115, 22, 0.1);
 }
 
 .glow-input::placeholder {
   color: rgba(245, 245, 235, 0.3);
 }
 
-/* Primary button with glow */
+/* Primary button — orange ember gradient for Fern & Ember */
 .btn-glow {
-  background: linear-gradient(135deg, var(--color-mystic), var(--color-accent));
+  background: linear-gradient(135deg, var(--color-gold), #ea580c);
   color: white;
   font-weight: 600;
   padding: 0.75rem 2rem;
@@ -85,7 +85,7 @@ body {
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(22, 163, 74, 0.2);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.5), 0 0 40px rgba(249, 115, 22, 0.2);
   transform: translateY(-1px);
 }
 

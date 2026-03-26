@@ -42,7 +42,7 @@ export default function App() {
                 className="text-4xl md:text-5xl font-bold tracking-wide text-ethereal"
                 style={{
                   fontFamily: "var(--font-display)",
-                  textShadow: "0 0 20px rgba(74, 222, 128, 0.5), 0 0 40px rgba(74, 222, 128, 0.2)",
+                  textShadow: "0 0 20px rgba(249, 115, 22, 0.5), 0 0 40px rgba(74, 222, 128, 0.2)",
                 }}
               >
                 Story Spring
