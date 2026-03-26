@@ -24,7 +24,6 @@ from app.db.auth_crud import (
     update_user_password,
 )
 import app.db.database as _db_module
-from app.db.database import SessionLocal
 from app.db.models import User
 
 logger = logging.getLogger(__name__)
@@ -106,7 +105,7 @@ async def signup(request: SignupRequest):
     if len(request.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         # Validate invite code
         invite = get_invite_by_code(db, request.invite_code)
@@ -136,7 +135,7 @@ async def signup(request: SignupRequest):
 
 @router.post("/login")
 async def login(request: LoginRequest):
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         user = get_user_by_email(db, request.email)
         if not user or not user.password_hash:
@@ -171,7 +170,7 @@ async def refresh(request: Request):
     user_id = payload["sub"]
 
     # Verify user still exists
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         user = get_user_by_id(db, user_id)
         if not user:
@@ -322,7 +321,7 @@ async def google_callback(request: Request, code: str, state: str = ""):
     if not google_id or not email:
         raise HTTPException(status_code=400, detail="Google did not return required user info")
 
-    db = SessionLocal()
+    db = _db_module.SessionLocal()
     try:
         # Check if user already exists (by google_id or email)
         user = get_user_by_google_id(db, google_id)
