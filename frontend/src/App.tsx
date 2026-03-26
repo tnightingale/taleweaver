@@ -7,6 +7,7 @@ import StoryRoute from "./routes/StoryRoute";
 import LibraryRoute from "./routes/LibraryRoute";
 import LoginRoute from "./routes/LoginRoute";
 import SignupRoute from "./routes/SignupRoute";
+import AccountRoute from "./routes/AccountRoute";
 import StandalonePlayer from "./components/StandalonePlayer";
 import InstallPrompt from "./components/InstallPrompt";
 import { useAuth } from "./contexts/AuthContext";
@@ -26,9 +27,17 @@ export default function App() {
           <header className="py-8 text-center relative">
             {user && !isAuthPage && (
               <div className="absolute right-4 top-4 flex items-center gap-3">
-                <span className="text-starlight/40 text-sm hidden sm:inline">
-                  {user.display_name}
-                </span>
+                <Link
+                  to="/account"
+                  className="text-starlight/40 hover:text-starlight/60 text-sm transition-colors"
+                  title="Account settings"
+                >
+                  <span className="hidden sm:inline">{user.display_name}</span>
+                  <svg className="w-4 h-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </Link>
                 <button
                   onClick={logout}
                   className="text-starlight/30 hover:text-starlight/60 text-sm transition-colors"
@@ -62,6 +71,7 @@ export default function App() {
             <Route path="/craft" element={<ProtectedRoute><CraftRoute /></ProtectedRoute>} />
             <Route path="/story/:jobId" element={<ProtectedRoute><StoryRoute /></ProtectedRoute>} />
             <Route path="/library" element={<ProtectedRoute><LibraryRoute /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><AccountRoute /></ProtectedRoute>} />
             <Route path="/s/:shortId" element={<StandalonePlayer />} />
           </Routes>
         </main>

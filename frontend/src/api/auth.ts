@@ -33,7 +33,8 @@ export async function login(email: string, password: string): Promise<User> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Login failed: ${res.status}`);
+    const detail = typeof err.detail === "string" ? err.detail : `Login failed: ${res.status}`;
+    throw new Error(detail);
   }
   return res.json();
 }
@@ -52,6 +53,23 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function refreshToken(): Promise<boolean> {
   const res = await fetch(`${BASE}/refresh`, { method: "POST" });
   return res.ok;
+}
+
+export async function updateAccount(data: {
+  display_name?: string;
+  current_password?: string;
+  new_password?: string;
+}): Promise<User> {
+  const res = await fetch(`${BASE}/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Update failed: ${res.status}`);
+  }
+  return res.json();
 }
 
 export function getGoogleAuthUrl(inviteCode?: string): string {

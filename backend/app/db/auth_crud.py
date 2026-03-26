@@ -57,6 +57,22 @@ def link_google_account(db: Session, user_id: str, google_id: str) -> None:
         db.commit()
 
 
+def update_user_password(db: Session, user_id: str, password_hash: str) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.password_hash = password_hash
+        db.commit()
+
+
+def update_user_display_name(db: Session, user_id: str, display_name: str) -> User:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.display_name = display_name.strip()
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 # ── Invite operations ──
 
 
