@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getCachedUser, getCurrentUser, login, signup, logout } from './auth';
 
 const mockFetch = vi.fn();
@@ -80,5 +80,47 @@ describe('auth localStorage caching', () => {
   it('getCachedUser returns null on corrupted data', () => {
     storageMap.set('tw-user', 'not-json');
     expect(getCachedUser()).toBeNull();
+  });
+});
+
+describe('getCurrentUser offline behavior', () => {
+  let originalOnLine: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+  });
+
+  afterEach(() => {
+    if (originalOnLine) {
+      Object.defineProperty(navigator, 'onLine', originalOnLine);
+    } else {
+      Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    }
+  });
+
+  it('skips fetch and returns cached user when offline', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    storageMap.set('tw-user', JSON.stringify(testUser));
+
+    const user = await getCurrentUser();
+    expect(user).toEqual(testUser);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('returns null when offline with no cached user', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+
+    const user = await getCurrentUser();
+    expect(user).toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('fetches from network when online', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    mockFetch.mockResolvedValueOnce(okResponse(testUser));
+
+    const user = await getCurrentUser();
+    expect(user).toEqual(testUser);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
