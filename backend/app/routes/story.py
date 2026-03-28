@@ -122,13 +122,13 @@ async def run_pipeline(job_id: str, state: dict):
                     update_job_stage(db, job_id, next_stage, progress=stage_progress)
                     logger.info(f"[{job_id}] Stage: {next_stage} ({stage_progress:.0f}%)")
                 # Merge node output into our tracked state
+                node_output = event[node_name] or {}
                 if final_state is None:
-                    final_state = {**state, **event[node_name]}
+                    final_state = {**state, **node_output}
                 else:
-                    final_state.update(event[node_name])
+                    final_state.update(node_output)
 
                 # Persist partial results as they become available
-                node_output = event[node_name]
                 current_progress = stage_progress if (idx + 1 < len(STAGE_ORDER)) else 0
                 if node_name == "story_writer":
                     job_rec = get_job_state(db, job_id)

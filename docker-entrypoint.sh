@@ -29,10 +29,11 @@ HUEY_PID=$!
 # Timeout 120s is plenty for API requests (no long-running generation).
 echo "🚀 Starting Gunicorn on port 80..."
 gunicorn app.main:app \
-  --workers ${GUNICORN_WORKERS:-4} \
+  --workers ${GUNICORN_WORKERS:-2} \
   --worker-class uvicorn.workers.UvicornWorker \
   --bind 0.0.0.0:80 \
   --timeout 120 \
+  --preload \
   --access-logfile - \
   --error-logfile - \
   &
