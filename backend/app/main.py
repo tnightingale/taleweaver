@@ -828,12 +828,16 @@ _frontend_dir = Path("/app/frontend/dist")
 
 
 class SPAStaticFiles(StaticFiles):
-    """StaticFiles with SPA fallback: serves index.html for unknown paths.
+    """StaticFiles with SPA fallback for known client-side routes only.
 
-    Unlike html=True mode, this doesn't redirect to add trailing slashes —
-    it serves index.html directly for any path that doesn't match a file,
-    replicating Caddy's `try_files {path} /index.html` behavior.
+    Serves index.html for React Router paths so client-side navigation
+    works on refresh/deep-link. Unknown paths get a real 404 — this stops
+    vulnerability scanners from seeing 200 on .env, .git/*, etc.
     """
+
+    _SPA_ROUTES = {
+        "", "login", "signup", "craft", "story", "library", "account", "s",
+    }
 
     async def get_response(self, path: str, scope):
         from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -841,7 +845,9 @@ class SPAStaticFiles(StaticFiles):
             return await super().get_response(path, scope)
         except StarletteHTTPException as e:
             if e.status_code == 404:
-                return await super().get_response("index.html", scope)
+                first_segment = path.strip("/").split("/")[0]
+                if first_segment in self._SPA_ROUTES:
+                    return await super().get_response("index.html", scope)
             raise
 
 
