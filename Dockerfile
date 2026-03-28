@@ -10,9 +10,10 @@ FROM node:20-slim AS frontend-base
 
 WORKDIR /app/frontend
 
-# Install dependencies
+# Install dependencies (ci is faster + deterministic from lockfile)
 COPY frontend/package*.json ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy source (needed by both test and build)
 COPY frontend/ ./
@@ -33,21 +34,17 @@ FROM python:3.9-slim AS backend-base
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
+    apt-get install -y --no-install-recommends ffmpeg curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
 
 # ============================================================================
 # Stage 3: Final production image
 # ============================================================================
 FROM backend-base AS production
-
-# Install curl for health check (not needed for tests)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
 
 # Copy backend application
 COPY backend/ ./
