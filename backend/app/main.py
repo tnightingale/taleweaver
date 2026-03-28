@@ -836,7 +836,7 @@ class SPAStaticFiles(StaticFiles):
     """
 
     _SPA_ROUTES = {
-        "", "login", "signup", "craft", "story", "library", "account", "s",
+        "", ".", "login", "signup", "craft", "story", "library", "account", "s",
     }
 
     async def get_response(self, path: str, scope):
