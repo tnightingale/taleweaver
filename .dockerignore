@@ -6,3 +6,6 @@ __pycache__
 .git
 certs
 .pytest_cache
+frontend/coverage
+**/*.test.*
+**/*.spec.*
