@@ -6,6 +6,7 @@ echo "🎭 Starting Taleweaver..."
 # Initialize storage directories if they don't exist
 mkdir -p /storage/jobs
 mkdir -p /storage/music
+mkdir -p /storage/stories
 
 # Copy default background music if storage/music is empty
 if [ ! "$(ls -A /storage/music)" ]; then

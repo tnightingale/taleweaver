@@ -25,11 +25,13 @@ export default function StoryRoute() {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const pollingRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const pollingActiveRef = useRef(false);
   const progressHighWater = useRef(0);
 
   const handleStatusUpdate = useCallback((status: import("../types").JobStatusResponse | import("../types").JobCompleteResponse) => {
     if (status.status === "complete" && "audio_url" in status) {
       clearInterval(pollingRef.current);
+      pollingActiveRef.current = false;
       const complete = status as import("../types").JobCompleteResponse;
       setStoryTitle(complete.title);
       setStoryDuration(complete.duration_seconds);
@@ -39,6 +41,7 @@ export default function StoryRoute() {
       setIsGenerating(false);
     } else if (status.status === "failed") {
       clearInterval(pollingRef.current);
+      pollingActiveRef.current = false;
       const errorMsg = "error" in status ? status.error : "Story generation failed";
       setError(errorMsg || "Story generation failed");
       setIsGenerating(false);
@@ -64,6 +67,7 @@ export default function StoryRoute() {
     setIsGenerating(true);
     setCurrentStage("writing");
     progressHighWater.current = 0;
+    pollingActiveRef.current = true;
 
     // Immediate first poll to avoid showing stale 0% state
     pollJobStatus(id)
@@ -71,6 +75,7 @@ export default function StoryRoute() {
       .catch(err => {
         setError(err instanceof Error ? err.message : "Failed to check story status");
         setIsGenerating(false);
+        pollingActiveRef.current = false;
       })
       .finally(() => setInitialLoading(false));
 
@@ -80,6 +85,8 @@ export default function StoryRoute() {
         handleStatusUpdate(status);
       } catch (err) {
         clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+        pollingActiveRef.current = false;
         setError(err instanceof Error ? err.message : "Failed to check story status");
         setIsGenerating(false);
       }
@@ -110,10 +117,23 @@ export default function StoryRoute() {
     // Start polling for generation
     startPolling(jobId);
 
+    // Mobile browsers suspend setInterval when backgrounded, so polling
+    // silently stops. Pause cleanly on hide, resume on visible.
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      } else if (document.visibilityState === "visible" && !pollingRef.current && pollingActiveRef.current) {
+        startPolling(jobId);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
       }
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [jobId, navigate, startPolling]);
 

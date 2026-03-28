@@ -33,6 +33,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
+      // Purge illustration cache — previous versions cached HTML fallbacks
+      // (SPA index.html served with 200 for missing images) which display
+      // as blank images. The new SW validates content-type before caching.
+      caches.delete('story-illustrations'),
       // Remove stale caches (old Workbox precache versions, etc.)
       // Clean up old caches, but keep Workbox precache (starts with 'workbox-precache')
       // and our expected runtime caches
@@ -214,7 +218,14 @@ registerRoute(
   new CacheFirst({
     cacheName: 'story-illustrations',
     plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      {
+        // Only cache actual images — reject HTML fallbacks (e.g. SPA index.html
+        // served for missing files) that would otherwise be cached forever.
+        cacheWillUpdate: async ({ response }: { response: Response }) => {
+          const ct = response.headers.get('content-type') || '';
+          return ct.startsWith('image/') ? response : null;
+        },
+      },
       new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 }),
     ],
   })
