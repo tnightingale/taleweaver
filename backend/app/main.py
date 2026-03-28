@@ -845,8 +845,9 @@ class SPAStaticFiles(StaticFiles):
             raise
 
 
-if _storage_dir.is_dir():
-    app.mount("/storage", StaticFiles(directory=str(_storage_dir)), name="storage")
+_stories_dir = _storage_dir / "stories"
+if _stories_dir.is_dir():
+    app.mount("/storage/stories", StaticFiles(directory=str(_stories_dir)), name="storage")
 
 if _frontend_dir.is_dir():
     app.mount("/", SPAStaticFiles(directory=str(_frontend_dir)), name="spa")
